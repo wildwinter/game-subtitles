@@ -1,0 +1,17 @@
+{
+  "name": "game-subtitles-render",
+  "private": true,
+  "description": "Runtime subtitle render helper for games — JS, browser-compatible",
+  "type": "module",
+  "main": "dist/game-subtitles-render.esm.js",
+  "scripts": {
+    "build":      "node build.mjs",
+    "test":       "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "vitest":  "^2.0.0",
+    "jsdom":   "^24.0.0"
+  }
+}

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PreprocessorLib\PreprocessorLib.csproj" />
+    <ProjectReference Include="..\PreprocessorTool\PreprocessorTool.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk"        Version="17.13.0" />
+    <PackageReference Include="xunit"                         Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio"     Version="3.1.1" />
+    <PackageReference Include="coverlet.collector"            Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Copy test fixtures to output directory -->
+    <Content Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

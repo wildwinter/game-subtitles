@@ -1,0 +1,14 @@
+{
+  "name": "game-subtitles",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Subtitle system for games — preprocessor and runtime render helper",
+  "scripts": {
+    "build": "npm run build --prefix preprocessor && npm run build --prefix render-helpers/render-helper-js",
+    "test":  "npm run test  --prefix preprocessor && npm run test  --prefix render-helpers/render-helper-js",
+    "dist":  "node scripts/dist.mjs"
+  },
+  "devDependencies": {
+    "archiver": "^7.0.0"
+  }
+}

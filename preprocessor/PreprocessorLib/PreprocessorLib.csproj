@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>PreprocessorLib</AssemblyName>
+    <RootNamespace>GameSubtitles.Lib</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <!-- Embed all dictionary pattern files into the DLL -->
+  <ItemGroup>
+    <EmbeddedResource Include="Dictionaries\**\*.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NHyphenator" Version="2.0.0" />
+  </ItemGroup>
+
+</Project>

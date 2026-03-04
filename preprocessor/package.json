@@ -1,0 +1,10 @@
+{
+  "name": "game-subtitles-preprocessor",
+  "private": true,
+  "description": "C# subtitle preprocessor — inserts soft hyphens for safe word-wrap",
+  "scripts": {
+    "build": "dotnet build GameSubtitles.slnx -c Release",
+    "test":  "dotnet test  GameSubtitles.slnx -c Release",
+    "dist":  "node scripts/dist.mjs"
+  }
+}

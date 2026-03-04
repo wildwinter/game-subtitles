@@ -52,3 +52,17 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+BRIEF.txt
+
+# npm / Node
+node_modules/
+npm-debug.log*
+
+# Build & distribution outputs
+dist/
+preprocessor/dist/
+render-helpers/render-helper-js/dist/
+
+# macOS
+.DS_Store

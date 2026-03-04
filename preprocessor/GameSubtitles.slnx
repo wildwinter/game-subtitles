@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Preprocessor.Tests/Preprocessor.Tests.csproj" />
+  <Project Path="PreprocessorLib/PreprocessorLib.csproj" />
+  <Project Path="PreprocessorTool/PreprocessorTool.csproj" />
+</Solution>

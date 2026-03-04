@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>game-subtitles-preprocess</AssemblyName>
+    <RootNamespace>GameSubtitles.CLI</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PreprocessorLib\PreprocessorLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CsvHelper"          Version="33.1.0" />
+    <PackageReference Include="ClosedXML"          Version="0.105.0" />
+    <PackageReference Include="Karambolo.PO"       Version="1.12.0" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta5.25306.1" />
+  </ItemGroup>
+
+</Project>
