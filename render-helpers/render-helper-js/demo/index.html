@@ -66,12 +66,18 @@
       height: 100%;
     }
 
-    /* Speaker name floated above the subtitle bar */
-    #speaker-name {
+    /* Footer: speaker label + subtitle bar, stacked at the bottom of the scene */
+    #dom-footer {
       position: absolute;
-      bottom: 68px;
+      bottom: 0;
       left: 0;
       right: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Speaker name sits directly above the subtitle bar, auto-tracks its height */
+    #speaker-name {
       text-align: center;
       font-size: 0.65rem;
       font-weight: 700;
@@ -80,15 +86,12 @@
       color: #f0cc88;
       text-shadow: 0 1px 4px rgba(0,0,0,0.9);
       min-height: 1em;
+      padding-bottom: 4px;
       pointer-events: none;
     }
 
     /* DomRenderer target — no horizontal padding so getContainerWidth() is accurate */
     #dom-sub {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
       background: rgba(0, 0, 0, 0.75);
       min-height: 60px;
       display: flex;
@@ -195,6 +198,34 @@
       border-radius: 3px;
       padding: 0.05em 0.3em;
     }
+
+    /* ── Option row ───────────────────────────────────────────────────────── */
+    .options { gap: 1rem; font-size: 0.82rem; }
+
+    .options label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .options input[type="checkbox"] { cursor: pointer; accent-color: #f0cc88; }
+
+    .lines-control { display: flex; align-items: center; gap: 0.4rem; }
+
+    button.lines-btn {
+      padding: 0.2rem 0.55rem;
+      min-width: 1.8rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    #lines-count {
+      min-width: 1.4em;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
   </style>
 </head>
 <body>
@@ -241,8 +272,10 @@
           <circle cx="524" cy="48" r="1.5" fill="white" opacity="0.7"/>
           <circle cx="316" cy="22" r="1"   fill="white" opacity="0.5"/>
         </svg>
-        <div id="speaker-name"></div>
-        <div id="dom-sub"></div>
+        <div id="dom-footer">
+          <div id="speaker-name"></div>
+          <div id="dom-sub"></div>
+        </div>
       </div>
     </div>
 
@@ -262,6 +295,19 @@
     <button class="start" id="btn-start" disabled>&#x25B6; Start</button>
     <button class="stop"  id="btn-stop"  disabled>&#x25A0; Stop</button>
     <button class="reset" id="btn-reset" disabled>&#x21BA; Reset</button>
+  </div>
+
+  <!-- Options -->
+  <div class="controls options">
+    <label>
+      <input type="checkbox" id="chk-speed"> 2&#xD7; speed
+    </label>
+    <div class="lines-control">
+      <span>Lines:</span>
+      <button class="lines-btn stop" id="btn-lines-dec">&#x2212;</button>
+      <span id="lines-count">2</span>
+      <button class="lines-btn stop" id="btn-lines-inc">+</button>
+    </div>
   </div>
 
   <!-- Progress -->
@@ -297,15 +343,19 @@
     // ── Canvas renderer (draws game scene + subtitle bar) ────────────────────
     const canvas = document.getElementById('canvas');
     const ctx    = canvas.getContext('2d');
-    const CW     = canvas.width;   // 540
-    const CH     = canvas.height;  // 304
-    const BAR_H  = 68;
+    const CW = canvas.width;   // 540
+    const CH = canvas.height;  // 304
     const SUB_FONT    = '16px Georgia, "Times New Roman", serif';
     const SPEAKER_FONT = 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
     let canvasSpeaker = '';
 
     function drawCanvasScene(lines) {
+      // Bar height: 8px top pad + maxLines × 22px + gaps + 12px bottom pad,
+      // minimum 60px to match the DOM bar's min-height.
+      const lineH = 22;
+      const BAR_H = Math.max(60, 20 + currentMaxLines * lineH + Math.max(0, currentMaxLines - 1) * 2);
+
       // Sky gradient
       const skyGrad = ctx.createLinearGradient(0, 0, 0, CH);
       skyGrad.addColorStop(0, '#16213e');
@@ -369,7 +419,6 @@
         ctx.fillStyle    = '#ffffff';
         ctx.textBaseline = 'middle';
         ctx.textAlign    = 'center';
-        const lineH  = 22;
         const totalH = lines.length * lineH;
         const startY = CH - BAR_H + (BAR_H - totalH) / 2 + lineH / 2;
         lines.forEach((line, i) => ctx.fillText(line, CW / 2, startY + i * lineH));
@@ -387,25 +436,31 @@
     };
 
     // ── State ─────────────────────────────────────────────────────────────────
-    let SCRIPTS      = [];   // populated after JSON fetch
-    let domPlayer    = null;
-    let canvasPlayer = null;
-    let raf          = null;
-    let lastTs       = null;
-    let elapsedMs    = 0;
-    let totalMs      = 0;
-    let pageIdx      = 0;
-    let totalPages   = 1;
+    let SCRIPTS       = [];   // populated after JSON fetch
+    let domPlayer     = null;
+    let canvasPlayer  = null;
+    let raf           = null;
+    let lastTs        = null;
+    let elapsedMs     = 0;
+    let totalMs       = 0;
+    let pageIdx       = 0;
+    let totalPages    = 1;
+    let isRunning     = false;
+    let currentMaxLines = 2;
 
     // ── UI refs ───────────────────────────────────────────────────────────────
-    const btnStart   = document.getElementById('btn-start');
-    const btnStop    = document.getElementById('btn-stop');
-    const btnReset   = document.getElementById('btn-reset');
-    const progFill   = document.getElementById('prog-fill');
-    const pageInfoEl = document.getElementById('page-info');
-    const timeInfoEl = document.getElementById('time-info');
-    const statusEl   = document.getElementById('status');
-    const scriptSel  = document.getElementById('script-sel');
+    const btnStart    = document.getElementById('btn-start');
+    const btnStop     = document.getElementById('btn-stop');
+    const btnReset    = document.getElementById('btn-reset');
+    const progFill    = document.getElementById('prog-fill');
+    const pageInfoEl  = document.getElementById('page-info');
+    const timeInfoEl  = document.getElementById('time-info');
+    const statusEl    = document.getElementById('status');
+    const scriptSel   = document.getElementById('script-sel');
+    const chkSpeed    = document.getElementById('chk-speed');
+    const btnLinesDec = document.getElementById('btn-lines-dec');
+    const btnLinesInc = document.getElementById('btn-lines-inc');
+    const linesCountEl = document.getElementById('lines-count');
 
     // ── Load subtitles.json ───────────────────────────────────────────────────
     fetch('/demo/subtitles.json')
@@ -448,9 +503,15 @@
       });
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-    function setButtons(isRunning) {
-      btnStart.disabled = isRunning;
-      btnStop.disabled  = !isRunning;
+    function setButtons(running) {
+      isRunning         = running;
+      btnStart.disabled = running;
+      btnStop.disabled  = !running;
+    }
+
+    function updateLinesDisplay() {
+      linesCountEl.textContent = currentMaxLines;
+      btnLinesDec.disabled     = currentMaxLines <= 1;
     }
 
     function updateProgress() {
@@ -468,8 +529,10 @@
     // ── Game loop ─────────────────────────────────────────────────────────────
     function loop(ts) {
       if (lastTs !== null) {
-        const delta = (ts - lastTs) / 1000;
-        elapsedMs = Math.min(elapsedMs + (ts - lastTs), totalMs);
+        const rawMs  = ts - lastTs;
+        const mul    = chkSpeed.checked ? 2 : 1;
+        const delta  = (rawMs / 1000) * mul;
+        elapsedMs    = Math.min(elapsedMs + rawMs * mul, totalMs);
         domPlayer.tick(delta);
         canvasPlayer.tick(delta);
         updateProgress();
@@ -486,6 +549,9 @@
       setButtons(false);
       btnReset.disabled = false;
       statusEl.textContent = 'Finished.';
+      speakerEl.textContent = '';
+      canvasSpeaker = '';
+      drawCanvasScene([]);
     }
 
     // ── Controls ──────────────────────────────────────────────────────────────
@@ -510,7 +576,7 @@
         script.text,
         t => domRenderer.measureLineWidth(t),
         domRenderer.getContainerWidth(),
-        script.maxLines,
+        currentMaxLines,
       ).length;
 
       // Tracking wrapper: keeps pageIdx in sync without changing DOM behaviour
@@ -523,11 +589,11 @@
       };
 
       domPlayer = new SubtitlePlayer({
-        text: script.text, duration: script.duration, maxLines: script.maxLines,
+        text: script.text, duration: script.duration, maxLines: currentMaxLines,
         renderer: trackingRenderer, onComplete,
       });
       canvasPlayer = new SubtitlePlayer({
-        text: script.text, duration: script.duration, maxLines: script.maxLines,
+        text: script.text, duration: script.duration, maxLines: currentMaxLines,
         renderer: canvasRenderer, onComplete: () => {},
       });
 
@@ -571,6 +637,23 @@
     btnStop.addEventListener('click', stop);
     btnReset.addEventListener('click', reset);
     scriptSel.addEventListener('change', reset);
+
+    btnLinesDec.addEventListener('click', () => {
+      if (currentMaxLines > 1) {
+        currentMaxLines--;
+        updateLinesDisplay();
+        if (isRunning) start();
+      }
+    });
+
+    btnLinesInc.addEventListener('click', () => {
+      currentMaxLines++;
+      updateLinesDisplay();
+      if (isRunning) start();
+    });
+
+    // Initialise options display
+    updateLinesDisplay();
 
     // Draw initial canvas background on load
     drawCanvasScene([]);
