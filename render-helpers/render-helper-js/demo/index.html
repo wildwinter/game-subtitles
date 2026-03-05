@@ -437,8 +437,6 @@
 
     // ── State ─────────────────────────────────────────────────────────────────
     let SCRIPTS       = [];   // populated after JSON fetch
-    let domPlayer     = null;
-    let canvasPlayer  = null;
     let raf           = null;
     let lastTs        = null;
     let elapsedMs     = 0;
@@ -447,6 +445,18 @@
     let totalPages    = 1;
     let isRunning     = false;
     let currentMaxLines = 2;
+
+    // ── Persistent players (created once, reused across subtitles) ────────────
+    let renderCount = 0;
+    const trackingRenderer = {
+      measureLineWidth: t  => domRenderer.measureLineWidth(t),
+      getContainerWidth: () => domRenderer.getContainerWidth(),
+      render(lines) { pageIdx = renderCount++;  domRenderer.render(lines); },
+      clear()        { renderCount = 0; pageIdx = 0; domRenderer.clear(); },
+    };
+
+    const domPlayer    = new SubtitlePlayer({ renderer: trackingRenderer, maxLines: currentMaxLines });
+    const canvasPlayer = new SubtitlePlayer({ renderer: canvasRenderer,   maxLines: currentMaxLines });
 
     // ── UI refs ───────────────────────────────────────────────────────────────
     const btnStart    = document.getElementById('btn-start');
@@ -579,26 +589,8 @@
         currentMaxLines,
       ).length;
 
-      // Tracking wrapper: keeps pageIdx in sync without changing DOM behaviour
-      let renderCount = 0;
-      const trackingRenderer = {
-        measureLineWidth: t  => domRenderer.measureLineWidth(t),
-        getContainerWidth: () => domRenderer.getContainerWidth(),
-        render(lines) { pageIdx = renderCount++;  domRenderer.render(lines); },
-        clear()        { renderCount = 0; pageIdx = 0; domRenderer.clear(); },
-      };
-
-      domPlayer = new SubtitlePlayer({
-        text: script.text, duration: script.duration, maxLines: currentMaxLines,
-        renderer: trackingRenderer, onComplete,
-      });
-      canvasPlayer = new SubtitlePlayer({
-        text: script.text, duration: script.duration, maxLines: currentMaxLines,
-        renderer: canvasRenderer, onComplete: () => {},
-      });
-
-      domPlayer.start();
-      canvasPlayer.start();
+      domPlayer.start({ text: script.text, duration: script.duration, onComplete });
+      canvasPlayer.start({ text: script.text, duration: script.duration, onComplete: () => {} });
 
       setButtons(true);
       btnReset.disabled = false;
@@ -641,6 +633,8 @@
     btnLinesDec.addEventListener('click', () => {
       if (currentMaxLines > 1) {
         currentMaxLines--;
+        domPlayer.maxLines = currentMaxLines;
+        canvasPlayer.maxLines = currentMaxLines;
         updateLinesDisplay();
         if (isRunning) start();
       }
@@ -648,6 +642,8 @@
 
     btnLinesInc.addEventListener('click', () => {
       currentMaxLines++;
+      domPlayer.maxLines = currentMaxLines;
+      canvasPlayer.maxLines = currentMaxLines;
       updateLinesDisplay();
       if (isRunning) start();
     });
