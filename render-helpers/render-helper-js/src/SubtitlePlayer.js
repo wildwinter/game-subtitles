@@ -1,4 +1,4 @@
-import { wrapText, paginateLines, allocateTimings } from './TextLayout.js';
+import { wrapAndPaginate, allocateTimings } from './TextLayout.js';
 
 /**
  * Manages paginated subtitle display driven by caller-supplied ticks.
@@ -103,12 +103,9 @@ export class SubtitlePlayer {
   }
 
   _layout() {
-    const lines = wrapText(
-      this._text,
-      t => this._renderer.measureLineWidth(t),
-      this._renderer.getContainerWidth(),
-    );
-    this._pages = paginateLines(lines, this._maxLines);
+    const measure = t => this._renderer.measureLineWidth(t);
+    const width   = this._renderer.getContainerWidth();
+    this._pages   = wrapAndPaginate(this._text, measure, width, this._maxLines);
     this._timings = allocateTimings(this._pages, this._duration);
   }
 

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { SubtitlePlayer } from '../SubtitlePlayer.js';
+import processedSubtitles from './fixtures/processed.json';
 
 // A fake renderer whose container is 100px wide and uses monospace 10px chars.
 function makeRenderer() {
@@ -42,7 +43,7 @@ describe('SubtitlePlayer', () => {
     });
     player.start();
     expect(r.rendered.length).toBe(1);
-    player.tick(2.1); // first page duration is 2s
+    player.tick(2.1); // first page duration is 2 s ('aaaaa…' ellipsis not timed)
     expect(r.rendered.length).toBe(2);
     expect(r.rendered[1]).toContain('bbbbb');
   });
@@ -108,6 +109,48 @@ describe('SubtitlePlayer', () => {
     player.start();
     player.tick(1.1);
     expect(onComplete).toHaveBeenCalledOnce();
+  });
+
+  describe('loaded from preprocessor JSON output', () => {
+    it('renders entry with soft-hyphenated text across multiple pages', () => {
+      const r = makeRenderer();
+      // Container is 100px wide (10 chars at 10px each).
+      // Entry "1" contains "Internationalization..." with U+00AD soft hyphens inserted
+      // by the preprocessor.  The player must hyphenate and paginate correctly.
+      const entry = processedSubtitles.find(e => e.id === '1');
+      const player = new SubtitlePlayer({
+        text: entry.subtitle,
+        duration: 6,
+        maxLines: 2,
+        renderer: r,
+      });
+      player.start();
+      // The long word "Internationalization" (20 chars) exceeds the 10-char container,
+      // so the layout must produce more than one line and thus render immediately.
+      expect(r.rendered.length).toBeGreaterThanOrEqual(1);
+      // Every rendered line must be free of raw soft hyphens (U+00AD must not leak out
+      // except as a trailing '-' inserted by the wrapper).
+      const allLines = r.rendered.flat();
+      allLines.forEach(line => {
+        expect(line).not.toContain('\u00ad');
+      });
+    });
+
+    it('plays a short entry from preprocessor JSON without error', () => {
+      const r = makeRenderer();
+      const onComplete = vi.fn();
+      const entry = processedSubtitles.find(e => e.id === '2');
+      const player = new SubtitlePlayer({
+        text: entry.subtitle,
+        duration: 2,
+        maxLines: 2,
+        renderer: r,
+        onComplete,
+      });
+      player.start();
+      player.tick(2.1);
+      expect(onComplete).toHaveBeenCalledOnce();
+    });
   });
 
   it('tick() is a no-op before start()', () => {

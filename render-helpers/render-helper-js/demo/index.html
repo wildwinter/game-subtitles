@@ -66,6 +66,23 @@
       height: 100%;
     }
 
+    /* Speaker name floated above the subtitle bar */
+    #speaker-name {
+      position: absolute;
+      bottom: 68px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #f0cc88;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+      min-height: 1em;
+      pointer-events: none;
+    }
+
     /* DomRenderer target — no horizontal padding so getContainerWidth() is accurate */
     #dom-sub {
       position: absolute;
@@ -114,6 +131,7 @@
       border-radius: 4px;
       font-size: 0.85rem;
       cursor: pointer;
+      max-width: 320px;
     }
 
     button {
@@ -162,6 +180,21 @@
       color: #8b949e;
       min-height: 1.1em;
     }
+
+    .note {
+      font-size: 0.72rem;
+      color: #484f58;
+      max-width: 720px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .note code {
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 3px;
+      padding: 0.05em 0.3em;
+    }
   </style>
 </head>
 <body>
@@ -208,6 +241,7 @@
           <circle cx="524" cy="48" r="1.5" fill="white" opacity="0.7"/>
           <circle cx="316" cy="22" r="1"   fill="white" opacity="0.5"/>
         </svg>
+        <div id="speaker-name"></div>
         <div id="dom-sub"></div>
       </div>
     </div>
@@ -222,13 +256,10 @@
 
   <!-- Controls -->
   <div class="controls">
-    <select id="script-sel">
-      <option value="0">NPC Greeting</option>
-      <option value="1">Long Speech</option>
-      <option value="2">Quick Alert</option>
-      <option value="3">Hyphenation Demo</option>
+    <select id="script-sel" disabled>
+      <option>Loading subtitles…</option>
     </select>
-    <button class="start" id="btn-start">&#x25B6; Start</button>
+    <button class="start" id="btn-start" disabled>&#x25B6; Start</button>
     <button class="stop"  id="btn-stop"  disabled>&#x25A0; Stop</button>
     <button class="reset" id="btn-reset" disabled>&#x21BA; Reset</button>
   </div>
@@ -242,7 +273,14 @@
     </div>
   </div>
 
-  <div id="status">Select a script and press Start</div>
+  <div id="status">Loading subtitle data…</div>
+
+  <p class="note">
+    Subtitle content is loaded from <code>demo/subtitles.json</code> — the format
+    produced by the C# preprocessor tool. The <code>subtitle</code> field contains
+    U+00AD soft hyphens inserted at valid break&shy;points; the renderers consume
+    this directly and never expose raw soft hyphens in the output.
+  </p>
 
   <script src="/dist/game-subtitles-render.js"></script>
   <script>
@@ -251,45 +289,21 @@
 
     const { SubtitlePlayer, DomRenderer, wrapText, paginateLines } = GameSubtitles;
 
-    // ── Sample scripts ─────────────────────────────────────────────────────
-    const SCRIPTS = [
-      {
-        name: 'NPC Greeting',
-        text: 'Welcome, traveller. You have arrived at the village of Ashenvale. The elders have been expecting you for some time.',
-        duration: 8,
-        maxLines: 2,
-      },
-      {
-        name: 'Long Speech',
-        text: 'Long ago, in the age before memory, the great dragon Pyroxanthus descended from the mountains and laid waste to the entire kingdom. The heroes of that time fought bravely, but were ultimately defeated. Now, centuries later, the prophecy speaks of one who will rise again to face the darkness once more.',
-        duration: 20,
-        maxLines: 2,
-      },
-      {
-        name: 'Quick Alert',
-        text: 'Enemy detected!',
-        duration: 2.5,
-        maxLines: 1,
-      },
-      {
-        name: 'Hyphenation Demo',
-        text: 'Inter\u00ADna\u00ADtion\u00ADal\u00ADi\u00ADza\u00ADtion and lo\u00ADca\u00ADli\u00ADza\u00ADtion are im\u00ADpor\u00ADtant con\u00ADsi\u00ADde\u00ADra\u00ADtions for any mul\u00ADti\u00ADlin\u00ADgual ap\u00ADpli\u00ADca\u00ADtion.',
-        duration: 12,
-        maxLines: 2,
-      },
-    ];
-
-    // ── DOM renderer ────────────────────────────────────────────────────────
-    const domEl = document.getElementById('dom-sub');
+    // ── DOM renderer ─────────────────────────────────────────────────────────
+    const domEl       = document.getElementById('dom-sub');
+    const speakerEl   = document.getElementById('speaker-name');
     const domRenderer = new DomRenderer(domEl);
 
-    // ── Canvas renderer (custom: draws game scene + subtitle bar) ───────────
+    // ── Canvas renderer (draws game scene + subtitle bar) ────────────────────
     const canvas = document.getElementById('canvas');
     const ctx    = canvas.getContext('2d');
     const CW     = canvas.width;   // 540
     const CH     = canvas.height;  // 304
     const BAR_H  = 68;
-    const SUB_FONT = '16px Georgia, "Times New Roman", serif';
+    const SUB_FONT    = '16px Georgia, "Times New Roman", serif';
+    const SPEAKER_FONT = 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+    let canvasSpeaker = '';
 
     function drawCanvasScene(lines) {
       // Sky gradient
@@ -340,7 +354,16 @@
       ctx.fillStyle = 'rgba(0,0,0,0.75)';
       ctx.fillRect(0, CH - BAR_H, CW, BAR_H);
 
-      // Lines (centred in the bar)
+      // Speaker name (above the bar)
+      if (canvasSpeaker) {
+        ctx.font         = SPEAKER_FONT;
+        ctx.fillStyle    = '#f0cc88';
+        ctx.textBaseline = 'bottom';
+        ctx.textAlign    = 'center';
+        ctx.fillText(canvasSpeaker.toUpperCase(), CW / 2, CH - BAR_H - 4);
+      }
+
+      // Subtitle lines (centred in the bar)
       if (lines && lines.length > 0) {
         ctx.font         = SUB_FONT;
         ctx.fillStyle    = '#ffffff';
@@ -363,7 +386,8 @@
       clear()        { drawCanvasScene([]); },
     };
 
-    // ── State ───────────────────────────────────────────────────────────────
+    // ── State ─────────────────────────────────────────────────────────────────
+    let SCRIPTS      = [];   // populated after JSON fetch
     let domPlayer    = null;
     let canvasPlayer = null;
     let raf          = null;
@@ -373,7 +397,7 @@
     let pageIdx      = 0;
     let totalPages   = 1;
 
-    // ── UI refs ─────────────────────────────────────────────────────────────
+    // ── UI refs ───────────────────────────────────────────────────────────────
     const btnStart   = document.getElementById('btn-start');
     const btnStop    = document.getElementById('btn-stop');
     const btnReset   = document.getElementById('btn-reset');
@@ -383,7 +407,47 @@
     const statusEl   = document.getElementById('status');
     const scriptSel  = document.getElementById('script-sel');
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
+    // ── Load subtitles.json ───────────────────────────────────────────────────
+    fetch('/demo/subtitles.json')
+      .then(r => r.json())
+      .then(data => {
+        // Map preprocessor JSON format → internal script objects.
+        // Duration is estimated from character count (~14 chars/s, min 3s, max 18s).
+        SCRIPTS = data
+          .filter(e => e.subtitle && e.subtitle.trim())
+          .map(e => {
+            const charCount = e.subtitle.replace(/\u00ad/g, '').length;
+            return {
+              id:       e.id,
+              name:     e.speaker ? `${e.speaker}` : e.id,
+              speaker:  e.speaker ?? '',
+              text:     e.subtitle,
+              duration: Math.min(18, Math.max(3, Math.round(charCount / 14))),
+              maxLines: 2,
+            };
+          });
+
+        // Populate selector
+        scriptSel.innerHTML = '';
+        SCRIPTS.forEach((s, i) => {
+          const opt     = document.createElement('option');
+          opt.value     = i;
+          const preview = s.text.replace(/\u00ad/g, '').slice(0, 42);
+          opt.textContent =
+            `[${s.id}] ${s.name} — ${preview}${s.text.length > 42 ? '…' : ''}`;
+          scriptSel.appendChild(opt);
+        });
+
+        scriptSel.disabled  = false;
+        btnStart.disabled   = false;
+        statusEl.textContent = 'Select a subtitle entry and press Start';
+        drawCanvasScene([]);
+      })
+      .catch(err => {
+        statusEl.textContent = `Failed to load subtitles.json: ${err.message}`;
+      });
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
     function setButtons(isRunning) {
       btnStart.disabled = isRunning;
       btnStop.disabled  = !isRunning;
@@ -401,7 +465,7 @@
       lastTs = null;
     }
 
-    // ── Game loop ────────────────────────────────────────────────────────────
+    // ── Game loop ─────────────────────────────────────────────────────────────
     function loop(ts) {
       if (lastTs !== null) {
         const delta = (ts - lastTs) / 1000;
@@ -414,7 +478,7 @@
       raf = requestAnimationFrame(loop);
     }
 
-    // ── Completion ───────────────────────────────────────────────────────────
+    // ── Completion ────────────────────────────────────────────────────────────
     function onComplete() {
       stopRaf();
       elapsedMs = totalMs;
@@ -424,17 +488,22 @@
       statusEl.textContent = 'Finished.';
     }
 
-    // ── Controls ─────────────────────────────────────────────────────────────
+    // ── Controls ──────────────────────────────────────────────────────────────
     function start() {
-      // Clean up any previous run
       domPlayer?.stop();
       canvasPlayer?.stop();
       stopRaf();
 
       const script = SCRIPTS[+scriptSel.value];
+      if (!script) return;
+
       totalMs   = script.duration * 1000;
       elapsedMs = 0;
       pageIdx   = 0;
+
+      // Update speaker labels
+      speakerEl.textContent = script.speaker;
+      canvasSpeaker = script.speaker;
 
       // Pre-compute total pages for the progress indicator
       const wrappedLines = wrapText(
@@ -444,7 +513,7 @@
       );
       totalPages = paginateLines(wrappedLines, script.maxLines).length;
 
-      // Thin tracking wrapper: keeps pageIdx in sync without changing DOM behaviour
+      // Tracking wrapper: keeps pageIdx in sync without changing DOM behaviour
       let renderCount = 0;
       const trackingRenderer = {
         measureLineWidth: t  => domRenderer.measureLineWidth(t),
@@ -467,7 +536,7 @@
 
       setButtons(true);
       btnReset.disabled = false;
-      statusEl.textContent = `Playing: ${script.name}`;
+      statusEl.textContent = `Playing: [${script.id}] ${script.name}`;
       updateProgress();
       raf = requestAnimationFrame(loop);
     }
@@ -486,13 +555,16 @@
       stopRaf();
       domPlayer?.reset();
       canvasPlayer?.reset();
+      speakerEl.textContent = '';
+      canvasSpeaker = '';
       elapsedMs = 0; pageIdx = 0; totalPages = 1;
       progFill.style.width   = '0%';
       pageInfoEl.textContent = '';
       timeInfoEl.textContent = '';
-      statusEl.textContent   = 'Select a script and press Start';
+      statusEl.textContent   = 'Select a subtitle entry and press Start';
       setButtons(false);
       btnReset.disabled = true;
+      drawCanvasScene([]);
     }
 
     btnStart.addEventListener('click', start);
