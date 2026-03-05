@@ -41,6 +41,18 @@ export class DomRenderer {
     this._element.innerHTML = '';
   }
 
+  /**
+   * Invalidates the cached measure element so the next measurement re-reads
+   * the container's computed font.  Call this after changing the element's
+   * font via CSS or inline style.
+   */
+  invalidateFont() {
+    if (this._measureEl) {
+      this._measureEl.remove();
+      this._measureEl = null;
+    }
+  }
+
   _ensureMeasureEl() {
     if (this._measureEl) return this._measureEl;
     const doc = this._element.ownerDocument;

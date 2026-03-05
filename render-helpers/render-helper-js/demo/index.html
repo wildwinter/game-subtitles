@@ -221,11 +221,13 @@
       font-weight: 700;
     }
 
-    #lines-count {
+    #lines-count, #font-size {
       min-width: 1.4em;
       text-align: center;
       font-variant-numeric: tabular-nums;
     }
+
+    #font-size { min-width: 3em; }
   </style>
 </head>
 <body>
@@ -308,6 +310,12 @@
       <span id="lines-count">2</span>
       <button class="lines-btn stop" id="btn-lines-inc">+</button>
     </div>
+    <div class="lines-control">
+      <span>Font:</span>
+      <button class="lines-btn stop" id="btn-font-dec">&#x2212;</button>
+      <span id="font-size">16px</span>
+      <button class="lines-btn stop" id="btn-font-inc">+</button>
+    </div>
   </div>
 
   <!-- Progress -->
@@ -345,15 +353,16 @@
     const ctx    = canvas.getContext('2d');
     const CW = canvas.width;   // 540
     const CH = canvas.height;  // 304
-    const SUB_FONT    = '16px Georgia, "Times New Roman", serif';
+    let currentFontSize = 16;
+    let SUB_FONT       = `${currentFontSize}px Georgia, "Times New Roman", serif`;
     const SPEAKER_FONT = 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
     let canvasSpeaker = '';
 
     function drawCanvasScene(lines) {
-      // Bar height: 8px top pad + maxLines × 22px + gaps + 12px bottom pad,
+      // Bar height: 8px top pad + maxLines × lineH + gaps + 12px bottom pad,
       // minimum 60px to match the DOM bar's min-height.
-      const lineH = 22;
+      const lineH = Math.round(currentFontSize * 1.375); // 16px → 22px
       const BAR_H = Math.max(60, 20 + currentMaxLines * lineH + Math.max(0, currentMaxLines - 1) * 2);
 
       // Sky gradient
@@ -471,6 +480,9 @@
     const btnLinesDec = document.getElementById('btn-lines-dec');
     const btnLinesInc = document.getElementById('btn-lines-inc');
     const linesCountEl = document.getElementById('lines-count');
+    const btnFontDec  = document.getElementById('btn-font-dec');
+    const btnFontInc  = document.getElementById('btn-font-inc');
+    const fontSizeEl  = document.getElementById('font-size');
 
     // ── Load subtitles.json ───────────────────────────────────────────────────
     fetch('/demo/subtitles.json')
@@ -522,6 +534,18 @@
     function updateLinesDisplay() {
       linesCountEl.textContent = currentMaxLines;
       btnLinesDec.disabled     = currentMaxLines <= 1;
+    }
+
+    function updateFontDisplay() {
+      fontSizeEl.textContent = currentFontSize + 'px';
+      btnFontDec.disabled    = currentFontSize <= 10;
+      btnFontInc.disabled    = currentFontSize >= 32;
+    }
+
+    function applyFont() {
+      SUB_FONT = `${currentFontSize}px Georgia, "Times New Roman", serif`;
+      domEl.style.font = SUB_FONT;
+      domRenderer.invalidateFont();
     }
 
     function updateProgress() {
@@ -648,8 +672,27 @@
       if (isRunning) start();
     });
 
+    btnFontDec.addEventListener('click', () => {
+      if (currentFontSize > 10) {
+        currentFontSize -= 2;
+        applyFont();
+        updateFontDisplay();
+        if (isRunning) start();
+      }
+    });
+
+    btnFontInc.addEventListener('click', () => {
+      if (currentFontSize < 32) {
+        currentFontSize += 2;
+        applyFont();
+        updateFontDisplay();
+        if (isRunning) start();
+      }
+    });
+
     // Initialise options display
     updateLinesDisplay();
+    updateFontDisplay();
 
     // Draw initial canvas background on load
     drawCanvasScene([]);
