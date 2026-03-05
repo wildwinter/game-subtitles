@@ -71,6 +71,20 @@ game-subtitles-preprocess ./loc/ -o ./out/ --field text -l es_ES
 game-subtitles-preprocess sheet.xlsx -o out.xlsx --field Subtitle -l en_GB
 ```
 
+### What the preprocessor does
+
+The tool reads each subtitle string and inserts **soft hyphen** (U+00AD) characters at every safe hyphenation point according to the TeX rules for the chosen language. No visible characters are added or removed — the soft hyphens are invisible unless the renderer decides to break a line there, in which case it displays a `-` at the break point.
+
+Example (`en_US`):
+
+```text
+Input:  "Internationalization is hard."
+Output: "In|ter|na|tion|al|i|za|tion is hard."
+         ↑  ↑  ↑   ↑  ↑ ↑  ↑   soft hyphens (U+00AD), shown here as | — invisible at runtime
+```
+
+Because soft hyphens are non-ASCII Unicode characters, **it is essential that your source files are saved and read as UTF-8**. See the format-specific notes below.
+
 ### Supported File Formats
 
 | Format | Rules |
@@ -79,6 +93,16 @@ game-subtitles-preprocess sheet.xlsx -o out.xlsx --field Subtitle -l en_GB
 | `.csv` | `--field` required; processes named column; all other columns pass through unchanged |
 | `.json` | `--field` required; input must be a JSON array of objects `[{…}]`; top-level key match is case-insensitive |
 | `.xlsx` | `--field` required; first sheet only; header row on row 1 |
+
+#### CSV and the UTF-8 BOM
+
+The CSV formatter mirrors the byte-order mark (BOM) of the input file in the output file — if the input starts with a UTF-8 BOM (`EF BB BF`) the output will too; if not, neither will the output.
+
+> **Strongly recommended:** always save CSV input files as **UTF-8 with BOM**.
+>
+> Without a BOM, many tools (notably Microsoft Excel on Windows) assume a legacy code page and will silently misread the soft hyphens and any other non-ASCII characters in the file, corrupting your data before it ever reaches this tool. A UTF-8 BOM is the standard signal that tells these tools the file is Unicode.
+
+Most modern editors (VS Code, Notepad++, JetBrains IDEs) have an explicit "Save with BOM" or "UTF-8 BOM" option in their encoding selector. The BOM has no effect on command-line tools, Python's `csv` module, or any other well-behaved UTF-8 reader.
 
 ### Library API (C#)
 
