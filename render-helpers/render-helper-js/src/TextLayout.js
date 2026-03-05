@@ -170,6 +170,32 @@ export function wrapAndPaginate(text, measureWidth, containerWidth, maxLines) {
     pages[pi][pages[pi].length - 1] += ELLIPSIS;
   }
 
+  // Last-line word reconstitution: if the very last line of the last page is a
+  // single token (the tail of a soft-hyphen break) and the preceding line ends
+  // with the matching hyphenated stem, reconstitute the whole word when it fits
+  // within containerWidth.  The last line was built with effectiveWidth, so a
+  // word up to containerWidth wide may now fit there without any ellipsis.
+  const lp = pages[pages.length - 1];
+  if (lp.length >= 2) {
+    const lastLine = lp[lp.length - 1];
+    if (!lastLine.includes(' ')) {
+      const prevTokens = lp[lp.length - 2].split(' ');
+      const prevLastToken = prevTokens[prevTokens.length - 1];
+      if (prevLastToken.endsWith('-')) {
+        const rejoined = prevLastToken.slice(0, -1) + lastLine;
+        if (measureWidth(rejoined) <= containerWidth) {
+          prevTokens.pop();
+          lp[lp.length - 1] = rejoined;
+          if (prevTokens.length > 0) {
+            lp[lp.length - 2] = prevTokens.join(' ');
+          } else {
+            lp.splice(lp.length - 2, 1);
+          }
+        }
+      }
+    }
+  }
+
   return pages;
 }
 
