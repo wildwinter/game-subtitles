@@ -14,6 +14,8 @@ internal sealed class CsvFormatter : IFormatter
             return;
         }
 
+        var outputEncoding = new System.Text.UTF8Encoding(HasUtf8Bom(inputPath));
+
         List<string> headers;
         List<Dictionary<string, string>> rows = [];
 
@@ -53,7 +55,7 @@ internal sealed class CsvFormatter : IFormatter
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ".");
-        using var writer = new StreamWriter(outputPath, append: false, System.Text.Encoding.UTF8);
+        using var writer = new StreamWriter(outputPath, append: false, outputEncoding);
         using var csv2 = new CsvWriter(writer, CultureInfo.InvariantCulture);
 
         foreach (var h in headers) csv2.WriteField(h);
@@ -64,5 +66,12 @@ internal sealed class CsvFormatter : IFormatter
             foreach (var h in headers) csv2.WriteField(row[h]);
             csv2.NextRecord();
         }
+    }
+
+    private static bool HasUtf8Bom(string path)
+    {
+        Span<byte> buf = stackalloc byte[3];
+        using var fs = File.OpenRead(path);
+        return fs.Read(buf) == 3 && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF;
     }
 }

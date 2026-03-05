@@ -17,17 +17,27 @@ internal sealed class FileProcessor
     private readonly SubtitlePreprocessor _preprocessor;
     private readonly string? _languageCode;
     private readonly string? _fieldName;
+    private readonly bool _forceOverwrite;
 
-    public FileProcessor(SubtitlePreprocessor preprocessor, string? languageCode, string? fieldName)
+    public FileProcessor(SubtitlePreprocessor preprocessor, string? languageCode, string? fieldName,
+        bool forceOverwrite = false)
     {
         _preprocessor = preprocessor;
         _languageCode = languageCode;
         _fieldName = fieldName;
+        _forceOverwrite = forceOverwrite;
     }
 
     public ProcessingResult ProcessFile(string inputPath, string outputPath)
     {
         var result = new ProcessingResult();
+
+        if (!_forceOverwrite && IsUpToDate(inputPath, outputPath))
+        {
+            result.MarkSkipped();
+            return result;
+        }
+
         var ext = Path.GetExtension(inputPath);
 
         if (!Formatters.TryGetValue(ext, out var formatter))
@@ -40,6 +50,10 @@ internal sealed class FileProcessor
         formatter.Process(inputPath, outputPath, _fieldName, transform, result);
         return result;
     }
+
+    private static bool IsUpToDate(string inputPath, string outputPath) =>
+        File.Exists(outputPath) &&
+        File.GetLastWriteTimeUtc(outputPath) >= File.GetLastWriteTimeUtc(inputPath);
 
     public IReadOnlyList<(string File, ProcessingResult Result)> ProcessFolder(
         string inputFolder, string outputFolder)

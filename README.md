@@ -46,12 +46,14 @@ Options:
   -o, --output <path>   Output file or folder (required)
   -f, --field <name>    Field to process in CSV / JSON / XLSX files
   -l, --lang <code>     Language code e.g. en_GB, fr_FR (default: en_US)
-  --no-overwrite        Preserve existing output files (default is to overwrite)
+  --force-overwrite     Always reprocess files, even if the output is already up to date
   -h, --help
   --version
 
 Exit codes: 0 = success, 1 = warnings, 2 = error
 ```
+
+By default the tool skips any output file that is already newer than the corresponding input file (make-style up-to-date check). Pass `--force-overwrite` to reprocess regardless.
 
 **Examples:**
 

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Subtitles — Renderer Demo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 2rem 1rem 3rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #f0cc88;
+    }
+
+    /* ── Panels ───────────────────────────────────────────────────────────── */
+    .panels {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .panel-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #8b949e;
+    }
+
+    /* ── DOM renderer scene ───────────────────────────────────────────────── */
+    .scene {
+      width: 540px;
+      height: 304px;
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .scene-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* DomRenderer target — no horizontal padding so getContainerWidth() is accurate */
+    #dom-sub {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.75);
+      min-height: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 8px 0 12px;
+      gap: 2px;
+      font: 16px Georgia, 'Times New Roman', serif;
+    }
+
+    #dom-sub p {
+      color: #ffffff;
+      text-align: center;
+      font: inherit;
+    }
+
+    /* ── Canvas renderer ──────────────────────────────────────────────────── */
+    canvas {
+      display: block;
+      width: 540px;
+      height: 304px;
+      border-radius: 6px;
+    }
+
+    /* ── Controls ─────────────────────────────────────────────────────────── */
+    .controls {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    select {
+      padding: 0.35rem 0.7rem;
+      background: #161b22;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    button {
+      padding: 0.35rem 1.1rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: opacity 0.15s;
+    }
+
+    button.start  { background: #238636; color: #fff; border-color: #2ea043; }
+    button.start:hover:not(:disabled) { background: #2ea043; }
+    button.stop, button.reset { background: #21262d; color: #c9d1d9; border-color: #30363d; }
+    button.stop:hover:not(:disabled), button.reset:hover:not(:disabled) { background: #30363d; }
+    button:disabled { opacity: 0.38; cursor: default; }
+
+    /* ── Progress ─────────────────────────────────────────────────────────── */
+    .progress-section { width: 100%; max-width: 1100px; }
+
+    .progress-bar {
+      height: 3px;
+      background: #21262d;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    #prog-fill {
+      height: 100%;
+      background: #f0cc88;
+      width: 0%;
+      transition: width 0.12s linear;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #8b949e;
+      margin-top: 5px;
+    }
+
+    #status {
+      font-size: 0.8rem;
+      color: #8b949e;
+      min-height: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Game Subtitles — Renderer Demo</h1>
+
+  <div class="panels">
+
+    <!-- DOM Renderer -->
+    <div class="panel">
+      <div class="panel-label">DOM Renderer</div>
+      <div class="scene">
+        <svg class="scene-svg" viewBox="0 0 540 304" preserveAspectRatio="xMidYMid slice"
+             xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="gSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#16213e"/>
+              <stop offset="100%" stop-color="#1a4a7a"/>
+            </linearGradient>
+            <radialGradient id="gSun" cx="56%" cy="30%" r="20%">
+              <stop offset="0%"   stop-color="#ffe680" stop-opacity="0.85"/>
+              <stop offset="100%" stop-color="#ff9d2e" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="540" height="304" fill="url(#gSky)"/>
+          <rect width="540" height="304" fill="url(#gSun)"/>
+          <!-- Ground -->
+          <rect y="200" width="540" height="104" fill="#1e0a3c"/>
+          <!-- Mountains -->
+          <polygon points="0,200 75,125 150,200"    fill="#2a1050" opacity="0.85"/>
+          <polygon points="90,200 200,108 310,200"   fill="#2a1050" opacity="0.85"/>
+          <polygon points="270,200 375,135 480,200"  fill="#2a1050" opacity="0.80"/>
+          <polygon points="400,200 490,145 580,200"  fill="#2a1050" opacity="0.85"/>
+          <!-- Buildings -->
+          <rect x="48"  y="160" width="44" height="40" fill="#180840"/>
+          <rect x="63"  y="148" width="13" height="12" fill="#180840"/>
+          <rect x="452" y="144" width="62" height="56" fill="#180840"/>
+          <rect x="470" y="132" width="16" height="12" fill="#180840"/>
+          <!-- Stars -->
+          <circle cx="28"  cy="18" r="1"   fill="white" opacity="0.8"/>
+          <circle cx="76"  cy="42" r="1"   fill="white" opacity="0.6"/>
+          <circle cx="148" cy="12" r="1.5" fill="white" opacity="0.7"/>
+          <circle cx="415" cy="28" r="1"   fill="white" opacity="0.8"/>
+          <circle cx="488" cy="8"  r="1"   fill="white" opacity="0.6"/>
+          <circle cx="524" cy="48" r="1.5" fill="white" opacity="0.7"/>
+          <circle cx="316" cy="22" r="1"   fill="white" opacity="0.5"/>
+        </svg>
+        <div id="dom-sub"></div>
+      </div>
+    </div>
+
+    <!-- Canvas Renderer -->
+    <div class="panel">
+      <div class="panel-label">Canvas Renderer</div>
+      <canvas id="canvas" width="540" height="304"></canvas>
+    </div>
+
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <select id="script-sel">
+      <option value="0">NPC Greeting</option>
+      <option value="1">Long Speech</option>
+      <option value="2">Quick Alert</option>
+      <option value="3">Hyphenation Demo</option>
+    </select>
+    <button class="start" id="btn-start">&#x25B6; Start</button>
+    <button class="stop"  id="btn-stop"  disabled>&#x25A0; Stop</button>
+    <button class="reset" id="btn-reset" disabled>&#x21BA; Reset</button>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-section">
+    <div class="progress-bar"><div id="prog-fill"></div></div>
+    <div class="progress-meta">
+      <span id="page-info"></span>
+      <span id="time-info"></span>
+    </div>
+  </div>
+
+  <div id="status">Select a script and press Start</div>
+
+  <script src="/dist/game-subtitles-render.js"></script>
+  <script>
+    /* global GameSubtitles */
+    'use strict';
+
+    const { SubtitlePlayer, DomRenderer, wrapText, paginateLines } = GameSubtitles;
+
+    // ── Sample scripts ─────────────────────────────────────────────────────
+    const SCRIPTS = [
+      {
+        name: 'NPC Greeting',
+        text: 'Welcome, traveller. You have arrived at the village of Ashenvale. The elders have been expecting you for some time.',
+        duration: 8,
+        maxLines: 2,
+      },
+      {
+        name: 'Long Speech',
+        text: 'Long ago, in the age before memory, the great dragon Pyroxanthus descended from the mountains and laid waste to the entire kingdom. The heroes of that time fought bravely, but were ultimately defeated. Now, centuries later, the prophecy speaks of one who will rise again to face the darkness once more.',
+        duration: 20,
+        maxLines: 2,
+      },
+      {
+        name: 'Quick Alert',
+        text: 'Enemy detected!',
+        duration: 2.5,
+        maxLines: 1,
+      },
+      {
+        name: 'Hyphenation Demo',
+        text: 'Inter\u00ADna\u00ADtion\u00ADal\u00ADi\u00ADza\u00ADtion and lo\u00ADca\u00ADli\u00ADza\u00ADtion are im\u00ADpor\u00ADtant con\u00ADsi\u00ADde\u00ADra\u00ADtions for any mul\u00ADti\u00ADlin\u00ADgual ap\u00ADpli\u00ADca\u00ADtion.',
+        duration: 12,
+        maxLines: 2,
+      },
+    ];
+
+    // ── DOM renderer ────────────────────────────────────────────────────────
+    const domEl = document.getElementById('dom-sub');
+    const domRenderer = new DomRenderer(domEl);
+
+    // ── Canvas renderer (custom: draws game scene + subtitle bar) ───────────
+    const canvas = document.getElementById('canvas');
+    const ctx    = canvas.getContext('2d');
+    const CW     = canvas.width;   // 540
+    const CH     = canvas.height;  // 304
+    const BAR_H  = 68;
+    const SUB_FONT = '16px Georgia, "Times New Roman", serif';
+
+    function drawCanvasScene(lines) {
+      // Sky gradient
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, CH);
+      skyGrad.addColorStop(0, '#16213e');
+      skyGrad.addColorStop(1, '#1a4a7a');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, CW, CH);
+
+      // Sun glow
+      const sunGrad = ctx.createRadialGradient(302, 91, 0, 302, 91, 75);
+      sunGrad.addColorStop(0, 'rgba(255,230,128,0.88)');
+      sunGrad.addColorStop(1, 'rgba(255,157,46,0)');
+      ctx.fillStyle = sunGrad;
+      ctx.fillRect(0, 0, CW, CH);
+
+      // Ground
+      ctx.fillStyle = '#1e0a3c';
+      ctx.fillRect(0, 200, CW, CH - 200);
+
+      // Mountains
+      ctx.fillStyle = 'rgba(42,16,80,0.85)';
+      [
+        [0, 200, 75, 125, 150, 200],
+        [90, 200, 200, 108, 310, 200],
+        [270, 200, 375, 135, 480, 200],
+        [400, 200, 490, 145, 580, 200],
+      ].forEach(([x0, y0, x1, y1, x2, y2]) => {
+        ctx.beginPath();
+        ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2);
+        ctx.closePath(); ctx.fill();
+      });
+
+      // Buildings
+      ctx.fillStyle = '#180840';
+      ctx.fillRect(48, 160, 44, 40);  ctx.fillRect(63, 148, 13, 12);
+      ctx.fillRect(452, 144, 62, 56); ctx.fillRect(470, 132, 16, 12);
+
+      // Stars
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      [[28, 18, 1], [76, 42, 1], [148, 12, 1.5],
+       [415, 28, 1], [488, 8, 1], [524, 48, 1.5], [316, 22, 1]]
+        .forEach(([x, y, r]) => {
+          ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+        });
+
+      // Subtitle bar
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      ctx.fillRect(0, CH - BAR_H, CW, BAR_H);
+
+      // Lines (centred in the bar)
+      if (lines && lines.length > 0) {
+        ctx.font         = SUB_FONT;
+        ctx.fillStyle    = '#ffffff';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign    = 'center';
+        const lineH  = 22;
+        const totalH = lines.length * lineH;
+        const startY = CH - BAR_H + (BAR_H - totalH) / 2 + lineH / 2;
+        lines.forEach((line, i) => ctx.fillText(line, CW / 2, startY + i * lineH));
+      }
+    }
+
+    const canvasRenderer = {
+      measureLineWidth(text) {
+        ctx.font = SUB_FONT;
+        return ctx.measureText(text).width;
+      },
+      getContainerWidth() { return CW; },
+      render(lines) { drawCanvasScene(lines); },
+      clear()        { drawCanvasScene([]); },
+    };
+
+    // ── State ───────────────────────────────────────────────────────────────
+    let domPlayer    = null;
+    let canvasPlayer = null;
+    let raf          = null;
+    let lastTs       = null;
+    let elapsedMs    = 0;
+    let totalMs      = 0;
+    let pageIdx      = 0;
+    let totalPages   = 1;
+
+    // ── UI refs ─────────────────────────────────────────────────────────────
+    const btnStart   = document.getElementById('btn-start');
+    const btnStop    = document.getElementById('btn-stop');
+    const btnReset   = document.getElementById('btn-reset');
+    const progFill   = document.getElementById('prog-fill');
+    const pageInfoEl = document.getElementById('page-info');
+    const timeInfoEl = document.getElementById('time-info');
+    const statusEl   = document.getElementById('status');
+    const scriptSel  = document.getElementById('script-sel');
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    function setButtons(isRunning) {
+      btnStart.disabled = isRunning;
+      btnStop.disabled  = !isRunning;
+    }
+
+    function updateProgress() {
+      const pct = totalMs > 0 ? Math.min(100, (elapsedMs / totalMs) * 100) : 0;
+      progFill.style.width   = pct + '%';
+      pageInfoEl.textContent = totalPages > 1 ? `Page ${pageIdx + 1} / ${totalPages}` : '';
+      timeInfoEl.textContent = `${(elapsedMs / 1000).toFixed(1)} s / ${(totalMs / 1000).toFixed(1)} s`;
+    }
+
+    function stopRaf() {
+      if (raf !== null) { cancelAnimationFrame(raf); raf = null; }
+      lastTs = null;
+    }
+
+    // ── Game loop ────────────────────────────────────────────────────────────
+    function loop(ts) {
+      if (lastTs !== null) {
+        const delta = (ts - lastTs) / 1000;
+        elapsedMs = Math.min(elapsedMs + (ts - lastTs), totalMs);
+        domPlayer.tick(delta);
+        canvasPlayer.tick(delta);
+        updateProgress();
+      }
+      lastTs = ts;
+      raf = requestAnimationFrame(loop);
+    }
+
+    // ── Completion ───────────────────────────────────────────────────────────
+    function onComplete() {
+      stopRaf();
+      elapsedMs = totalMs;
+      updateProgress();
+      setButtons(false);
+      btnReset.disabled = false;
+      statusEl.textContent = 'Finished.';
+    }
+
+    // ── Controls ─────────────────────────────────────────────────────────────
+    function start() {
+      // Clean up any previous run
+      domPlayer?.stop();
+      canvasPlayer?.stop();
+      stopRaf();
+
+      const script = SCRIPTS[+scriptSel.value];
+      totalMs   = script.duration * 1000;
+      elapsedMs = 0;
+      pageIdx   = 0;
+
+      // Pre-compute total pages for the progress indicator
+      const wrappedLines = wrapText(
+        script.text,
+        t => domRenderer.measureLineWidth(t),
+        domRenderer.getContainerWidth(),
+      );
+      totalPages = paginateLines(wrappedLines, script.maxLines).length;
+
+      // Thin tracking wrapper: keeps pageIdx in sync without changing DOM behaviour
+      let renderCount = 0;
+      const trackingRenderer = {
+        measureLineWidth: t  => domRenderer.measureLineWidth(t),
+        getContainerWidth: () => domRenderer.getContainerWidth(),
+        render(lines) { pageIdx = renderCount++;  domRenderer.render(lines); },
+        clear()        { renderCount = 0; pageIdx = 0; domRenderer.clear(); },
+      };
+
+      domPlayer = new SubtitlePlayer({
+        text: script.text, duration: script.duration, maxLines: script.maxLines,
+        renderer: trackingRenderer, onComplete,
+      });
+      canvasPlayer = new SubtitlePlayer({
+        text: script.text, duration: script.duration, maxLines: script.maxLines,
+        renderer: canvasRenderer, onComplete: () => {},
+      });
+
+      domPlayer.start();
+      canvasPlayer.start();
+
+      setButtons(true);
+      btnReset.disabled = false;
+      statusEl.textContent = `Playing: ${script.name}`;
+      updateProgress();
+      raf = requestAnimationFrame(loop);
+    }
+
+    function stop() {
+      domPlayer?.stop();
+      canvasPlayer?.stop();
+      stopRaf();
+      setButtons(false);
+      statusEl.textContent = 'Stopped.';
+    }
+
+    function reset() {
+      domPlayer?.stop();
+      canvasPlayer?.stop();
+      stopRaf();
+      domPlayer?.reset();
+      canvasPlayer?.reset();
+      elapsedMs = 0; pageIdx = 0; totalPages = 1;
+      progFill.style.width   = '0%';
+      pageInfoEl.textContent = '';
+      timeInfoEl.textContent = '';
+      statusEl.textContent   = 'Select a script and press Start';
+      setButtons(false);
+      btnReset.disabled = true;
+    }
+
+    btnStart.addEventListener('click', start);
+    btnStop.addEventListener('click', stop);
+    btnReset.addEventListener('click', reset);
+    scriptSel.addEventListener('change', reset);
+
+    // Draw initial canvas background on load
+    drawCanvasScene([]);
+  </script>
+</body>
+</html>

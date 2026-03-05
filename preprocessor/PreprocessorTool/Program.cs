@@ -23,26 +23,26 @@ var langOpt = new Option<string?>("--lang", ["-l"])
 {
     Description = "Language code e.g. en_GB, fr_FR (default: en_US)",
 };
-var noOverwriteOpt = new Option<bool>("--no-overwrite")
+var forceOverwriteOpt = new Option<bool>("--force-overwrite")
 {
-    Description = "Preserve existing output files (default is to overwrite)",
+    Description = "Always reprocess files even if the output is already up to date",
 };
 
 var root = new RootCommand("Game Subtitles \u2014 inserts soft hyphen (U+00AD) markers in localised subtitle strings")
 {
-    inputArg, outputOpt, fieldOpt, langOpt, noOverwriteOpt
+    inputArg, outputOpt, fieldOpt, langOpt, forceOverwriteOpt
 };
 
 root.SetAction(parseResult =>
 {
-    var input       = parseResult.GetValue(inputArg)!;
-    var output      = parseResult.GetValue(outputOpt)!;
-    var field       = parseResult.GetValue(fieldOpt);
-    var lang        = parseResult.GetValue(langOpt);
-    var noOverwrite = parseResult.GetValue(noOverwriteOpt);
+    var input          = parseResult.GetValue(inputArg)!;
+    var output         = parseResult.GetValue(outputOpt)!;
+    var field          = parseResult.GetValue(fieldOpt);
+    var lang           = parseResult.GetValue(langOpt);
+    var forceOverwrite = parseResult.GetValue(forceOverwriteOpt);
 
     var preprocessor = new SubtitlePreprocessor();
-    var processor    = new FileProcessor(preprocessor, lang, field);
+    var processor    = new FileProcessor(preprocessor, lang, field, forceOverwrite);
     int exitCode     = 0;
 
     if (Directory.Exists(input))
@@ -56,11 +56,6 @@ root.SetAction(parseResult =>
     }
     else if (File.Exists(input))
     {
-        if (noOverwrite && File.Exists(output))
-        {
-            Console.Error.WriteLine($"ERROR: Output file already exists: {output}");
-            return 2;
-        }
         var r = processor.ProcessFile(input, output);
         Report(input, r);
         exitCode = ExitCode(r);
@@ -79,6 +74,7 @@ return await config.InvokeAsync(args);
 
 static void Report(string label, ProcessingResult r)
 {
+    if (r.Skipped) { Console.WriteLine($"SKIP [{label}]: up to date."); return; }
     foreach (var w in r.Warnings) Console.Error.WriteLine($"WARN [{label}]: {w}");
     foreach (var e in r.Errors)   Console.Error.WriteLine($"ERROR [{label}]: {e}");
     if (!r.HasErrors)
