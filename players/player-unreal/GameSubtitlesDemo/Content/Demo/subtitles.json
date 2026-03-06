@@ -1,0 +1,62 @@
+[
+  {
+    "id": "1p-01",
+    "speaker": "Guard",
+    "subtitle": "Stop. That's close enough."
+  },
+  {
+    "id": "1p-02",
+    "speaker": "Kael",
+    "subtitle": "Im\u00adpos\u00adsi\u00adble. The re\u00adinforce\u00adments should have ar\u00adrived hours ago."
+  },
+  {
+    "id": "1p-03",
+    "speaker": "Lira",
+    "subtitle": "I never wanted any of this. But here we are."
+  },
+  {
+    "id": "1p-04",
+    "speaker": "System",
+    "subtitle": "All sys\u00adtems nominal. Re\u00adgroup at ex\u00adfil point Bravo in five min\u00adutes."
+  },
+  {
+    "id": "2p-01",
+    "speaker": "Dr. Eryndal",
+    "subtitle": "The de\u00adcom\u00adpres\u00adsion se\u00adquence will take ap\u00adprox\u00adi\u00admate\u00adly four\u00adteen min\u00adutes to com\u00adplete. Please re\u00admain in your pres\u00adsu\u00adri\u00adzed suit at all times. Any breach of the hull will trigger an au\u00adto\u00admat\u00adic seal\u00ading pro\u00adto\u00adcol and im\u00adme\u00addi\u00adate lock\u00addown."
+  },
+  {
+    "id": "2p-02",
+    "speaker": "Commander Vael",
+    "subtitle": "I've re\u00adviewed your re\u00adquest care\u00adful\u00adly, and the an\u00adswer is no. The risk is far too great. I will not au\u00adtho\u00adrise an op\u00ader\u00adation of this scale on the ba\u00adsis of in\u00adcom\u00adplete in\u00adtel\u00adli\u00adgence. Come back when you have some\u00adthing con\u00adclu\u00adsive."
+  },
+  {
+    "id": "2p-03",
+    "speaker": "Tutorial",
+    "subtitle": "Use the left ana\u00adlogue stick to move and the right to look around. Press [A] to jump, [B] to sprint, and [X] to in\u00adter\u00adact. Your cur\u00adrent ob\u00adjec\u00adtive is marked on the com\u00adpass. Open the pause menu at any time to re\u00adview your in\u00adven\u00adto\u00adry and mis\u00adsion pa\u00adram\u00ade\u00adters."
+  },
+  {
+    "id": "2p-04",
+    "speaker": "Kael",
+    "subtitle": "I thought you were dead. Ev\u00adery\u00adone thought you were dead \u2014 the re\u00adport was clear, no sur\u00advi\u00advors. And yet here you stand. I have spent the last three days try\u00ading to un\u00adder\u00adstand what that means, and I find my\u00adself with more ques\u00adtions than an\u00adswers."
+  },
+  {
+    "id": "3p-01",
+    "speaker": "Narrator",
+    "subtitle": "The Foun\u00adda\u00adtion had been built on a lie \u2014 not the kind you can ra\u00adtion\u00adal\u00adise away, but a fun\u00adda\u00admen\u00adtal de\u00adcep\u00adtion woven into ev\u00adery doc\u00adu\u00adment, ev\u00adery cer\u00ade\u00admo\u00adny, and ev\u00adery les\u00adson they ever taught. Gen\u00ader\u00adation after gen\u00ader\u00adation had built their en\u00adtire world on some\u00adthing that never ex\u00adist\u00aded. And now, at last, the truth was sur\u00adfa\u00adcing \u2014 and with it, the weight of ev\u00adery\u00adthing they had lost."
+  },
+  {
+    "id": "3p-02",
+    "speaker": "Archivist Deen",
+    "subtitle": "The re\u00adcon\u00adstruc\u00adtion of the sur\u00adface maps con\u00adfirms what our sen\u00adsors have been in\u00addic\u00adat\u00ading for months. Be\u00adyond the sev\u00adenth par\u00adal\u00adlel, ter\u00adri\u00adto\u00adries once thought un\u00adinhab\u00adited now show clear signs of an\u00adcient col\u00ado\u00adni\u00adza\u00adtion. The struc\u00adtures pre\u00addate any\u00adthing the Con\u00adfe\u00adder\u00ada\u00adtion has pre\u00advi\u00adous\u00adly cat\u00adal\u00adogued by sev\u00ader\u00adal thou\u00adsand years. We do not yet know who built them \u2014 or why they were aban\u00addoned."
+  },
+  {
+    "id": "3p-03",
+    "speaker": "Dr. Solenne",
+    "subtitle": "We are look\u00ading at a bi\u00adolog\u00adi\u00adcal sig\u00adna\u00adture un\u00adlike any\u00adthing pre\u00advi\u00adous\u00adly doc\u00adu\u00adment\u00aded in the sci\u00aden\u00adti\u00adfi\u00adc lit\u00ader\u00adature. The im\u00adpli\u00adca\u00adtions for our un\u00adder\u00adstand\u00ading of ex\u00adtra\u00adter\u00adres\u00adtri\u00adal life are ex\u00adtraor\u00addi\u00adna\u00adry \u2014 this single sam\u00adple ef\u00adfec\u00adtive\u00adly in\u00adval\u00adid\u00adates two cen\u00adtu\u00adries of as\u00adsumed sci\u00aden\u00adti\u00adfi\u00adcal con\u00adsensus. Ev\u00adery\u00adthing we thought we knew about the or\u00adigns of life in this sec\u00adtor will need to be re\u00advis\u00adited."
+  },
+  {
+    "id": "3p-04",
+    "speaker": "Narrator",
+    "subtitle": "Three years had passed since the Col\u00adlapse. The cities that sur\u00advived were un\u00adrec\u00adog\u00adnis\u00adable \u2014 their sky\u00adlines re\u00adshaped by the quakes, their streets si\u00adlent in ways that no lan\u00adguage yet had words for. Sur\u00advi\u00advors spoke of those first weeks in whis\u00adpers, if they spoke of them at all. Most had sim\u00adply learned to live along\u00adside the emp\u00adti\u00adness the way you learn to live along\u00adside grief."
+  }
+]

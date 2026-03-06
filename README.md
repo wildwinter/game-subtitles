@@ -1,10 +1,25 @@
 # Game Subtitles
 
-**Game Subtitles** is a two-part subtitle system for games. The first part is a **preprocessor** — a command-line tool and C# library — that annotates your localised subtitle strings with soft hyphen markers before they ship. The second part is a **JavaScript player** that uses those markers at runtime to wrap and paginate subtitle text accurately, no matter what font or container size you are using.
+**Game Subtitles** is a subtitle system for games built around a shared two-step approach. The first step is a **preprocessor** — a command-line tool and C# library — that annotates your localised subtitle strings with soft hyphen markers before they ship. The second step is a **runtime player** that uses those markers to wrap and paginate subtitle text accurately, no matter what font or container size you are using. Runtime players are provided for **JavaScript** (browser, Node, any JS game engine) and **Unreal Engine 5** (C++ plugin with Blueprint support).
 
 Together they solve the situation where you have a long line of audio, a long subtitle that won't fit on the screen, and you want to simply say "display this text for this amount of time please".
 
 **Game Subtitles** will take care of that for you, wrapping and breaking the text properly into multiple pages of text, and displaying them at the right time in the spoken line. And it will do this for lots of different languages.
+
+## Table of Contents
+
+- [Why do I need this?](#why-do-i-need-this)
+- [Source Code](#source-code)
+- [Releases](#releases)
+- [Usage](#usage)
+  - [Overview](#overview)
+  - [Preprocessor](#preprocessor)
+  - [JavaScript Player (`players/player-js`)](#javascript-player-playersplayer-js)
+  - [Unreal Engine Plugin (`players/player-unreal`)](#unreal-engine-plugin-playersplayer-unreal)
+- [Contributors](#contributors)
+- [Acknowledgements](#acknowledgements)
+  - [Hyphenation patterns](#hyphenation-patterns)
+- [License](#license)
 
 ## Why do I need this?
 
@@ -41,8 +56,8 @@ Here is a typical end-to-end flow:
 
 1. **Run the preprocessor** on your subtitle strings — either via the CLI as part of your build pipeline, or by calling the C# library directly if you have a custom tool. This annotates every string with U+00AD markers and writes the result to a new file in the same format.
 2. **Ship the annotated strings** with your game, in whichever format you use (CSV, JSON, XLSX, PO).
-3. **At runtime,** load a subtitle string and pass it to `SubtitlePlayer`. It measures each word in your actual font, wraps to lines, paginates, and drives the display for you.
-4. **In your game loop,** call `player.tick(delta)` each frame. The player advances pages automatically and calls your `onComplete` callback when the last page has been shown.
+3. **At runtime,** load a subtitle string and pass it to the player. It measures each word in your actual font, wraps to lines, paginates, and drives the display for you. Players are available for JavaScript and Unreal Engine 5; both expose the same concepts under equivalent APIs.
+4. **In your game loop,** call `player.tick(delta)` (JS) or `Player->Tick(DeltaSeconds)` (Unreal) each frame. The player advances pages automatically and fires your completion callback when the last page has been shown.
 
 ---
 
@@ -153,7 +168,7 @@ IReadOnlyList<string> langs = SubtitlePreprocessor.SupportedLanguages;
 
 ---
 
-### JavaScript Player
+### JavaScript Player (`players/player-js`)
 
 Copy either file from the distribution zip into your project:
 
@@ -280,6 +295,151 @@ const myRenderer = {
   clear()                { /* remove the current subtitle display */ },
 };
 ```
+
+---
+
+### Unreal Engine Plugin (`players/player-unreal`)
+
+The Unreal plugin provides the same player logic as a native C++ UE 5.7 plugin with full Blueprint support.
+
+#### Setup
+
+1. Copy `players/player-unreal/GameSubtitles/` into your project's `Plugins/` folder (or your engine plugins folder).
+2. Add `"GameSubtitles"` to your `.uproject` plugins list.
+3. Add `"GameSubtitles"` to your module's `PublicDependencyModuleNames` in `Build.cs`.
+4. Rebuild.
+
+#### Real-world usage
+
+**1. Add a `USubtitleWidget` to your HUD layout.**
+
+In your Widget Blueprint, subclass `USubtitleWidget` and place a `UVerticalBox` named `TextContainer` wherever you want the subtitle lines to appear. Or use it programmatically:
+
+```cpp
+USubtitleWidget* SubWidget = CreateWidget<USubtitleWidget>(PlayerController, USubtitleWidget::StaticClass());
+SubWidget->FontInfo = FSlateFontInfo(MyFontAsset, 16);
+SubWidget->ContainerWidthOverride = 540.f; // set if calling Start() before the widget is on screen
+SubWidget->AddToViewport();
+```
+
+**2. Create a player and point it at the widget.**
+
+```cpp
+USubtitlePlayer* Player = NewObject<USubtitlePlayer>(this);
+Player->Initialize(SubWidget, /*MaxLines=*/2);
+
+Player->OnComplete.AddDynamic(this, &AMyHUD::HandleSubtitleDone);
+```
+
+The player and widget are long-lived. Create them once and reuse them for every subtitle.
+
+**3. When your dialogue system triggers a line, call `Start()`.**
+
+```cpp
+void AMyHUD::ShowSubtitle(const FString& Text, float DurationSeconds)
+{
+    Player->Start(Text, DurationSeconds);
+}
+```
+
+`Start()` lays out the text, renders the first page immediately, and begins timing. If a subtitle is already playing it is stopped first.
+
+**4. Drive it from your tick.**
+
+From an `AActor`, `UActorComponent`, or `UUserWidget::NativeTick`:
+
+```cpp
+void AMyHUD::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+    Player->Tick(DeltaSeconds);
+}
+```
+
+#### `USubtitlePlayer` API
+
+```cpp
+// Create and configure
+USubtitlePlayer* Player = NewObject<USubtitlePlayer>(this);
+Player->Initialize(RendererObject, MaxLines);  // RendererObject implements ISubtitleRenderer
+
+// Start playing (stops any currently playing subtitle first)
+Player->Start(Text, DurationSeconds);
+
+// Call once per frame
+Player->Tick(DeltaSeconds);
+
+// Stop without firing OnComplete
+Player->Stop();
+
+// Clear display and return to initial state
+Player->Reset();
+
+// Number of pages in the current layout (valid after Start())
+Player->GetPageCount();
+
+// Change lines-per-page (takes effect on the next Start())
+Player->MaxLines = 3;
+
+// Completion event (BlueprintAssignable dynamic multicast delegate)
+Player->OnComplete.AddDynamic(this, &AMyActor::HandleDone);
+```
+
+All methods are also Blueprint-callable. The player is a plain `UObject` — not a component — so you own its lifetime and call `Tick` yourself. This matches the JS player's design exactly.
+
+#### `USubtitleWidget`
+
+```cpp
+SubWidget->FontInfo             = FSlateFontInfo(FontAsset, 16);
+SubWidget->TextColor            = FLinearColor::White;
+SubWidget->ContainerWidthOverride = 540.f; // bypass geometry lookup before first layout pass
+```
+
+Text is measured using Slate's font measure service with the same `FontInfo`, so measurements always match what is rendered. To use a Blueprint-designed layout, subclass `USubtitleWidget` in a Widget Blueprint and add a `UVerticalBox` named **`TextContainer`**.
+
+#### Custom renderer
+
+Implement `ISubtitleRenderer` on any `UObject` to plug in a fully custom renderer:
+
+```cpp
+UCLASS()
+class UMyRenderer : public UObject, public ISubtitleRenderer
+{
+    GENERATED_BODY()
+public:
+    virtual float MeasureLineWidth_Implementation(const FString& Text) override;
+    virtual float GetContainerWidth_Implementation() override;
+    virtual void  Render_Implementation(const TArray<FString>& Lines) override;
+    virtual void  Clear_Implementation() override;
+};
+```
+
+Blueprint implementations are equally supported — bind the interface events in any Blueprint class.
+
+#### Low-level layout API
+
+The same layout functions used internally are exposed as static C++ helpers:
+
+```cpp
+#include "TextLayout.h"
+
+// Wrap + paginate (MeasureWidth is any callable returning float)
+TArray<TArray<FString>> Pages = FSubtitleTextLayout::WrapAndPaginate(
+    Text, MeasureWidth, ContainerWidth, MaxLines);
+
+// Allocate display time proportionally to character count
+TArray<float> Timings = FSubtitleTextLayout::AllocateTimings(Pages, TotalDurationSeconds);
+```
+
+#### Demo project
+
+`players/player-unreal/GameSubtitlesDemo/` is an Unreal project that mirrors the player-js `demo/index.html`:
+
+- Same `subtitles.json` data (loaded from `Content/Demo/subtitles.json` at runtime)
+- Script selector, **▶ Start** / **■ Stop** / **↺ Reset** buttons, 1×/2× speed toggle
+- Lines-per-page ±, font size ±, progress bar, elapsed/total time, status line
+
+Setup: copy the `GameSubtitles` plugin into `GameSubtitlesDemo/Plugins/`, generate project files, open in UE 5.7, and Play in Editor.
 
 ---
 
