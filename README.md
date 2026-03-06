@@ -21,7 +21,7 @@ The catch is that all of these things depend on the *actual rendered width* of e
 
 1. **Offline (at build or localization time):** the preprocessor reads your subtitle strings and inserts invisible [soft hyphen](https://en.wikipedia.org/wiki/Soft_hyphen) characters (U+00AD) at every point where a word could safely be broken, using the correct TeX hyphenation rules for the target language. These are zero-width when not used; they only produce a visible `-` if the renderer decides to break there.
 
-2. **At runtime:** the JavaScript render helper uses those markers — together with the actual measured pixel widths of your font — to wrap and paginate text correctly, whatever the container size.
+2. **At runtime:** the JavaScript render helper uses those markers — together with the actual measured pixel widths of your font — to wrap and paginate text correctly, whatever the container size. If you (or the user!) changes font size, or the container size, or the number of lines of subtitle, then the render helper will cope with all that when it shows the next line. Flexible subtitles! Cool, right?
 
 ## Source Code
 
