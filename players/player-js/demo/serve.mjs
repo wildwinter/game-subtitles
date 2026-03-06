@@ -1,6 +1,6 @@
 /**
- * Minimal static file server for the renderer demo.
- * Serves the render-helper-js/ directory so that:
+ * Minimal static file server for the player demo.
+ * Serves the player-js/ directory so that:
  *   GET /           → demo/index.html
  *   GET /demo/...   → demo/...
  *   GET /dist/...   → dist/...   (IIFE build loaded by the page)
@@ -51,7 +51,7 @@ const server = createServer((req, res) => {
 const url = `http://localhost:${port}/`;
 
 server.listen(port, '127.0.0.1', () => {
-  console.log(`\n  Game Subtitles — Renderer Demo`);
+  console.log(`\n  Game Subtitles — Player Demo`);
   console.log(`  ────────────────────────────────`);
   console.log(`  ${url}\n`);
   console.log('  Press Ctrl+C to stop.\n');

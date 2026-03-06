@@ -24,8 +24,8 @@ jobs:
       - name: Install npm dependencies (root)
         run: npm install
 
-      - name: Install npm dependencies (render helper)
-        run: npm install --prefix render-helpers/render-helper-js
+      - name: Install npm dependencies (player)
+        run: npm install --prefix players/player-js
 
       - name: Build
         run: npm run build

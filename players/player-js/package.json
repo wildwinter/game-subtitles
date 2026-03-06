@@ -1,9 +1,9 @@
 {
-  "name": "game-subtitles-render",
+  "name": "game-subtitles-player",
   "private": true,
-  "description": "Runtime subtitle render helper for games — JS, browser-compatible",
+  "description": "Runtime subtitle player for games — JS, browser-compatible",
   "type": "module",
-  "main": "dist/game-subtitles-render.esm.js",
+  "main": "dist/game-subtitles-player.esm.js",
   "scripts": {
     "build":      "node build.mjs",
     "test":       "vitest run",

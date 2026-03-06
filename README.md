@@ -1,6 +1,6 @@
 # Game Subtitles
 
-**Game Subtitles** is a two-part subtitle system for games. The first part is a **preprocessor** — a command-line tool and C# library — that annotates your localised subtitle strings with soft hyphen markers before they ship. The second part is a **JavaScript render helper** that uses those markers at runtime to wrap and paginate subtitle text accurately, no matter what font or container size you are using.
+**Game Subtitles** is a two-part subtitle system for games. The first part is a **preprocessor** — a command-line tool and C# library — that annotates your localised subtitle strings with soft hyphen markers before they ship. The second part is a **JavaScript player** that uses those markers at runtime to wrap and paginate subtitle text accurately, no matter what font or container size you are using.
 
 Together they solve the situation where you have a long line of audio, a long subtitle that won't fit on the screen, and you want to simply say "display this text for this amount of time please".
 
@@ -21,7 +21,7 @@ The catch is that all of these things depend on the *actual rendered width* of e
 
 1. **Offline (at build or localization time):** the preprocessor reads your subtitle strings and inserts invisible [soft hyphen](https://en.wikipedia.org/wiki/Soft_hyphen) characters (U+00AD) at every point where a word could safely be broken, using the correct TeX hyphenation rules for the target language. These are zero-width when not used; they only produce a visible `-` if the renderer decides to break there.
 
-2. **At runtime:** the JavaScript render helper uses those markers — together with the actual measured pixel widths of your font — to wrap and paginate text correctly, whatever the container size. If you (or the user!) changes font size, or the container size, or the number of lines of subtitle, then the render helper will cope with all that when it shows the next line. Flexible subtitles! Cool, right?
+2. **At runtime:** the JavaScript player uses those markers — together with the actual measured pixel widths of your font — to wrap and paginate text correctly, whatever the container size. If you (or the user!) changes font size, or the container size, or the number of lines of subtitle, then the render helper will cope with all that when it shows the next line. Flexible subtitles! Cool, right?
 
 ## Source Code
 
@@ -153,14 +153,14 @@ IReadOnlyList<string> langs = SubtitlePreprocessor.SupportedLanguages;
 
 ---
 
-### JavaScript Render Helper
+### JavaScript Player
 
 Copy either file from the distribution zip into your project:
 
 | File | Format |
 | --- | --- |
-| `game-subtitles-render.esm.js` | ES module — `import { … } from '…'` |
-| `game-subtitles-render.js` | IIFE — `window.GameSubtitles` |
+| `game-subtitles-player.esm.js` | ES module — `import { … } from '…'` |
+| `game-subtitles-player.js` | IIFE — `window.GameSubtitles` |
 
 #### Real-world usage
 
@@ -169,7 +169,7 @@ Here is how you would wire this up in a typical game with a DOM-based subtitle o
 **1. Set up the player once, pointing it at your subtitle element.**
 
 ```javascript
-import { SubtitlePlayer, DomRenderer } from './game-subtitles-render.esm.js';
+import { SubtitlePlayer, DomRenderer } from './game-subtitles-player.esm.js';
 
 const subtitleEl = document.getElementById('subtitle-bar');
 const renderer   = new DomRenderer(subtitleEl);
@@ -214,7 +214,7 @@ That is all. The player handles multi-page display, proportional timing across p
 If your subtitle overlay is drawn on a canvas rather than DOM elements, swap in the `CanvasRenderer`:
 
 ```javascript
-import { SubtitlePlayer, CanvasRenderer } from './game-subtitles-render.esm.js';
+import { SubtitlePlayer, CanvasRenderer } from './game-subtitles-player.esm.js';
 
 const canvas   = document.getElementById('game-canvas');
 const renderer = new CanvasRenderer(canvas, '16px Arial');

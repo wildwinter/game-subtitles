@@ -25,9 +25,9 @@ function run(cmd, cwd = rootDir) {
 console.log('\n=== Building preprocessor ===');
 run('npm run dist --prefix preprocessor');
 
-// 2. Build JS render helper
-console.log('\n=== Building render-helper-js ===');
-run('npm run build --prefix render-helpers/render-helper-js');
+// 2. Build JS player
+console.log('\n=== Building player-js ===');
+run('npm run build --prefix players/player-js');
 
 // 3. Assemble zips
 console.log('\n=== Assembling distribution zips ===');
@@ -36,7 +36,7 @@ console.log('\n=== Assembling distribution zips ===');
 const archiver = require('archiver');
 const { createWriteStream } = await import('node:fs');
 
-const jsFile = resolve(rootDir, 'render-helpers/render-helper-js/dist/game-subtitles-render.js');
+const jsFile = resolve(rootDir, 'players/player-js/dist/game-subtitles-player.js');
 const readme = resolve(rootDir, 'README.md');
 
 async function makeZip(zipName, addFn) {
@@ -58,21 +58,21 @@ async function makeZip(zipName, addFn) {
 await makeZip(`game-subtitles-win-v${version}.zip`, archive => {
   archive.file(resolve(rootDir, 'preprocessor/dist/win-x64/game-subtitles-preprocess.exe'),
     { name: 'game-subtitles-preprocess.exe' });
-  archive.file(jsFile,  { name: 'game-subtitles-render.js' });
+  archive.file(jsFile,  { name: 'game-subtitles-player.js' });
   archive.file(readme,  { name: 'README.md' });
 });
 
 await makeZip(`game-subtitles-osx-v${version}.zip`, archive => {
   archive.file(resolve(rootDir, 'preprocessor/dist/osx-arm64/game-subtitles-preprocess'),
     { name: 'game-subtitles-preprocess' });
-  archive.file(jsFile,  { name: 'game-subtitles-render.js' });
+  archive.file(jsFile,  { name: 'game-subtitles-player.js' });
   archive.file(readme,  { name: 'README.md' });
 });
 
 await makeZip(`game-subtitles-lib-v${version}.zip`, archive => {
   archive.file(resolve(rootDir, 'preprocessor/dist/lib/PreprocessorLib.dll'),
     { name: 'PreprocessorLib.dll' });
-  archive.file(jsFile,  { name: 'game-subtitles-render.js' });
+  archive.file(jsFile,  { name: 'game-subtitles-player.js' });
   archive.file(readme,  { name: 'README.md' });
 });
 
