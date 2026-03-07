@@ -47,7 +47,6 @@ internal sealed class JsonFormatter : IFormatter
         {
             if (item is not JsonObject obj) continue;
 
-            // Case-insensitive key search
             var key = obj.Select(kv => kv.Key)
                          .FirstOrDefault(k => k.Equals(fieldName, StringComparison.OrdinalIgnoreCase));
             if (key is null) continue;

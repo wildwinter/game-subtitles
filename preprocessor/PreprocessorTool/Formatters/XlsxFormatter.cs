@@ -23,7 +23,6 @@ internal sealed class XlsxFormatter : IFormatter
             return;
         }
 
-        // Find the target column
         int? targetCol = null;
         foreach (var cell in headerRow.CellsUsed())
         {

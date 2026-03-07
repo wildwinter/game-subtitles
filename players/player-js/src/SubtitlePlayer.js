@@ -44,7 +44,7 @@ export class SubtitlePlayer {
    * @param {Function} [opts.onComplete] Called when all pages have been shown.
    */
   start({ text, duration, onComplete = null }) {
-    this._running = false; // stop any current playback
+    this._running = false;
     this._renderer.clear();
 
     this._onComplete = onComplete;

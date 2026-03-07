@@ -4,15 +4,21 @@
 #include "Components/TextBlock.h"
 #include "Blueprint/WidgetTree.h"
 #include "Framework/Application/SlateApplication.h"
+#include "Fonts/FontMeasure.h"
 #include "Rendering/SlateRenderer.h"
 #include "Fonts/SlateFontInfo.h"
 
 // ── UUserWidget overrides ──────────────────────────────────────────────────────
 
+void USubtitleWidget::NativeOnInitialized()
+{
+    Super::NativeOnInitialized();
+    EnsureTextContainer();
+}
+
 void USubtitleWidget::NativeConstruct()
 {
     Super::NativeConstruct();
-    EnsureTextContainer();
 }
 
 // ── ISubtitleRenderer implementation ──────────────────────────────────────────
@@ -27,10 +33,21 @@ float USubtitleWidget::MeasureLineWidth_Implementation(const FString& Text)
     TSharedRef<FSlateFontMeasure> FontMeasure =
         FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
 
-    // Measure at scale 1.0; the layout algorithms work in logical (unscaled) pixels.
-    // If your project uses a non-1.0 DPI override you may need to adjust here.
-    const FVector2D Size = FontMeasure->Measure(FText::FromString(Text), FontInfo, 1.0f);
-    return Size.X;
+    // Measure at the actual DPI scale so the result matches what Slate renders.
+    // Measure() returns physical pixels at the given scale; dividing back gives Slate units,
+    // which is the same space as GetCachedGeometry().GetLocalSize() used by GetContainerWidth().
+    float Scale = GetCachedGeometry().Scale;
+    if (Scale <= 0.f)
+    {
+        Scale = FSlateApplication::Get().GetApplicationScale();
+    }
+    if (Scale <= 0.f)
+    {
+        Scale = 1.f;
+    }
+
+    const FVector2D Size = FontMeasure->Measure(FText::FromString(Text), FontInfo, Scale);
+    return Size.X / Scale;
 }
 
 float USubtitleWidget::GetContainerWidth_Implementation()
@@ -69,11 +86,11 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines)
         TextBlock->SetJustification(ETextJustify::Center);
         TextBlock->SetAutoWrapText(false); // layout is already done by WrapAndPaginate
 
-        UVerticalBoxSlot* Slot = TextContainer->AddChildToVerticalBox(TextBlock);
-        if (Slot)
+        UVerticalBoxSlot* NewSlot = TextContainer->AddChildToVerticalBox(TextBlock);
+        if (NewSlot)
         {
-            Slot->SetHorizontalAlignment(HAlign_Center);
-            Slot->SetVerticalAlignment(VAlign_Center);
+            NewSlot->SetHorizontalAlignment(HAlign_Fill);
+            NewSlot->SetVerticalAlignment(VAlign_Center);
         }
     }
 }

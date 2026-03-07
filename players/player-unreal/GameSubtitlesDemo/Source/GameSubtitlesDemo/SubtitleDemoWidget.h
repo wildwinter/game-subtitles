@@ -31,13 +31,10 @@ struct FSubtitleEntry
 };
 
 /**
- * Full-screen demo widget that mirrors the player-js demo/index.html.
+ * Full-screen demo widget for the GameSubtitles plugin.
  *
  * Features:
  *   - Loads Content/Demo/subtitles.json at construct time
- *   - Dual SubtitleWidget renderers (main display + a second "alternate" renderer
- *     driven by the same player, so custom renderers can be demonstrated)
- *   - Script selector (equivalent to <select id="script-sel">)
  *   - Start / Stop / Reset buttons
  *   - 2x-speed toggle
  *   - Lines per page +/- control (1-5)
@@ -45,7 +42,7 @@ struct FSubtitleEntry
  *   - Progress bar + elapsed/total time display
  *   - Status line
  *
- * The widget builds its own UI tree programmatically in NativeConstruct; no Blueprint
+ * The widget builds its own UI tree programmatically in NativeOnInitialized; no Blueprint
  * layout is required. Subclass and override to customise styling.
  */
 UCLASS(BlueprintType, Blueprintable)
@@ -56,6 +53,7 @@ class GAMESUBTITLESDEMO_API USubtitleDemoWidget : public UUserWidget
 public:
     // ── UUserWidget ────────────────────────────────────────────────────────────
 
+    virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
     virtual void NativeDestruct() override;
     virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
@@ -69,7 +67,7 @@ protected:
     UPROPERTY()
     USubtitlePlayer* Player = nullptr;
 
-    /** The SubtitleWidget that acts as the renderer (equivalent to DomRenderer). */
+    /** The SubtitleWidget that acts as the renderer. */
     UPROPERTY()
     USubtitleWidget* SubWidget = nullptr;
 

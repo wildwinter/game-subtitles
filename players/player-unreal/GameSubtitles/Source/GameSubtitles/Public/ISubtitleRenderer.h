@@ -7,11 +7,10 @@
 /**
  * Interface that a subtitle renderer must implement.
  *
- * Mirrors the IRenderer contract from player-js:
- *   measureLineWidth(text) -> float
- *   getContainerWidth()    -> float
- *   render(lines)          -> void
- *   clear()                -> void
+ *   MeasureLineWidth(text) -> float
+ *   GetContainerWidth()    -> float
+ *   Render(lines)          -> void
+ *   Clear()                -> void
  *
  * Implement this interface on any UObject (e.g. a UUserWidget subclass) to plug it
  * into USubtitlePlayer. Both C++ and Blueprint implementations are supported.

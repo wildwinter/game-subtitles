@@ -18,8 +18,6 @@ void ASubtitleDemoHUD::BeginPlay()
     if (DemoWidget)
     {
         DemoWidget->AddToViewport(0);
-
-        // Show the cursor so players can interact with the demo UI
         PC->bShowMouseCursor = true;
         PC->SetInputMode(FInputModeUIOnly());
     }

@@ -1,19 +1,19 @@
 {
-    "FileVersion": 3,
-    "EngineAssociation": "5.7",
-    "Category": "",
-    "Description": "Demo project for the Game Subtitles plugin. Mirrors the player-js demo: loads subtitles.json, shows a paginated subtitle bar with speaker name, and provides Start/Stop/Reset controls.",
-    "Modules": [
-        {
-            "Name": "GameSubtitlesDemo",
-            "Type": "Runtime",
-            "LoadingPhase": "Default"
-        }
-    ],
-    "Plugins": [
-        {
-            "Name": "GameSubtitles",
-            "Enabled": true
-        }
-    ]
+	"FileVersion": 3,
+	"EngineAssociation": "5.7",
+	"Category": "",
+	"Description": "Demo project for the Game Subtitles plugin. Loads subtitles.json, shows a paginated subtitle bar with speaker name, and provides Start/Stop/Reset controls.",
+	"Modules": [
+		{
+			"Name": "GameSubtitlesDemo",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "GameSubtitles",
+			"Enabled": true
+		}
+	]
 }

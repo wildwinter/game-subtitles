@@ -66,3 +66,16 @@ render-helpers/render-helper-js/dist/
 
 # macOS
 .DS_Store
+
+# Unreal Engine
+players/player-unreal/**/Plugins/
+players/player-unreal/**/Binaries/
+players/player-unreal/**/Intermediate/
+players/player-unreal/**/Saved/
+players/player-unreal/**/.vs/
+players/player-unreal/**/*.sln
+players/player-unreal/**/DerivedDataCache/
+
+.claude
+.vs
+.vsconfig

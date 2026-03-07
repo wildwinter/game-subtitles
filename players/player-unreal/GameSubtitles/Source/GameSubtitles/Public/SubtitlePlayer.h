@@ -10,8 +10,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSubtitleComplete);
 /**
  * Manages paginated subtitle display driven by caller-supplied ticks.
  *
- * Direct port of player-js SubtitlePlayer. Create once for a given renderer and line
- * count, then reuse across any number of subtitles by calling Start() each time.
+ * Create once for a given renderer and line count, then reuse across any number
+ * of subtitles by calling Start() each time.
  *
  * Usage (C++):
  *   USubtitlePlayer* Player = NewObject<USubtitlePlayer>(this);
@@ -37,7 +37,6 @@ public:
 
     /**
      * Fired when all pages have been displayed and the subtitle has finished.
-     * Mirrors the onComplete callback parameter in player-js.
      */
     UPROPERTY(BlueprintAssignable, Category = "Subtitles")
     FOnSubtitleComplete OnComplete;

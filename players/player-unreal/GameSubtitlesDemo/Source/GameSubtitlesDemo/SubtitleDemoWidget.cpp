@@ -26,7 +26,7 @@
 #include "Styling/SlateTypes.h"
 #include "Engine/Font.h"
 
-// ── Palette (mirrors index.html dark theme) ────────────────────────────────────
+// ── Palette ────────────────────────────────────────────────────────────────────
 
 namespace Palette
 {
@@ -44,12 +44,17 @@ namespace Palette
 
 // ── Lifecycle ──────────────────────────────────────────────────────────────────
 
-void USubtitleDemoWidget::NativeConstruct()
+void USubtitleDemoWidget::NativeOnInitialized()
 {
-    Super::NativeConstruct();
+    Super::NativeOnInitialized();
 
     LoadSubtitles();
     BuildUI();
+}
+
+void USubtitleDemoWidget::NativeConstruct()
+{
+    Super::NativeConstruct();
 
     // Create the player
     Player = NewObject<USubtitlePlayer>(this);
@@ -136,7 +141,7 @@ void USubtitleDemoWidget::LoadSubtitles()
             continue;
         }
 
-        // Duration: ~14 chars/s, clamped to [3, 18] seconds (matches JS demo)
+        // Duration: ~14 chars/s, clamped to [3, 18] seconds
         FString CleanText = Entry.Text.Replace(TEXT("\u00AD"), TEXT(""));
         const int32 CharCount = CleanText.Len();
         Entry.Duration = FMath::Clamp(FMath::RoundToFloat(CharCount / 14.f), 3.f, 18.f);
@@ -147,6 +152,7 @@ void USubtitleDemoWidget::LoadSubtitles()
 
 // ── UI construction ────────────────────────────────────────────────────────────
 
+PRAGMA_DISABLE_SHADOW_VARIABLE_WARNINGS
 void USubtitleDemoWidget::BuildUI()
 {
     if (!WidgetTree)
@@ -206,9 +212,8 @@ void USubtitleDemoWidget::BuildUI()
 
         // Subtitle widget (implements ISubtitleRenderer)
         SubWidget = WidgetTree->ConstructWidget<USubtitleWidget>(USubtitleWidget::StaticClass());
-        SubWidget->FontInfo            = SubtitleFont();
-        SubWidget->TextColor           = Palette::White;
-        SubWidget->ContainerWidthOverride = 540.f;
+        SubWidget->FontInfo  = SubtitleFont();
+        SubWidget->TextColor = Palette::White;
         {
             UVerticalBoxSlot* Slot = Footer->AddChildToVerticalBox(SubWidget);
             Slot->SetHorizontalAlignment(HAlign_Fill);
@@ -263,6 +268,40 @@ void USubtitleDemoWidget::BuildUI()
             ScriptSelector->SetSelectedIndex(0);
         }
         ScriptSelector->OnSelectionChanged.AddDynamic(this, &USubtitleDemoWidget::OnScriptSelectionChanged);
+
+        {
+            FSlateBrush DarkBrush;
+            DarkBrush.TintColor = FSlateColor(Palette::BgPanel);
+            FSlateBrush HoverBrush;
+            HoverBrush.TintColor = FSlateColor(FLinearColor(0.18f, 0.22f, 0.27f, 1.f));
+
+            // Dropdown row colours
+            FTableRowStyle RowStyle;
+            RowStyle.SetEvenRowBackgroundBrush(DarkBrush)
+                    .SetOddRowBackgroundBrush(DarkBrush)
+                    .SetEvenRowBackgroundHoveredBrush(HoverBrush)
+                    .SetOddRowBackgroundHoveredBrush(HoverBrush)
+                    .SetActiveBrush(HoverBrush)
+                    .SetInactiveBrush(DarkBrush)
+                    .SetActiveHoveredBrush(HoverBrush)
+                    .SetInactiveHoveredBrush(HoverBrush)
+                    .SetTextColor(FSlateColor(Palette::TextMain))
+                    .SetSelectedTextColor(FSlateColor(Palette::TextAccent));
+            ScriptSelector->SetItemStyle(RowStyle);
+
+            // Button area (selected-item display): dark background, light text
+            FComboBoxStyle BoxStyle = ScriptSelector->GetWidgetStyle();
+            BoxStyle.ComboButtonStyle.ButtonStyle
+                    .SetNormal(DarkBrush)
+                    .SetHovered(HoverBrush)
+                    .SetPressed(HoverBrush);
+            ScriptSelector->SetWidgetStyle(BoxStyle);
+
+PRAGMA_DISABLE_DEPRECATION_WARNINGS
+            ScriptSelector->ForegroundColor = Palette::TextMain;
+PRAGMA_ENABLE_DEPRECATION_WARNINGS
+        }
+
         {
             UHorizontalBoxSlot* Slot = CtrlRow->AddChildToHorizontalBox(ScriptSelector);
             Slot->SetPadding(FMargin(0.f, 0.f, 6.f, 0.f));
@@ -433,6 +472,7 @@ void USubtitleDemoWidget::BuildUI()
     UpdateLinesDisplay();
     UpdateFontDisplay();
 }
+PRAGMA_ENABLE_SHADOW_VARIABLE_WARNINGS
 
 // ── Controls ───────────────────────────────────────────────────────────────────
 
@@ -654,6 +694,7 @@ UTextBlock* USubtitleDemoWidget::MakeLabel(const FString& Text, float Size, FLin
 
     FSlateFontInfo Font;
     Font.Size = static_cast<int32>(Size);
+    Font.FontObject = GEngine ? GEngine->GetMediumFont() : nullptr;
     Block->SetFont(Font);
     Block->SetText(FText::FromString(Text));
     Block->SetColorAndOpacity(FSlateColor(Color));

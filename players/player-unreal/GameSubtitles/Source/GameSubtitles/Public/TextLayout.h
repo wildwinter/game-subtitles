@@ -5,8 +5,8 @@
 /**
  * Static functions for subtitle text layout: word-wrap, pagination, and timing allocation.
  *
- * Direct port of the player-js TextLayout.js algorithms. The same soft-hyphen syllable
- * breaking rules, ellipsis-reservation, and proportional timing allocation apply.
+ * Implements soft-hyphen syllable breaking, ellipsis-reservation, and proportional
+ * timing allocation.
  *
  * Soft hyphens (U+00AD) mark valid syllable break-points inside words, as inserted by
  * the C# preprocessor. They are never exposed in the rendered output.
@@ -17,7 +17,7 @@ public:
     /**
      * Wraps Text and paginates it in a single pass.
      *
-     * Rules (identical to player-js):
+     * Rules:
      *   - Soft-hyphen syllable breaks are used on all non-last lines of each page.
      *   - The last line of each page only receives complete words; no word is split
      *     across a page boundary.

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameMode.h"
 #include "SubtitleDemoGameMode.generated.h"
 
 /**
@@ -9,7 +9,7 @@
  * which in turn creates and adds the USubtitleDemoWidget to the viewport.
  */
 UCLASS()
-class GAMESUBTITLESDEMO_API ASubtitleDemoGameMode : public AGameModeBase
+class GAMESUBTITLESDEMO_API ASubtitleDemoGameMode : public AGameMode
 {
     GENERATED_BODY()
 

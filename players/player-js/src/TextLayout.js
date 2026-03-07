@@ -78,7 +78,7 @@ export function wrapAndPaginate(text, measureWidth, containerWidth, maxLines) {
   const pages = [];
   let pageLines = [];
   let lineText = '';
-  let lineSlot = 0; // 0-indexed line position within the current page
+  let lineSlot = 0;
 
   function advanceLine() {
     pageLines.push(lineText);
@@ -104,14 +104,13 @@ export function wrapAndPaginate(text, measureWidth, containerWidth, maxLines) {
     const hasSyllables = syllables.length > 1;
     const sep = lineText ? ' ' : '';
 
-    // 1. Full word fits within the effective width.
     if (measureWidth(lineText + sep + clean) <= effectiveWidth) {
       lineText += sep + clean;
       wi++;
       continue;
     }
 
-    // 2. Syllable-prefix hyphenation — only on non-last slots with content.
+    // Syllable-prefix hyphenation — only on non-last slots with content.
     if (!isLastSlot && hasSyllables && lineText) {
       const breakAt = findSyllableBreak(syllables, lineText, sep, measureWidth, effectiveWidth);
       if (breakAt >= 0) {
@@ -122,15 +121,14 @@ export function wrapAndPaginate(text, measureWidth, containerWidth, maxLines) {
       }
     }
 
-    // 3. Flush the current line (if non-empty) and retry the word.
+    // Flush the current line (if non-empty) and retry the word.
     if (lineText) {
       advanceLine();
       continue;
     }
 
-    // 4. Line is empty on a last slot with prior lines: close the page so the
-    //    word retries at slot 0 of a fresh page, where syllable-breaking is
-    //    allowed and the word can be laid out properly.
+    // Last slot with no content yet: close the page so the word retries at
+    // slot 0 of a fresh page where syllable-breaking is permitted.
     if (isLastSlot && pageLines.length > 0) {
       pages.push(pageLines);
       pageLines = [];
@@ -138,7 +136,7 @@ export function wrapAndPaginate(text, measureWidth, containerWidth, maxLines) {
       continue;
     }
 
-    // 5. Line is empty, non-last slot: try syllable breaking from the start.
+    // Empty non-last slot: try syllable breaking from the start of the word.
     if (!isLastSlot && hasSyllables) {
       const breakAt = findSyllableBreak(syllables, '', '', measureWidth, effectiveWidth);
       if (breakAt >= 0) {
@@ -149,8 +147,7 @@ export function wrapAndPaginate(text, measureWidth, containerWidth, maxLines) {
       }
     }
 
-    // 6. Character-level break as a last resort.  Use effectiveWidth on last
-    //    slots so the subsequently appended '…' always fits.
+    // Character-level break as a last resort.
     const broken = forceBreak(clean, measureWidth, isLastSlot ? effectiveWidth : containerWidth);
     for (let bi = 0; bi < broken.length - 1; bi++) {
       lineText = broken[bi];

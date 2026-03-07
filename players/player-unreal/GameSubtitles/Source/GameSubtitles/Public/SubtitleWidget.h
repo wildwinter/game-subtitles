@@ -10,8 +10,7 @@ class UVerticalBox;
 class UTextBlock;
 
 /**
- * A UUserWidget that implements ISubtitleRenderer, providing the "DOM renderer"
- * equivalent from player-js.
+ * A UUserWidget that implements ISubtitleRenderer.
  *
  * Measures text with the Slate font measure service (same font used for rendering),
  * renders each line as a UTextBlock in a centred UVerticalBox, and reports the
@@ -25,7 +24,7 @@ class UTextBlock;
  *
  * -- C++ / programmatic usage --
  * USubtitleWidget* Widget = CreateWidget<USubtitleWidget>(PlayerController, USubtitleWidget::StaticClass());
- * // The widget builds its own tree on NativeConstruct.
+ * // The widget builds its own tree on NativeOnInitialized.
  * Player->Initialize(Widget, 2);
  *
  * -- Font --
@@ -63,6 +62,7 @@ public:
 
     // ── UUserWidget ────────────────────────────────────────────────────────────
 
+    virtual void NativeOnInitialized() override;
     virtual void NativeConstruct() override;
 
 protected:

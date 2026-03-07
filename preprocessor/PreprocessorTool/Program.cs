@@ -3,13 +3,11 @@ using GameSubtitles.CLI;
 using GameSubtitles.CLI.Formatters;
 using GameSubtitles.Lib;
 
-// Argument
 var inputArg = new Argument<string>("input")
 {
     Description = "Input file or folder path",
 };
 
-// Options: beta5 signature is Option<T>(name, aliases[])
 var outputOpt = new Option<string>("--output", ["-o"])
 {
     Description = "Output file or folder path",
