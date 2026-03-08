@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace GameSubtitles
 {
     /// <summary>
-    /// Static text-layout utilities. Direct C# port of TextLayout.js / TextLayout.cpp.
+    /// Static text-layout utilities for wrapping and paginating subtitle text.
     /// </summary>
     public static class TextLayout
     {

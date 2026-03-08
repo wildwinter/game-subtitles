@@ -1,6 +1,6 @@
 # Game Subtitles
 
-**Game Subtitles** is a subtitle system for games built around a shared two-step approach. The first step is a **preprocessor** — a command-line tool and C# library — that annotates your localised subtitle strings with soft hyphen markers before they ship. The second step is a **runtime player** that uses those markers to wrap and paginate subtitle text accurately, no matter what font or container size you are using. Runtime players are provided for **JavaScript** (browser, Node, any JS game engine) and **Unreal Engine 5** (C++ plugUin with Blueprint support).
+**Game Subtitles** is a subtitle system for games built around a shared two-step approach. The first step is a **preprocessor** — a command-line tool and C# library — that annotates your localised subtitle strings with soft hyphen markers before they ship. The second step is a **runtime player** that uses those markers to wrap and paginate subtitle text accurately, no matter what font or container size you are using. Runtime players are provided for **JavaScript** (browser, Node, any JS game engine), **Unreal Engine 5** (C++ plugin with Blueprint support), and **Unity** (UPM package using TextMeshPro).
 
 Together they solve the situation where you have a long line of audio, a long subtitle that won't fit on the screen, and you want to simply say "display this text for this amount of time please".
 
@@ -16,6 +16,7 @@ Together they solve the situation where you have a long line of audio, a long su
   - [Preprocessor](#preprocessor)
   - [JavaScript Player (`players/player-js`)](#javascript-player-playersplayer-js)
   - [Unreal Engine Plugin (`players/player-unreal`)](#unreal-engine-plugin-playersplayer-unreal)
+  - [Unity Package (`players/player-unity`)](#unity-package-playersplayer-unity)
 - [Contributors](#contributors)
 - [Acknowledgements](#acknowledgements)
   - [Hyphenation patterns](#hyphenation-patterns)
@@ -56,8 +57,8 @@ Here is a typical end-to-end flow:
 
 1. **Run the preprocessor** on your subtitle strings — either via the CLI as part of your build pipeline, or by calling the C# library directly if you have a custom tool. This annotates every string with U+00AD markers and writes the result to a new file in the same format.
 2. **Ship the annotated strings** with your game, in whichever format you use (CSV, JSON, XLSX, PO).
-3. **At runtime,** load a subtitle string and pass it to the player. It measures each word in your actual font, wraps to lines, paginates, and drives the display for you. Players are available for JavaScript and Unreal Engine 5; both expose the same concepts under equivalent APIs.
-4. **In your game loop,** call `player.tick(delta)` (JS) or `Player->Tick(DeltaSeconds)` (Unreal) each frame. The player advances pages automatically and fires your completion callback when the last page has been shown.
+3. **At runtime,** load a subtitle string and pass it to the player. It measures each word in your actual font, wraps to lines, paginates, and drives the display for you. Players are available for JavaScript, Unreal Engine 5, and Unity; all three expose the same concepts under equivalent APIs.
+4. **In your game loop,** call `player.tick(delta)` (JS), `Player->Tick(DeltaSeconds)` (Unreal), or `player.Tick(deltaTime)` (Unity) each frame. The player advances pages automatically and fires your completion callback when the last page has been shown.
 
 ---
 
@@ -447,9 +448,171 @@ Setup: copy the `GameSubtitles` plugin (from the release zip at `player-unreal/G
 
 ---
 
+### Unity Package (`players/player-unity`)
+
+The Unity package provides the same player logic as a native C# UPM package using TextMeshPro for font measurement and rendering. Requires **Unity 6.0** or later.
+
+#### Setup
+
+**From a release zip:** the zip contains a `player-unity/GameSubtitles/` folder. Copy `GameSubtitles/` into your project's `Packages/` folder (create it if it does not exist).
+
+**From source:** copy `players/player-unity/GameSubtitles/` into your project's `Packages/` folder instead.
+
+Then open `Packages/manifest.json` and add the package reference:
+
+```json
+{
+  "dependencies": {
+    "net.wildwinter.game-subtitles": "file:GameSubtitles"
+  }
+}
+```
+
+Unity will resolve the package from the local folder automatically. If you place it outside `Packages/`, adjust the relative path accordingly (Unity 6 resolves `file:` paths relative to the `Packages/` folder).
+
+> **TextMeshPro:** In Unity 6, TMP is bundled inside `com.unity.ugui`. If the TMP Essential Resources have not been imported yet, go to **Window → TextMeshPro → Import TMP Essential Resources** after adding the package.
+
+#### Real-world usage
+
+**1. Add a `SubtitleWidget` to your uGUI layout.**
+
+Attach `SubtitleWidget` to any `RectTransform` in your Canvas. It renders each subtitle line as a `TextMeshProUGUI` child and reports its own preferred height to the layout system.
+
+```csharp
+// Programmatic setup
+var widgetGo = new GameObject("SubtitleWidget");
+widgetGo.transform.SetParent(myCanvasTransform, false);
+widgetGo.AddComponent<RectTransform>();
+var widget = widgetGo.AddComponent<SubtitleWidget>();
+widget.FontSize               = 16f;
+widget.TextColor              = Color.white;
+widget.ContainerWidthOverride = 540f; // set if calling Start() before the widget is laid out
+```
+
+**2. Create a player and point it at the widget.**
+
+`SubtitlePlayer` is a plain C# class — not a MonoBehaviour. Create it from any MonoBehaviour and hold a reference to it.
+
+```csharp
+var player = new SubtitlePlayer();
+player.Initialize(widget, maxLines: 2);
+
+player.OnComplete += HandleSubtitleDone;
+```
+
+The player and widget are long-lived. Create them once and reuse them for every subtitle.
+
+**3. When your dialogue system triggers a line, call `Start()`.**
+
+```csharp
+void ShowSubtitle(string text, float durationSeconds)
+{
+    player.Start(text, durationSeconds);
+}
+```
+
+`Start()` lays out the text, renders the first page immediately, and begins timing. If a subtitle is already playing it is stopped first.
+
+**4. Drive it from your Update loop.**
+
+```csharp
+void Update()
+{
+    player.Tick(Time.deltaTime);
+}
+```
+
+#### `SubtitlePlayer` API
+
+```csharp
+// Create and configure
+var player = new SubtitlePlayer();
+player.Initialize(renderer, maxLines);  // renderer implements ISubtitleRenderer
+
+// Start playing (stops any currently playing subtitle first)
+player.Start(text, durationSeconds);
+
+// Call once per frame
+player.Tick(deltaTime);
+
+// Stop without firing OnComplete
+player.Stop();
+
+// Clear display and return to initial state
+player.Reset();
+
+// Number of pages in the current layout (valid after Start())
+player.PageCount;
+
+// Change lines-per-page (takes effect on the next Start())
+player.MaxLines = 3;
+
+// Completion event
+player.OnComplete += HandleDone;
+```
+
+#### `SubtitleWidget`
+
+```csharp
+widget.FontAsset              = myTMPFontAsset;  // optional; defaults to TMP default font
+widget.FontSize               = 16f;
+widget.TextColor              = Color.white;
+widget.ContainerWidthOverride = 540f;            // bypass geometry lookup before first layout pass
+```
+
+Text is measured using TMP's `GetPreferredValues()` with the same font settings, so measurements always match what is rendered. The widget is a MonoBehaviour implementing `ISubtitleRenderer` and can be used anywhere in a standard uGUI hierarchy.
+
+#### Custom renderer
+
+Implement `ISubtitleRenderer` on any MonoBehaviour or plain C# class to plug in a fully custom renderer:
+
+```csharp
+public class MyRenderer : MonoBehaviour, ISubtitleRenderer
+{
+    public float MeasureLineWidth(string text) { /* return pixel width of text */ }
+    public float GetContainerWidth()           { /* return available width in pixels */ }
+    public void  Render(string[] lines)        { /* display the lines */ }
+    public void  Clear()                       { /* remove the current subtitle display */ }
+}
+```
+
+#### Low-level layout API
+
+The same layout functions used internally are available as static C# helpers:
+
+```csharp
+using GameSubtitles;
+
+// Wrap + paginate (measureFn is any Func<string, float> returning pixel width)
+List<List<string>> pages = TextLayout.WrapAndPaginate(
+    text, measureFn, containerWidth, maxLines);
+
+// Allocate display time proportionally to character count
+List<float> timings = TextLayout.AllocateTimings(pages, totalDurationSeconds);
+```
+
+#### Demo project
+
+`players/player-unity/GameSubtitlesDemo/` is a Unity project that mirrors the player-js `demo/index.html` and the Unreal demo:
+
+- Same `subtitles.json` data (loaded from `Assets/Demo/Resources/` at runtime)
+- Script selector, **Start** / **Stop** / **Reset** buttons, 1×/2× speed toggle
+- Lines-per-page ±, font size ±, progress bar, elapsed/total time, status line
+- Entire UI constructed programmatically — no prefab or scene setup required
+
+Setup:
+
+1. Copy the `GameSubtitles` package (from the release zip at `player-unity/GameSubtitles/`, or from source at `players/player-unity/GameSubtitles/`) into `GameSubtitlesDemo/Packages/GameSubtitles/`.
+2. Copy the four JSON files from `players/player-unreal/GameSubtitlesDemo/Content/Demo/` into `GameSubtitlesDemo/Assets/Demo/Resources/`.
+3. Open the project in Unity 6.0 or later.
+4. Go to **Window → TextMeshPro → Import TMP Essential Resources** if the prompt does not appear automatically.
+5. Open the `Demo` scene and enter Play mode, or attach `GameSubtitlesDemo` to an empty GameObject in any scene.
+
+---
+
 ## Contributors
 
-* [wildwinter](https://github.com/wildwinter) — original author
+* [Ian Thomas](https://github.com/wildwinter) — original author
 
 ## Acknowledgements
 

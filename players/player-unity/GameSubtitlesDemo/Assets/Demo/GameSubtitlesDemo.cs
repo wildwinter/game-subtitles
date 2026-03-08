@@ -14,11 +14,11 @@ namespace GameSubtitles.Demo
     /// entire Canvas UI tree programmatically in Awake — no prefab or scene hierarchy
     /// is required.
     ///
-    /// Features (mirrors the Unreal and JS demos):
+    /// Features:
     ///   - Loads Resources/subtitles.json at start
     ///   - Language selector (4 toggle buttons)
     ///   - Script selector (◀ / label / ▶ navigation)
-    ///   - ▶ Start / ■ Stop / ↺ Reset buttons
+    ///   - Start / Stop / Reset buttons
     ///   - 1× / 2× speed toggle
     ///   - Lines −/+ control (1–5 lines per page)
     ///   - Font −/+ control (10–32 px)
@@ -26,8 +26,8 @@ namespace GameSubtitles.Demo
     ///   - Status line
     ///
     /// JSON data files must be placed in a Resources/ folder adjacent to this script.
-    /// Copy the four files from player-unreal/GameSubtitlesDemo/Content/Demo/ into
-    /// Assets/Demo/Resources/.
+    /// The four subtitle JSON files are in the shared demo data folder at
+    /// demo/data/ in the repository root.
     /// </summary>
     public class GameSubtitlesDemo : MonoBehaviour
     {

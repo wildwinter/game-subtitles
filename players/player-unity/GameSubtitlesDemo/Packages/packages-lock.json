@@ -166,7 +166,7 @@
       },
       "url": "https://packages.unity.com"
     },
-    "com.wildwinter.game-subtitles": {
+    "net.wildwinter.game-subtitles": {
       "version": "file:../../GameSubtitles",
       "depth": 0,
       "source": "local",
