@@ -48,7 +48,7 @@ void USubtitleDemoWidget::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
 
-    LoadSubtitles();
+    LoadSubtitles(TEXT("subtitles.json"));
     BuildUI();
 }
 
@@ -103,9 +103,9 @@ void USubtitleDemoWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 
 // ── Data loading ───────────────────────────────────────────────────────────────
 
-void USubtitleDemoWidget::LoadSubtitles()
+void USubtitleDemoWidget::LoadSubtitles(const FString& Filename)
 {
-    const FString JsonPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Demo/subtitles.json"));
+    const FString JsonPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Demo"), Filename);
 
     FString JsonStr;
     if (!FFileHelper::LoadFileToString(JsonStr, *JsonPath))
@@ -114,11 +114,17 @@ void USubtitleDemoWidget::LoadSubtitles()
         return;
     }
 
+    // Strip UTF-8 BOM if present (preprocessor tool emits it)
+    if (JsonStr.StartsWith(TEXT("\uFEFF")))
+    {
+        JsonStr.RemoveAt(0, 1, EAllowShrinking::No);
+    }
+
     TArray<TSharedPtr<FJsonValue>> JsonArray;
     TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonStr);
     if (!FJsonSerializer::Deserialize(Reader, JsonArray))
     {
-        UE_LOG(LogTemp, Warning, TEXT("SubtitleDemo: failed to parse subtitles.json"));
+        UE_LOG(LogTemp, Warning, TEXT("SubtitleDemo: failed to parse %s"), *Filename);
         return;
     }
 
@@ -148,6 +154,41 @@ void USubtitleDemoWidget::LoadSubtitles()
 
         Scripts.Add(Entry);
     }
+
+    // If called after initial build (i.e. on language switch), refresh the selector
+    if (ScriptSelector)
+    {
+        PopulateScriptSelector();
+    }
+}
+
+void USubtitleDemoWidget::PopulateScriptSelector()
+{
+    if (!ScriptSelector)
+    {
+        return;
+    }
+
+    ScriptSelector->ClearOptions();
+    if (Scripts.Num() == 0)
+    {
+        ScriptSelector->AddOption(TEXT("(no subtitles loaded)"));
+    }
+    else
+    {
+        for (int32 i = 0; i < Scripts.Num(); ++i)
+        {
+            const FSubtitleEntry& S      = Scripts[i];
+            FString               Preview = S.Text.Replace(TEXT("\u00AD"), TEXT("")).Left(42);
+            if (S.Text.Len() > 42)
+            {
+                Preview += TEXT("\u2026");
+            }
+            ScriptSelector->AddOption(FString::Printf(TEXT("[%s] %s \u2014 %s"), *S.Id, *S.Speaker, *Preview));
+        }
+        ScriptSelector->SetSelectedIndex(0);
+    }
+    if (BtnStart) BtnStart->SetIsEnabled(Scripts.Num() > 0);
 }
 
 // ── UI construction ────────────────────────────────────────────────────────────
@@ -247,26 +288,26 @@ void USubtitleDemoWidget::BuildUI()
     {
         UHorizontalBox* CtrlRow = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass());
 
-        // Combo box
+        // Language selector
+        LangSelector = WidgetTree->ConstructWidget<UComboBoxString>(UComboBoxString::StaticClass());
+        LangSelector->AddOption(TEXT("English"));
+        LangSelector->AddOption(TEXT("Fran\u00E7ais"));
+        LangSelector->AddOption(TEXT("Svenska"));
+        LangSelector->AddOption(TEXT("Espa\u00F1ol"));
+        LangSelector->SetSelectedIndex(0);
+        LangSelector->OnSelectionChanged.AddDynamic(this, &USubtitleDemoWidget::OnLangSelectionChanged);
+        {
+            USizeBox* LangBox = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
+            LangBox->SetWidthOverride(110.f);
+            LangBox->AddChild(LangSelector);
+            UHorizontalBoxSlot* Slot = CtrlRow->AddChildToHorizontalBox(LangBox);
+            Slot->SetPadding(FMargin(0.f, 0.f, 6.f, 0.f));
+            Slot->SetVerticalAlignment(VAlign_Center);
+        }
+
+        // Script combo box
         ScriptSelector = WidgetTree->ConstructWidget<UComboBoxString>(UComboBoxString::StaticClass());
-        if (Scripts.Num() == 0)
-        {
-            ScriptSelector->AddOption(TEXT("(no subtitles loaded)"));
-        }
-        else
-        {
-            for (int32 i = 0; i < Scripts.Num(); ++i)
-            {
-                const FSubtitleEntry& S      = Scripts[i];
-                FString               Preview = S.Text.Replace(TEXT("\u00AD"), TEXT("")).Left(42);
-                if (S.Text.Len() > 42)
-                {
-                    Preview += TEXT("\u2026");
-                }
-                ScriptSelector->AddOption(FString::Printf(TEXT("[%s] %s \u2014 %s"), *S.Id, *S.Speaker, *Preview));
-            }
-            ScriptSelector->SetSelectedIndex(0);
-        }
+        PopulateScriptSelector();
         ScriptSelector->OnSelectionChanged.AddDynamic(this, &USubtitleDemoWidget::OnScriptSelectionChanged);
 
         {
@@ -275,7 +316,6 @@ void USubtitleDemoWidget::BuildUI()
             FSlateBrush HoverBrush;
             HoverBrush.TintColor = FSlateColor(FLinearColor(0.18f, 0.22f, 0.27f, 1.f));
 
-            // Dropdown row colours
             FTableRowStyle RowStyle;
             RowStyle.SetEvenRowBackgroundBrush(DarkBrush)
                     .SetOddRowBackgroundBrush(DarkBrush)
@@ -287,19 +327,21 @@ void USubtitleDemoWidget::BuildUI()
                     .SetInactiveHoveredBrush(HoverBrush)
                     .SetTextColor(FSlateColor(Palette::TextMain))
                     .SetSelectedTextColor(FSlateColor(Palette::TextAccent));
-            ScriptSelector->SetItemStyle(RowStyle);
 
-            // Button area (selected-item display): dark background, light text
             FComboBoxStyle BoxStyle = ScriptSelector->GetWidgetStyle();
             BoxStyle.ComboButtonStyle.ButtonStyle
                     .SetNormal(DarkBrush)
                     .SetHovered(HoverBrush)
                     .SetPressed(HoverBrush);
-            ScriptSelector->SetWidgetStyle(BoxStyle);
 
+            for (UComboBoxString* Combo : { LangSelector, ScriptSelector })
+            {
+                Combo->SetItemStyle(RowStyle);
+                Combo->SetWidgetStyle(BoxStyle);
 PRAGMA_DISABLE_DEPRECATION_WARNINGS
-            ScriptSelector->ForegroundColor = Palette::TextMain;
+                Combo->ForegroundColor = Palette::TextMain;
 PRAGMA_ENABLE_DEPRECATION_WARNINGS
+            }
         }
 
         {
@@ -668,6 +710,32 @@ void USubtitleDemoWidget::OnFontIncClicked()
         ApplyFont();
         UpdateFontDisplay();
         if (bIsRunning) DoStart();
+    }
+}
+
+void USubtitleDemoWidget::OnLangSelectionChanged(FString /*SelectedItem*/, ESelectInfo::Type SelectionType)
+{
+    // Ignore programmatic selection fired during BuildUI initialisation
+    if (SelectionType == ESelectInfo::Direct)
+    {
+        return;
+    }
+
+    static const TArray<FString> LangFiles = {
+        TEXT("subtitles.json"),
+        TEXT("subtitles-fr.json"),
+        TEXT("subtitles-sv.json"),
+        TEXT("subtitles-es.json"),
+    };
+
+    DoReset();
+
+    const int32 Idx = LangSelector ? LangSelector->GetSelectedIndex() : 0;
+    LoadSubtitles(LangFiles.IsValidIndex(Idx) ? LangFiles[Idx] : TEXT("subtitles.json"));
+
+    if (StatusText)
+    {
+        StatusText->SetText(FText::FromString(TEXT("Select a subtitle entry and press Start.")));
     }
 }
 

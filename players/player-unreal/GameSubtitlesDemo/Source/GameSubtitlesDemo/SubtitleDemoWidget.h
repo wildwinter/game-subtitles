@@ -80,6 +80,7 @@ protected:
 
     // ── Built UI widgets ───────────────────────────────────────────────────────
 
+    UPROPERTY() UComboBoxString* LangSelector    = nullptr;
     UPROPERTY() UComboBoxString* ScriptSelector  = nullptr;
     UPROPERTY() UButton*        BtnStart         = nullptr;
     UPROPERTY() UButton*        BtnStop          = nullptr;
@@ -99,7 +100,8 @@ protected:
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
-    void LoadSubtitles();
+    void LoadSubtitles(const FString& Filename);
+    void PopulateScriptSelector();
     void BuildUI();
 
     void DoStart();
@@ -127,6 +129,8 @@ protected:
     void OnFontDecClicked();
     UFUNCTION()
     void OnFontIncClicked();
+    UFUNCTION()
+    void OnLangSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION()
     void OnScriptSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION()
