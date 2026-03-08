@@ -291,6 +291,12 @@
 
   <!-- Controls -->
   <div class="controls">
+    <select id="lang-sel">
+      <option value="subtitles.json">English</option>
+      <option value="subtitles-fr.json">Français</option>
+      <option value="subtitles-sv.json">Svenska</option>
+      <option value="subtitles-es.json">Español</option>
+    </select>
     <select id="script-sel" disabled>
       <option>Loading subtitles…</option>
     </select>
@@ -330,10 +336,11 @@
   <div id="status">Loading subtitle data…</div>
 
   <p class="note">
-    Subtitle content is loaded from <code>demo/subtitles.json</code> — the format
+    Subtitle content is loaded from <code>demo/subtitles*.json</code> — the format
     produced by the C# preprocessor tool. The <code>subtitle</code> field contains
-    U+00AD soft hyphens inserted at valid break&shy;points; the renderers consume
-    this directly and never expose raw soft hyphens in the output.
+    U+00AD soft hyphens inserted at valid break&shy;points using the correct TeX
+    hyphenation rules for the selected language; the renderers consume this directly
+    and never expose raw soft hyphens in the output.
   </p>
 
   <script src="/dist/game-subtitles-player.js"></script>
@@ -476,6 +483,7 @@
     const timeInfoEl  = document.getElementById('time-info');
     const statusEl    = document.getElementById('status');
     const scriptSel   = document.getElementById('script-sel');
+    const langSel     = document.getElementById('lang-sel');
     const chkSpeed    = document.getElementById('chk-speed');
     const btnLinesDec = document.getElementById('btn-lines-dec');
     const btnLinesInc = document.getElementById('btn-lines-inc');
@@ -484,45 +492,54 @@
     const btnFontInc  = document.getElementById('btn-font-inc');
     const fontSizeEl  = document.getElementById('font-size');
 
-    // ── Load subtitles.json ───────────────────────────────────────────────────
-    fetch('/demo/subtitles.json')
-      .then(r => r.json())
-      .then(data => {
-        // Map preprocessor JSON format → internal script objects.
-        // Duration is estimated from character count (~14 chars/s, min 3s, max 18s).
-        SCRIPTS = data
-          .filter(e => e.subtitle && e.subtitle.trim())
-          .map(e => {
-            const charCount = e.subtitle.replace(/\u00ad/g, '').length;
-            return {
-              id:       e.id,
-              name:     e.speaker ? `${e.speaker}` : e.id,
-              speaker:  e.speaker ?? '',
-              text:     e.subtitle,
-              duration: Math.min(18, Math.max(3, Math.round(charCount / 14))),
-              maxLines: 2,
-            };
+    // ── Load subtitles from a named JSON file ─────────────────────────────────
+    function loadSubtitles(filename) {
+      scriptSel.disabled = true;
+      scriptSel.innerHTML = '<option>Loading…</option>';
+      btnStart.disabled = true;
+      reset();
+
+      fetch(`/demo/${filename}`)
+        .then(r => r.json())
+        .then(data => {
+          // Map preprocessor JSON format → internal script objects.
+          // Duration is estimated from character count (~14 chars/s, min 3s, max 18s).
+          SCRIPTS = data
+            .filter(e => e.subtitle && e.subtitle.trim())
+            .map(e => {
+              const charCount = e.subtitle.replace(/\u00ad/g, '').length;
+              return {
+                id:       e.id,
+                name:     e.speaker ? `${e.speaker}` : e.id,
+                speaker:  e.speaker ?? '',
+                text:     e.subtitle,
+                duration: Math.min(18, Math.max(3, Math.round(charCount / 14))),
+                maxLines: 2,
+              };
+            });
+
+          // Populate selector
+          scriptSel.innerHTML = '';
+          SCRIPTS.forEach((s, i) => {
+            const opt     = document.createElement('option');
+            opt.value     = i;
+            const preview = s.text.replace(/\u00ad/g, '').slice(0, 42);
+            opt.textContent =
+              `[${s.id}] ${s.name} — ${preview}${s.text.length > 42 ? '…' : ''}`;
+            scriptSel.appendChild(opt);
           });
 
-        // Populate selector
-        scriptSel.innerHTML = '';
-        SCRIPTS.forEach((s, i) => {
-          const opt     = document.createElement('option');
-          opt.value     = i;
-          const preview = s.text.replace(/\u00ad/g, '').slice(0, 42);
-          opt.textContent =
-            `[${s.id}] ${s.name} — ${preview}${s.text.length > 42 ? '…' : ''}`;
-          scriptSel.appendChild(opt);
+          scriptSel.disabled   = false;
+          btnStart.disabled    = false;
+          statusEl.textContent = 'Select a subtitle entry and press Start';
+          drawCanvasScene([]);
+        })
+        .catch(err => {
+          statusEl.textContent = `Failed to load ${filename}: ${err.message}`;
         });
+    }
 
-        scriptSel.disabled  = false;
-        btnStart.disabled   = false;
-        statusEl.textContent = 'Select a subtitle entry and press Start';
-        drawCanvasScene([]);
-      })
-      .catch(err => {
-        statusEl.textContent = `Failed to load subtitles.json: ${err.message}`;
-      });
+    loadSubtitles('subtitles.json');
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     function setButtons(running) {
@@ -648,6 +665,8 @@
       btnReset.disabled = true;
       drawCanvasScene([]);
     }
+
+    langSel.addEventListener('change', () => loadSubtitles(langSel.value));
 
     btnStart.addEventListener('click', start);
     btnStop.addEventListener('click', stop);
