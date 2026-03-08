@@ -68,4 +68,13 @@ public class SubtitlePreprocessorTests
         Assert.Contains("de",    langs);
         Assert.Contains("es",    langs);
     }
+
+    [Fact]
+    public void Process_AlreadyHyphenated_IsIdempotent()
+    {
+        const string text = "Internationalization";
+        var once  = _sut.Process(text, "en_US");
+        var twice = _sut.Process(once, "en_US");
+        Assert.Equal(once, twice);
+    }
 }
