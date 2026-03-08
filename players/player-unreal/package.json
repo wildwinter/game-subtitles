@@ -1,0 +1,9 @@
+{
+  "name": "game-subtitles-player-unreal",
+  "private": true,
+  "description": "Runtime subtitle player for games — Unreal Engine 5 C++ plugin",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}

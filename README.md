@@ -1,6 +1,6 @@
 # Game Subtitles
 
-**Game Subtitles** is a subtitle system for games built around a shared two-step approach. The first step is a **preprocessor** — a command-line tool and C# library — that annotates your localised subtitle strings with soft hyphen markers before they ship. The second step is a **runtime player** that uses those markers to wrap and paginate subtitle text accurately, no matter what font or container size you are using. Runtime players are provided for **JavaScript** (browser, Node, any JS game engine) and **Unreal Engine 5** (C++ plugin with Blueprint support).
+**Game Subtitles** is a subtitle system for games built around a shared two-step approach. The first step is a **preprocessor** — a command-line tool and C# library — that annotates your localised subtitle strings with soft hyphen markers before they ship. The second step is a **runtime player** that uses those markers to wrap and paginate subtitle text accurately, no matter what font or container size you are using. Runtime players are provided for **JavaScript** (browser, Node, any JS game engine) and **Unreal Engine 5** (C++ plugUin with Blueprint support).
 
 Together they solve the situation where you have a long line of audio, a long subtitle that won't fit on the screen, and you want to simply say "display this text for this amount of time please".
 
@@ -170,12 +170,11 @@ IReadOnlyList<string> langs = SubtitlePreprocessor.SupportedLanguages;
 
 ### JavaScript Player (`players/player-js`)
 
-Copy either file from the distribution zip into your project:
+Copy `player-js/game-subtitles-player.js` from the distribution zip into your project:
 
 | File | Format |
 | --- | --- |
-| `game-subtitles-player.esm.js` | ES module — `import { … } from '…'` |
-| `game-subtitles-player.js` | IIFE — `window.GameSubtitles` |
+| `player-js/game-subtitles-player.js` | IIFE — `window.GameSubtitles` |
 
 #### Real-world usage
 
@@ -304,10 +303,15 @@ The Unreal plugin provides the same player logic as a native C++ UE 5.7 plugin w
 
 #### Setup
 
-1. Copy `players/player-unreal/GameSubtitles/` into your project's `Plugins/` folder (or your engine plugins folder).
-2. Add `"GameSubtitles"` to your `.uproject` plugins list.
-3. Add `"GameSubtitles"` to your module's `PublicDependencyModuleNames` in `Build.cs`.
-4. Rebuild.
+**From a release zip:** the zip contains a `player-unreal/GameSubtitles/` folder. Copy `GameSubtitles/` into your project's `Plugins/` folder (create it if it does not exist).
+
+**From source:** copy `players/player-unreal/GameSubtitles/` into your project's `Plugins/` folder instead.
+
+Then:
+
+1. Add `"GameSubtitles"` to your `.uproject` plugins list.
+2. Add `"GameSubtitles"` to your module's `PublicDependencyModuleNames` in `Build.cs`.
+3. Right-click the `.uproject` → *Generate Visual Studio project files*, then rebuild.
 
 #### Real-world usage
 
@@ -439,7 +443,7 @@ TArray<float> Timings = FSubtitleTextLayout::AllocateTimings(Pages, TotalDuratio
 - Script selector, **▶ Start** / **■ Stop** / **↺ Reset** buttons, 1×/2× speed toggle
 - Lines-per-page ±, font size ±, progress bar, elapsed/total time, status line
 
-Setup: copy the `GameSubtitles` plugin into `GameSubtitlesDemo/Plugins/`, generate project files, open in UE 5.7, and Play in Editor.
+Setup: copy the `GameSubtitles` plugin (from the release zip at `player-unreal/GameSubtitles/`, or from source at `players/player-unreal/GameSubtitles/`) into `GameSubtitlesDemo/Plugins/GameSubtitles/`, right-click the `.uproject` → *Generate Visual Studio project files*, open in UE 5.7, and Play in Editor.
 
 ---
 

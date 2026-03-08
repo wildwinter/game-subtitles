@@ -29,15 +29,20 @@ run('npm run dist --prefix preprocessor');
 console.log('\n=== Building player-js ===');
 run('npm run build --prefix players/player-js');
 
-// 3. Assemble zips
+// 3. Build Unreal plugin
+console.log('\n=== Building player-unreal ===');
+run('npm run build --prefix players/player-unreal');
+
+// 4. Assemble zips
 console.log('\n=== Assembling distribution zips ===');
 
 // Dynamic import of archiver (CommonJS module)
 const archiver = require('archiver');
 const { createWriteStream } = await import('node:fs');
 
-const jsFile = resolve(rootDir, 'players/player-js/dist/game-subtitles-player.js');
-const readme = resolve(rootDir, 'README.md');
+const jsFile       = resolve(rootDir, 'players/player-js/dist/game-subtitles-player.js');
+const unrealPlugin = resolve(rootDir, 'players/player-unreal/dist/GameSubtitles');
+const readme       = resolve(rootDir, 'README.md');
 
 async function makeZip(zipName, addFn) {
   const output = resolve(distDir, zipName);
@@ -58,22 +63,25 @@ async function makeZip(zipName, addFn) {
 await makeZip(`game-subtitles-win-v${version}.zip`, archive => {
   archive.file(resolve(rootDir, 'preprocessor/dist/win-x64/game-subtitles-preprocess.exe'),
     { name: 'game-subtitles-preprocess.exe' });
-  archive.file(jsFile,  { name: 'game-subtitles-player.js' });
-  archive.file(readme,  { name: 'README.md' });
+  archive.file(jsFile,        { name: 'player-js/game-subtitles-player.js' });
+  archive.directory(unrealPlugin, 'player-unreal/GameSubtitles');
+  archive.file(readme,        { name: 'README.md' });
 });
 
 await makeZip(`game-subtitles-osx-v${version}.zip`, archive => {
   archive.file(resolve(rootDir, 'preprocessor/dist/osx-arm64/game-subtitles-preprocess'),
     { name: 'game-subtitles-preprocess' });
-  archive.file(jsFile,  { name: 'game-subtitles-player.js' });
-  archive.file(readme,  { name: 'README.md' });
+  archive.file(jsFile,        { name: 'player-js/game-subtitles-player.js' });
+  archive.directory(unrealPlugin, 'player-unreal/GameSubtitles');
+  archive.file(readme,        { name: 'README.md' });
 });
 
 await makeZip(`game-subtitles-lib-v${version}.zip`, archive => {
   archive.file(resolve(rootDir, 'preprocessor/dist/lib/PreprocessorLib.dll'),
     { name: 'PreprocessorLib.dll' });
-  archive.file(jsFile,  { name: 'game-subtitles-player.js' });
-  archive.file(readme,  { name: 'README.md' });
+  archive.file(jsFile,        { name: 'player-js/game-subtitles-player.js' });
+  archive.directory(unrealPlugin, 'player-unreal/GameSubtitles');
+  archive.file(readme,        { name: 'README.md' });
 });
 
 console.log('\nDist complete.');
