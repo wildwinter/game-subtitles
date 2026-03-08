@@ -1,0 +1,9 @@
+{
+  "name": "game-subtitles-player-unity",
+  "private": true,
+  "description": "Runtime subtitle player for games — Unity UPM package",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}
