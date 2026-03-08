@@ -76,6 +76,24 @@ players/player-unreal/**/.vs/
 players/player-unreal/**/*.sln
 players/player-unreal/**/DerivedDataCache/
 
+# Unity
+players/player-unity/**/[Ll]ibrary/
+players/player-unity/**/[Tt]emp/
+players/player-unity/**/[Oo]bj/
+players/player-unity/**/[Bb]uild/
+players/player-unity/**/[Bb]uilds/
+players/player-unity/**/[Ll]ogs/
+players/player-unity/**/[Uu]ser[Ss]ettings/
+players/player-unity/**/*.csproj
+players/player-unity/**/*.unityproj
+players/player-unity/**/*.sln
+players/player-unity/**/.vs/
+players/player-unity/**/ExportedObj/
+players/player-unity/**/.consulo/
+players/player-unity/**/*.pidb.meta
+players/player-unity/**/*.pdb.meta
+players/player-unity/**/*.mdb.meta
+
 .claude
 .vs
 .vsconfig

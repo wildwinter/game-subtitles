@@ -1,0 +1,12 @@
+{
+  "name": "com.wildwinter.game-subtitles",
+  "version": "1.0.0",
+  "displayName": "Game Subtitles",
+  "description": "Paginated subtitle player with soft-hyphen layout. Matches the player-js and player-unreal implementations.",
+  "unity": "2021.3",
+  "category": "UI",
+  "keywords": ["subtitles", "ui", "text", "localization"],
+  "dependencies": {
+    "com.unity.textmeshpro": "3.0.6"
+  }
+}
