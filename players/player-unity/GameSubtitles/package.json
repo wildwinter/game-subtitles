@@ -3,10 +3,8 @@
   "version": "1.0.0",
   "displayName": "Game Subtitles",
   "description": "Paginated subtitle player with soft-hyphen layout. Matches the player-js and player-unreal implementations.",
-  "unity": "2021.3",
+  "unity": "6.0",
   "category": "UI",
   "keywords": ["subtitles", "ui", "text", "localization"],
-  "dependencies": {
-    "com.unity.textmeshpro": "3.0.6"
-  }
+  "dependencies": {}
 }

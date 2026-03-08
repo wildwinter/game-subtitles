@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace GameSubtitles.Demo
@@ -10,113 +11,125 @@ namespace GameSubtitles.Demo
     /// Full-screen demo scene for the GameSubtitles package.
     ///
     /// Attach to an empty GameObject in any scene. The MonoBehaviour constructs its
-    /// entire Canvas UI tree programmatically in <see cref="Awake"/> — no prefab or
-    /// scene hierarchy is required.
+    /// entire Canvas UI tree programmatically in Awake — no prefab or scene hierarchy
+    /// is required.
     ///
     /// Features (mirrors the Unreal and JS demos):
     ///   - Loads Resources/subtitles.json at start
-    ///   - Language selector (English / Français / Svenska / Español)
-    ///   - Script dropdown, ▶ Start / ■ Stop / ↺ Reset buttons
+    ///   - Language selector (4 toggle buttons)
+    ///   - Script selector (◀ / label / ▶ navigation)
+    ///   - ▶ Start / ■ Stop / ↺ Reset buttons
     ///   - 1× / 2× speed toggle
     ///   - Lines −/+ control (1–5 lines per page)
     ///   - Font −/+ control (10–32 px)
-    ///   - Progress bar + elapsed / total time display
+    ///   - Progress bar and elapsed / total time
     ///   - Status line
     ///
-    /// JSON data files must be placed in a Resources/ folder adjacent to this script
-    /// (or anywhere under Assets/). Copy the files from
-    ///   player-unreal/GameSubtitlesDemo/Content/Demo/
-    /// into
-    ///   Assets/Demo/Resources/
+    /// JSON data files must be placed in a Resources/ folder adjacent to this script.
+    /// Copy the four files from player-unreal/GameSubtitlesDemo/Content/Demo/ into
+    /// Assets/Demo/Resources/.
     /// </summary>
     public class GameSubtitlesDemo : MonoBehaviour
     {
         // ── Colour palette ────────────────────────────────────────────────────────
 
-        private static readonly Color ColBgDark    = HexColor("#0d1117");
-        private static readonly Color ColBgPanel   = HexColor("#161b22");
-        private static readonly Color ColBgScene   = HexColor("#160a25"); // dark purple sky
-        private static readonly Color ColBgSubBar  = new Color(0f, 0f, 0f, 0.75f);
-        private static readonly Color ColTextMain  = HexColor("#c9d1d9");
-        private static readonly Color ColTextMuted = HexColor("#8b949e");
-        private static readonly Color ColAccent    = HexColor("#f0cc88");
-        private static readonly Color ColBtnGreen  = HexColor("#238636");
-        private static readonly Color ColBtnGray   = HexColor("#21262d");
+        private static readonly Color ColBgDark   = Hex("#0d1117");
+        private static readonly Color ColBgScene  = Hex("#160a25");
+        private static readonly Color ColBgSubBar = new Color(0f, 0f, 0f, 0.75f);
+        private static readonly Color ColBgPanel  = Hex("#161b22");
+        private static readonly Color ColTextMain = Hex("#c9d1d9");
+        private static readonly Color ColMuted    = Hex("#8b949e");
+        private static readonly Color ColAccent   = Hex("#f0cc88");
+        private static readonly Color ColGreen    = Hex("#238636");
+        private static readonly Color ColGray     = Hex("#21262d");
+        private static readonly Color ColGrayLit  = Hex("#2d333b");
+
+        // ── Constant data ─────────────────────────────────────────────────────────
+
+        private static readonly string[] LangFiles  = { "subtitles", "subtitles-fr", "subtitles-sv", "subtitles-es" };
+        private static readonly string[] LangLabels = { "English", "Fran\u00E7ais", "Svenska", "Espa\u00F1ol" };
 
         // ── State ─────────────────────────────────────────────────────────────────
 
-        private List<SubtitleEntry> _scripts = new List<SubtitleEntry>();
-        private SubtitlePlayer      _player;
-        private SubtitleWidget      _subWidget;
+        private readonly List<SubtitleEntry> _scripts = new();
+        private SubtitlePlayer _player;
+        private SubtitleWidget _subWidget;
 
-        private bool  _isRunning    = false;
-        private float _elapsedMs    = 0f;
-        private float _totalMs      = 0f;
-        private int   _maxLines     = 2;
-        private int   _fontSize     = 16;
-        private bool  _doubleSpeed  = false;
+        private int   _scriptIndex = 0;
+        private int   _langIndex   = 0;
+        private bool  _isRunning   = false;
+        private float _elapsedMs   = 0f;
+        private float _totalMs     = 0f;
+        private int   _maxLines    = 2;
+        private int   _fontSize    = 16;
+        private bool  _doubleSpeed = false;
 
-        // ── Built UI widgets ──────────────────────────────────────────────────────
+        // ── UI references ─────────────────────────────────────────────────────────
 
-        private TMP_Dropdown  _langDropdown;
-        private TMP_Dropdown  _scriptDropdown;
-        private Button        _btnStart;
-        private Button        _btnStop;
-        private Button        _btnReset;
-        private Button        _btnSpeed;
-        private Button        _btnLinesDec;
-        private Button        _btnLinesInc;
-        private Button        _btnFontDec;
-        private Button        _btnFontInc;
-        private Slider        _progressBar;
-        private TMP_Text      _statusText;
-        private TMP_Text      _pageInfoText;
-        private TMP_Text      _timeInfoText;
-        private TMP_Text      _linesCountText;
-        private TMP_Text      _fontSizeText;
-        private TMP_Text      _speakerNameText;
+        private Button   _btnStart, _btnStop, _btnReset, _btnSpeed;
+        private Button   _btnLinesDec, _btnLinesInc;
+        private Button   _btnFontDec, _btnFontInc;
+        private Button   _btnScriptPrev, _btnScriptNext;
+        private Button[] _langBtns = new Button[4];
+        private TMP_Text _scriptLabel;
+        private TMP_Text _statusText, _pageInfoText, _timeInfoText;
+        private TMP_Text _linesCountText, _fontSizeText;
+        private TMP_Text _speakerNameText;
+        private RectTransform _progressFillRT;
 
         // ── Unity lifecycle ───────────────────────────────────────────────────────
 
         private void Awake()
         {
-            LoadSubtitles("subtitles");
+            EnsureCamera();
+            EnsureEventSystem();
             BuildUI();
+        }
+
+        private static void EnsureCamera()
+        {
+            if (Camera.main != null) return;
+            var go = new GameObject("Main Camera");
+            go.tag = "MainCamera";
+            go.AddComponent<Camera>().clearFlags = CameraClearFlags.SolidColor;
+        }
+
+        private static void EnsureEventSystem()
+        {
+            if (FindAnyObjectByType<EventSystem>() != null) return;
+            var go = new GameObject("EventSystem");
+            go.AddComponent<EventSystem>();
+            go.AddComponent<StandaloneInputModule>();
         }
 
         private void Start()
         {
+            LoadSubtitles(LangFiles[_langIndex]);
+
             _player = new SubtitlePlayer();
             _player.Initialize(_subWidget, _maxLines);
             _player.OnComplete += OnSubtitleComplete;
 
             SetRunning(false);
+            RefreshScriptLabel();
 
-            if (_scripts.Count == 0)
-            {
-                SetStatus("No subtitle data found. Copy JSON files into Assets/Demo/Resources/.");
-                if (_btnStart != null) _btnStart.interactable = false;
-            }
-            else
-            {
-                SetStatus("Select a subtitle entry and press Start.");
-            }
+            SetStatus(_scripts.Count == 0
+                ? "No subtitle data found. Copy JSON files into Assets/Demo/Resources/."
+                : "Select a subtitle entry and press Start.");
+
+            if (_scripts.Count == 0 && _btnStart != null)
+                _btnStart.interactable = false;
         }
 
-        private void OnDestroy()
-        {
-            _player?.Stop();
-        }
+        private void OnDestroy() => _player?.Stop();
 
         private void Update()
         {
-            if (!_isRunning || _player == null)
-                return;
+            if (!_isRunning || _player == null) return;
 
-            float multiplier = _doubleSpeed ? 2f : 1f;
-            float delta      = Time.deltaTime * multiplier;
-
-            _elapsedMs = Mathf.Min(_elapsedMs + Time.deltaTime * 1000f * multiplier, _totalMs);
+            float mult  = _doubleSpeed ? 2f : 1f;
+            float delta = Time.deltaTime * mult;
+            _elapsedMs  = Mathf.Min(_elapsedMs + Time.deltaTime * 1000f * mult, _totalMs);
             _player.Tick(delta);
             UpdateProgress();
         }
@@ -128,17 +141,14 @@ namespace GameSubtitles.Demo
             var asset = Resources.Load<TextAsset>(resourceName);
             if (asset == null)
             {
-                Debug.LogWarning($"GameSubtitlesDemo: could not load Resources/{resourceName}.json");
+                Debug.LogWarning($"GameSubtitlesDemo: Resources/{resourceName} not found.");
                 return;
             }
 
             string json = asset.text;
+            if (json.Length > 0 && json[0] == '\uFEFF') json = json[1..]; // strip BOM
 
-            // Strip UTF-8 BOM if present (preprocessor tool emits it)
-            if (json.Length > 0 && json[0] == '\uFEFF')
-                json = json.Substring(1);
-
-            // Unity's JsonUtility cannot deserialize a top-level array; wrap it
+            // Unity's JsonUtility can't deserialise a bare JSON array; wrap it first
             string wrapped = "{\"items\":" + json + "}";
             SubtitleEntryList list;
             try   { list = JsonUtility.FromJson<SubtitleEntryList>(wrapped); }
@@ -147,273 +157,21 @@ namespace GameSubtitles.Demo
             if (list?.items == null) return;
 
             _scripts.Clear();
-            foreach (var raw in list.items)
+            foreach (var r in list.items)
             {
-                if (string.IsNullOrEmpty(raw.subtitle)) continue;
-
-                // Duration: ~14 chars/s, clamped to [3, 18] seconds
-                string clean = raw.subtitle.Replace("\u00AD", "");
-                float  dur   = Mathf.Clamp(Mathf.Round(clean.Length / 14f), 3f, 18f);
-
+                if (string.IsNullOrEmpty(r.subtitle)) continue;
+                string clean = r.subtitle.Replace("\u00AD", "");
                 _scripts.Add(new SubtitleEntry
                 {
-                    id       = raw.id,
-                    speaker  = raw.speaker,
-                    text     = raw.subtitle,
-                    duration = dur
+                    id       = r.id,
+                    speaker  = r.speaker,
+                    text     = r.subtitle,
+                    duration = Mathf.Clamp(Mathf.Round(clean.Length / 14f), 3f, 18f),
                 });
             }
 
-            // If called after initial build (i.e. on language switch), refresh dropdown
-            if (_scriptDropdown != null)
-                PopulateScriptDropdown();
-        }
-
-        private void PopulateScriptDropdown()
-        {
-            if (_scriptDropdown == null) return;
-
-            _scriptDropdown.ClearOptions();
-            var options = new List<TMP_Dropdown.OptionData>();
-
-            if (_scripts.Count == 0)
-            {
-                options.Add(new TMP_Dropdown.OptionData("(no subtitles loaded)"));
-            }
-            else
-            {
-                foreach (var s in _scripts)
-                {
-                    string preview = s.text.Replace("\u00AD", "");
-                    if (preview.Length > 42)
-                        preview = preview.Substring(0, 42) + "\u2026";
-                    else
-                        preview = preview.Left(42);
-                    options.Add(new TMP_Dropdown.OptionData(
-                        $"[{s.id}] {s.speaker} \u2014 {preview}"));
-                }
-            }
-
-            _scriptDropdown.AddOptions(options);
-            if (_btnStart != null) _btnStart.interactable = _scripts.Count > 0;
-        }
-
-        // ── UI construction ───────────────────────────────────────────────────────
-
-        private void BuildUI()
-        {
-            // Root Canvas (ScreenSpaceOverlay)
-            var canvasGo = new GameObject("GameSubtitlesDemoCanvas");
-            canvasGo.transform.SetParent(transform, false);
-            var canvas = canvasGo.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvasGo.AddComponent<CanvasScaler>(); // default pixel-perfect
-            canvasGo.AddComponent<GraphicRaycaster>();
-
-            // Dark full-screen background
-            var bg = MakePanel(canvasGo.transform, ColBgDark, "Background");
-            StretchFill(bg);
-
-            // Content: centred vertical stack
-            var content = MakeVerticalLayout(canvasGo.transform, "Content",
-                padding: new RectOffset(0, 0, 16, 24), spacing: 0f);
-            StretchFill(content.transform.parent == null ? content : content);
-            var contentRT = content.GetComponent<RectTransform>();
-            contentRT.anchorMin = contentRT.anchorMax = new Vector2(0.5f, 0.5f);
-            contentRT.pivot     = new Vector2(0.5f, 0.5f);
-            contentRT.sizeDelta = new Vector2(560f, 0f);
-            var csf = content.AddComponent<ContentSizeFitter>();
-            csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-            // ── Title ─────────────────────────────────────────────────────────────
-            {
-                var title = MakeLabel(content.transform, "GAME SUBTITLES \u2014 PLAYER DEMO", 11f, ColAccent);
-                var slot  = content.GetComponent<VerticalLayoutGroup>();
-                AddLayoutElement(title, minHeight: 28f);
-                title.alignment = TextAlignmentOptions.Center;
-            }
-
-            // ── Scene area ────────────────────────────────────────────────────────
-            {
-                // 540×304 container
-                var sceneGo = new GameObject("SceneArea");
-                sceneGo.transform.SetParent(content.transform, false);
-                AddLayoutElement(sceneGo, minWidth: 540f, minHeight: 304f, flexWidth: 0f);
-                var sceneRT = sceneGo.AddComponent<RectTransform>();
-                sceneRT.sizeDelta = new Vector2(540f, 304f);
-
-                // Purple sky background
-                var sceneBg = MakePanel(sceneGo.transform, ColBgScene, "SceneBg");
-                StretchFill(sceneBg);
-
-                // Footer panel: speaker name + subtitle bar (bottom-anchored)
-                var footerGo = new GameObject("Footer");
-                footerGo.transform.SetParent(sceneGo.transform, false);
-                var footerRT = footerGo.AddComponent<RectTransform>();
-                footerRT.anchorMin = new Vector2(0f, 0f);
-                footerRT.anchorMax = new Vector2(1f, 0f);
-                footerRT.pivot     = new Vector2(0.5f, 0f);
-                footerRT.sizeDelta = Vector2.zero;
-                var footerLayout = footerGo.AddComponent<VerticalLayoutGroup>();
-                footerLayout.childAlignment = TextAnchor.LowerCenter;
-                footerLayout.childForceExpandWidth = true;
-                footerLayout.childForceExpandHeight = false;
-                footerLayout.spacing = 0f;
-                var footerFit = footerGo.AddComponent<ContentSizeFitter>();
-                footerFit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-                // Speaker name
-                _speakerNameText = MakeLabel(footerGo.transform, "", 8.5f, ColAccent);
-                _speakerNameText.alignment = TextAlignmentOptions.Center;
-                AddLayoutElement(_speakerNameText.gameObject, minHeight: 14f);
-                var speakerLE = _speakerNameText.GetComponent<LayoutElement>()
-                                ?? _speakerNameText.gameObject.AddComponent<LayoutElement>();
-                speakerLE.minHeight = 14f;
-
-                // Dark subtitle bar
-                var subBarGo = new GameObject("SubBar");
-                subBarGo.transform.SetParent(footerGo.transform, false);
-                AddLayoutElement(subBarGo, minHeight: 0f);
-                var subBarImg = subBarGo.AddComponent<Image>();
-                subBarImg.color = ColBgSubBar;
-                var subBarRT = subBarGo.GetComponent<RectTransform>();
-                subBarRT.sizeDelta = Vector2.zero;
-                var subBarLayout = subBarGo.AddComponent<VerticalLayoutGroup>();
-                subBarLayout.padding = new RectOffset(0, 0, 8, 12);
-                subBarLayout.childForceExpandWidth  = true;
-                subBarLayout.childForceExpandHeight = false;
-                subBarLayout.childAlignment = TextAnchor.LowerCenter;
-                var subBarFit = subBarGo.AddComponent<ContentSizeFitter>();
-                subBarFit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-                // SubtitleWidget renderer
-                var subWidgetGo = new GameObject("SubtitleWidget");
-                subWidgetGo.transform.SetParent(subBarGo.transform, false);
-                subWidgetGo.AddComponent<RectTransform>();
-                _subWidget = subWidgetGo.AddComponent<SubtitleWidget>();
-                _subWidget.FontSize            = _fontSize;
-                _subWidget.TextColor           = Color.white;
-                _subWidget.ContainerWidthOverride = 540f; // set before Start() since widget may not be laid out yet
-                AddLayoutElement(subWidgetGo, minHeight: 0f);
-                var swFit = subWidgetGo.AddComponent<ContentSizeFitter>();
-                swFit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-                AddLayoutElement(sceneGo, minWidth: 540f, minHeight: 304f, flexWidth: 0f);
-            }
-
-            // Spacer after scene
-            MakeSpacer(content.transform, 12f);
-
-            // ── Controls row: language, script, Start/Stop/Reset ─────────────────
-            {
-                var row = MakeHorizontalLayout(content.transform, "CtrlRow", spacing: 6f);
-                AddLayoutElement(row, minHeight: 28f);
-
-                // Language dropdown
-                _langDropdown = MakeDropdown(row.transform, 110f,
-                    new[] { "English", "Fran\u00E7ais", "Svenska", "Espa\u00F1ol" });
-                _langDropdown.onValueChanged.AddListener(OnLangChanged);
-
-                // Script dropdown (fill remaining space)
-                _scriptDropdown = MakeDropdown(row.transform, 0f, Array.Empty<string>());
-                AddLayoutElement(_scriptDropdown.gameObject, flexWidth: 1f);
-                _scriptDropdown.onValueChanged.AddListener(idx => DoReset());
-                PopulateScriptDropdown();
-
-                _btnStart = MakeButton(row.transform, "\u25B6 Start", ColBtnGreen, () => DoStart());
-                _btnStop  = MakeButton(row.transform, "\u25A0 Stop",  ColBtnGray,  () => DoStop());
-                _btnReset = MakeButton(row.transform, "\u21BA Reset", ColBtnGray,  () => DoReset());
-            }
-
-            MakeSpacer(content.transform, 8f);
-
-            // ── Options row: speed, lines, font ──────────────────────────────────
-            {
-                var row = MakeHorizontalLayout(content.transform, "OptRow", spacing: 6f);
-                AddLayoutElement(row, minHeight: 28f);
-
-                _btnSpeed = MakeButton(row.transform, "1\xD7 Speed", ColBtnGray, OnSpeedToggle);
-                AddHorizontalSpacer(row.transform, 10f);
-
-                MakeSmallLabel(row.transform, "Lines:");
-                _btnLinesDec    = MakeButton(row.transform, "\u2212", ColBtnGray, () => ChangeLine(-1));
-                _linesCountText = MakeSmallLabel(row.transform, _maxLines.ToString());
-                _btnLinesInc    = MakeButton(row.transform, "+",     ColBtnGray, () => ChangeLine(+1));
-                AddHorizontalSpacer(row.transform, 10f);
-
-                MakeSmallLabel(row.transform, "Font:");
-                _btnFontDec  = MakeButton(row.transform, "\u2212",        ColBtnGray, () => ChangeFont(-2));
-                _fontSizeText = MakeSmallLabel(row.transform, $"{_fontSize}px");
-                _btnFontInc  = MakeButton(row.transform, "+",            ColBtnGray, () => ChangeFont(+2));
-            }
-
-            MakeSpacer(content.transform, 12f);
-
-            // ── Progress bar ──────────────────────────────────────────────────────
-            {
-                var sliderGo = new GameObject("ProgressBar");
-                sliderGo.transform.SetParent(content.transform, false);
-                AddLayoutElement(sliderGo, minWidth: 540f, minHeight: 8f, flexWidth: 0f);
-                var sliderRT = sliderGo.AddComponent<RectTransform>();
-                sliderRT.sizeDelta = new Vector2(540f, 8f);
-
-                _progressBar = sliderGo.AddComponent<Slider>();
-                _progressBar.minValue    = 0f;
-                _progressBar.maxValue    = 1f;
-                _progressBar.value       = 0f;
-                _progressBar.interactable = false;
-                _progressBar.transition  = Selectable.Transition.None;
-
-                // Background
-                var bgImg = MakePanel(sliderGo.transform, ColBgPanel, "BG");
-                StretchFill(bgImg);
-
-                // Fill area
-                var fillAreaGo = new GameObject("FillArea");
-                fillAreaGo.transform.SetParent(sliderGo.transform, false);
-                var fillAreaRT = fillAreaGo.AddComponent<RectTransform>();
-                fillAreaRT.anchorMin = Vector2.zero;
-                fillAreaRT.anchorMax = Vector2.one;
-                fillAreaRT.sizeDelta = Vector2.zero;
-
-                var fillGo = new GameObject("Fill");
-                fillGo.transform.SetParent(fillAreaGo.transform, false);
-                var fillImg = fillGo.AddComponent<Image>();
-                fillImg.color = ColAccent;
-                var fillRT = fillGo.GetComponent<RectTransform>();
-                fillRT.anchorMin = Vector2.zero;
-                fillRT.anchorMax = new Vector2(0f, 1f);
-                fillRT.sizeDelta = Vector2.zero;
-
-                _progressBar.fillRect = fillRT;
-            }
-
-            MakeSpacer(content.transform, 4f);
-
-            // ── Progress meta row ─────────────────────────────────────────────────
-            {
-                var row = MakeHorizontalLayout(content.transform, "MetaRow", spacing: 0f);
-                AddLayoutElement(row, minWidth: 540f, minHeight: 16f, flexWidth: 0f);
-
-                _pageInfoText = MakeLabel(row.transform, "", 9f, ColTextMuted);
-                AddLayoutElement(_pageInfoText.gameObject, flexWidth: 1f);
-
-                _timeInfoText = MakeLabel(row.transform, "", 9f, ColTextMuted);
-                _timeInfoText.alignment = TextAlignmentOptions.Right;
-                AddLayoutElement(_timeInfoText.gameObject, flexWidth: 1f);
-            }
-
-            MakeSpacer(content.transform, 8f);
-
-            // ── Status line ───────────────────────────────────────────────────────
-            {
-                _statusText = MakeLabel(content.transform, "Loading\u2026", 10.5f, ColTextMuted);
-                _statusText.alignment = TextAlignmentOptions.Center;
-                AddLayoutElement(_statusText.gameObject, minHeight: 20f);
-            }
-
-            UpdateLinesDisplay();
-            UpdateFontDisplay();
+            _scriptIndex = 0;
+            RefreshScriptLabel();
         }
 
         // ── Controls ──────────────────────────────────────────────────────────────
@@ -421,19 +179,14 @@ namespace GameSubtitles.Demo
         private void DoStart()
         {
             if (_player == null || _scripts.Count == 0) return;
-
             _player.Stop();
 
-            int idx = _scriptDropdown != null ? _scriptDropdown.value : 0;
-            if (idx < 0 || idx >= _scripts.Count) return;
-
-            var s = _scripts[idx];
+            if (_scriptIndex < 0 || _scriptIndex >= _scripts.Count) return;
+            var s = _scripts[_scriptIndex];
 
             _totalMs   = s.duration * 1000f;
             _elapsedMs = 0f;
-
-            if (_speakerNameText != null)
-                _speakerNameText.text = s.speaker.ToUpper();
+            if (_speakerNameText != null) _speakerNameText.text = s.speaker.ToUpper();
 
             _player.MaxLines = _maxLines;
             _player.Start(s.text, s.duration);
@@ -455,21 +208,44 @@ namespace GameSubtitles.Demo
             _player?.Reset();
             SetRunning(false);
             _elapsedMs = 0f;
-            if (_progressBar      != null) _progressBar.value = 0f;
-            if (_pageInfoText      != null) _pageInfoText.text = "";
-            if (_timeInfoText      != null) _timeInfoText.text = "";
-            if (_speakerNameText   != null) _speakerNameText.text = "";
+            if (_progressFillRT  != null) _progressFillRT.anchorMax = new Vector2(0f, 1f);
+            if (_pageInfoText    != null) _pageInfoText.text = "";
+            if (_timeInfoText    != null) _timeInfoText.text = "";
+            if (_speakerNameText != null) _speakerNameText.text = "";
             SetStatus("Select a subtitle entry and press Start.");
         }
 
         private void OnSpeedToggle()
         {
             _doubleSpeed = !_doubleSpeed;
-            if (_btnSpeed != null)
-            {
-                var lbl = _btnSpeed.GetComponentInChildren<TMP_Text>();
-                if (lbl != null) lbl.text = _doubleSpeed ? "2\xD7 Speed" : "1\xD7 Speed";
-            }
+            var lbl = _btnSpeed?.GetComponentInChildren<TMP_Text>();
+            if (lbl != null) lbl.text = _doubleSpeed ? "2x Speed" : "1x Speed";
+        }
+
+        private void OnLangSelected(int idx)
+        {
+            if (idx == _langIndex) return;
+            _langIndex = idx;
+            DoReset();
+            LoadSubtitles(LangFiles[_langIndex]);
+            RefreshLangButtons();
+            SetStatus("Select a subtitle entry and press Start.");
+        }
+
+        private void OnScriptPrev()
+        {
+            if (_scripts.Count == 0) return;
+            _scriptIndex = (_scriptIndex - 1 + _scripts.Count) % _scripts.Count;
+            DoReset();
+            RefreshScriptLabel();
+        }
+
+        private void OnScriptNext()
+        {
+            if (_scripts.Count == 0) return;
+            _scriptIndex = (_scriptIndex + 1) % _scripts.Count;
+            DoReset();
+            RefreshScriptLabel();
         }
 
         private void ChangeLine(int delta)
@@ -492,14 +268,6 @@ namespace GameSubtitles.Demo
             if (_isRunning) DoStart();
         }
 
-        private void OnLangChanged(int idx)
-        {
-            string[] files = { "subtitles", "subtitles-fr", "subtitles-sv", "subtitles-es" };
-            DoReset();
-            LoadSubtitles(idx >= 0 && idx < files.Length ? files[idx] : "subtitles");
-            SetStatus("Select a subtitle entry and press Start.");
-        }
-
         private void OnSubtitleComplete()
         {
             SetRunning(false);
@@ -508,6 +276,8 @@ namespace GameSubtitles.Demo
             if (_speakerNameText != null) _speakerNameText.text = "";
             SetStatus("Finished.");
         }
+
+        // ── State helpers ─────────────────────────────────────────────────────────
 
         private void SetRunning(bool running)
         {
@@ -524,14 +294,13 @@ namespace GameSubtitles.Demo
         private void UpdateProgress()
         {
             float pct = _totalMs > 0f ? Mathf.Clamp01(_elapsedMs / _totalMs) : 0f;
-            if (_progressBar != null) _progressBar.value = pct;
+            if (_progressFillRT != null) _progressFillRT.anchorMax = new Vector2(pct, 1f);
 
             if (_player != null && _pageInfoText != null)
             {
                 int pages = _player.PageCount;
                 _pageInfoText.text = pages > 1 ? $"Page ? / {pages}" : "";
             }
-
             if (_timeInfoText != null)
                 _timeInfoText.text = $"{_elapsedMs / 1000f:F1} s / {_totalMs / 1000f:F1} s";
         }
@@ -550,176 +319,335 @@ namespace GameSubtitles.Demo
             if (_btnFontInc   != null) _btnFontInc.interactable = _fontSize < 32;
         }
 
-        // ── UI factory helpers ────────────────────────────────────────────────────
-
-        private static GameObject MakePanel(Transform parent, Color color, string name = "Panel")
+        private void RefreshLangButtons()
         {
-            var go  = new GameObject(name);
-            go.transform.SetParent(parent, false);
-            var img = go.AddComponent<Image>();
-            img.color = color;
-            go.AddComponent<RectTransform>();
-            return go;
+            for (int i = 0; i < _langBtns.Length; i++)
+            {
+                if (_langBtns[i] == null) continue;
+                bool active = (i == _langIndex);
+                var img = _langBtns[i].GetComponent<Image>();
+                if (img != null) img.color = active ? ColGrayLit : ColGray;
+                var lbl = _langBtns[i].GetComponentInChildren<TMP_Text>();
+                if (lbl != null) lbl.color = active ? ColAccent : ColTextMain;
+            }
         }
 
-        private static GameObject MakeVerticalLayout(Transform parent, string name,
-            RectOffset padding = null, float spacing = 4f)
+        private void RefreshScriptLabel()
+        {
+            if (_scriptLabel == null) return;
+
+            if (_scripts.Count == 0)
+            {
+                _scriptLabel.text = "(no subtitles loaded)";
+                if (_btnScriptPrev != null) _btnScriptPrev.interactable = false;
+                if (_btnScriptNext != null) _btnScriptNext.interactable = false;
+                return;
+            }
+
+            var s = _scripts[_scriptIndex];
+            string preview = s.text.Replace("\u00AD", "");
+            if (preview.Length > 38) preview = preview[..38] + "\u2026";
+            _scriptLabel.text = $"[{s.id}] {s.speaker} \u2014 {preview}";
+
+            bool multi = _scripts.Count > 1;
+            if (_btnScriptPrev != null) _btnScriptPrev.interactable = multi;
+            if (_btnScriptNext != null) _btnScriptNext.interactable = multi;
+        }
+
+        // ── UI construction ───────────────────────────────────────────────────────
+
+        private void BuildUI()
+        {
+            // Canvas
+            var canvasGo = new GameObject("DemoCanvas");
+            canvasGo.transform.SetParent(transform, false);
+            var canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 100;
+            var scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1280, 720);
+            scaler.screenMatchMode     = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight  = 0.5f;
+            canvasGo.AddComponent<GraphicRaycaster>();
+
+            // Full-screen dark background
+            StretchFill(MakePanel(canvasGo.transform, ColBgDark, "BG"));
+
+            // Centre column — fixed 540px wide, auto-height via ContentSizeFitter
+            var col = new GameObject("Column");
+            col.transform.SetParent(canvasGo.transform, false);
+            var colRT = col.AddComponent<RectTransform>();
+            colRT.anchorMin = colRT.anchorMax = new Vector2(0.5f, 0.5f);
+            colRT.pivot     = new Vector2(0.5f, 0.5f);
+            colRT.sizeDelta = new Vector2(540f, 0f);
+            var colVL = col.AddComponent<VerticalLayoutGroup>();
+            colVL.padding               = new RectOffset(0, 0, 16, 16);
+            colVL.spacing               = 8f;
+            colVL.childAlignment        = TextAnchor.UpperCenter;
+            colVL.childForceExpandWidth = true;
+            colVL.childForceExpandHeight = false;
+            colVL.childControlWidth      = true;
+            colVL.childControlHeight     = true;
+            col.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            // Title
+            var title = Label(col.transform, "GAME SUBTITLES \u2014 PLAYER DEMO", 11f, ColAccent);
+            title.alignment = TextAlignmentOptions.Center;
+            LE(title, minH: 18f);
+
+            // ── 540×304 scene area ────────────────────────────────────────────────
+            {
+                var scene = new GameObject("Scene");
+                scene.transform.SetParent(col.transform, false);
+                var sceneRT = scene.AddComponent<RectTransform>();
+                sceneRT.sizeDelta = new Vector2(540f, 304f);
+                LE(scene, minW: 540f, minH: 304f, flexW: 0f, flexH: 0f);
+
+                // Sky background
+                StretchFill(MakePanel(scene.transform, ColBgScene, "Sky"));
+
+                // Footer (speaker + subtitle bar) anchored to bottom edge
+                var footer = new GameObject("Footer");
+                footer.transform.SetParent(scene.transform, false);
+                var fRT = footer.AddComponent<RectTransform>();
+                fRT.anchorMin = new Vector2(0f, 0f);
+                fRT.anchorMax = new Vector2(1f, 0f);
+                fRT.pivot     = new Vector2(0.5f, 0f);
+                fRT.sizeDelta = Vector2.zero;
+                var fVL = footer.AddComponent<VerticalLayoutGroup>();
+                fVL.childForceExpandWidth   = true;
+                fVL.childForceExpandHeight  = false;
+                fVL.childControlWidth       = true;
+                fVL.childControlHeight      = true;
+                footer.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+                // Speaker name
+                _speakerNameText = Label(footer.transform, "", 8.5f, ColAccent);
+                _speakerNameText.alignment = TextAlignmentOptions.Center;
+                LE(_speakerNameText, minH: 14f);
+
+                // Dark semi-transparent subtitle bar
+                var bar = MakePanel(footer.transform, ColBgSubBar, "SubBar");
+                var barVL = bar.AddComponent<VerticalLayoutGroup>();
+                barVL.padding               = new RectOffset(0, 0, 8, 12);
+                barVL.childForceExpandWidth  = true;
+                barVL.childForceExpandHeight = false;
+                barVL.childControlWidth      = true;
+                barVL.childControlHeight     = true;
+                bar.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+                // SubtitleWidget renderer
+                var swGo = new GameObject("SubtitleWidget");
+                swGo.transform.SetParent(bar.transform, false);
+                swGo.AddComponent<RectTransform>();
+                _subWidget = swGo.AddComponent<SubtitleWidget>();
+                _subWidget.FontSize               = _fontSize;
+                _subWidget.TextColor              = Color.white;
+                _subWidget.ContainerWidthOverride = 540f; // explicit until widget is on-screen
+            }
+
+            // ── Language buttons ──────────────────────────────────────────────────
+            {
+                var row = HRow(col.transform, "LangRow", 4f);
+                LE(row, minH: 26f);
+                for (int i = 0; i < 4; i++)
+                {
+                    int idx = i; // capture for lambda
+                    _langBtns[i] = Btn(row.transform, LangLabels[i], ColGray, () => OnLangSelected(idx), 100f);
+                }
+            }
+
+            // ── Script selector: ◀ label ▶ ───────────────────────────────────────
+            {
+                var row = HRow(col.transform, "ScriptRow", 4f);
+                LE(row, minH: 26f);
+                _btnScriptPrev = Btn(row.transform, "<", ColGray, OnScriptPrev, 28f);
+                _scriptLabel   = Label(row.transform, "", 10f, ColTextMain);
+                _scriptLabel.alignment     = TextAlignmentOptions.Center;
+                _scriptLabel.overflowMode  = TextOverflowModes.Ellipsis;
+                LE(_scriptLabel, minW: 400f, flexW: 1f);
+                _btnScriptNext = Btn(row.transform, ">", ColGray, OnScriptNext, 28f);
+            }
+
+            // ── Playback buttons ──────────────────────────────────────────────────
+            {
+                var row = HRow(col.transform, "PlayRow", 6f);
+                LE(row, minH: 26f);
+                _btnStart = Btn(row.transform, "Start", ColGreen, DoStart,  90f);
+                _btnStop  = Btn(row.transform, "Stop",  ColGray,  DoStop,   90f);
+                _btnReset = Btn(row.transform, "Reset", ColGray,  DoReset,  90f);
+            }
+
+            // ── Options: speed | lines | font ─────────────────────────────────────
+            {
+                var row = HRow(col.transform, "OptRow", 6f);
+                LE(row, minH: 26f);
+                _btnSpeed = Btn(row.transform, "1x Speed", ColGray, OnSpeedToggle, 90f);
+                HSpacer(row.transform, 12f);
+
+                Label(row.transform, "Lines:", 11f, ColTextMain);
+                _btnLinesDec    = Btn(row.transform, "-", ColGray, () => ChangeLine(-1), 28f);
+                _linesCountText = Label(row.transform, "2", 11f, ColTextMain);
+                LE(_linesCountText, minW: 20f);
+                _linesCountText.alignment = TextAlignmentOptions.Center;
+                _btnLinesInc    = Btn(row.transform, "+", ColGray, () => ChangeLine(+1), 28f);
+                HSpacer(row.transform, 12f);
+
+                Label(row.transform, "Font:", 11f, ColTextMain);
+                _btnFontDec  = Btn(row.transform, "-", ColGray, () => ChangeFont(-2), 28f);
+                _fontSizeText = Label(row.transform, "16px", 11f, ColTextMain);
+                LE(_fontSizeText, minW: 34f);
+                _fontSizeText.alignment = TextAlignmentOptions.Center;
+                _btnFontInc  = Btn(row.transform, "+", ColGray, () => ChangeFont(+2), 28f);
+            }
+
+            // ── Progress bar (anchor-based fill — no sprite required) ────────────
+            {
+                var bg = MakePanel(col.transform, ColBgPanel, "ProgressBg");
+                LE(bg, minH: 8f, flexW: 0f);
+
+                // Fill: left-anchored child; move anchorMax.x to animate progress
+                var fillGo = new GameObject("Fill");
+                fillGo.transform.SetParent(bg.transform, false);
+                fillGo.AddComponent<Image>().color = ColAccent;
+                _progressFillRT             = fillGo.GetComponent<RectTransform>();
+                _progressFillRT.anchorMin   = Vector2.zero;
+                _progressFillRT.anchorMax   = Vector2.zero; // starts empty
+                _progressFillRT.offsetMin   = Vector2.zero;
+                _progressFillRT.offsetMax   = Vector2.zero;
+            }
+
+            // ── Meta row: page info | time ────────────────────────────────────────
+            {
+                var row = HRow(col.transform, "MetaRow", 0f);
+                LE(row, minH: 16f);
+                _pageInfoText = Label(row.transform, "", 9f, ColMuted);
+                LE(_pageInfoText, flexW: 1f);
+                _timeInfoText = Label(row.transform, "", 9f, ColMuted);
+                _timeInfoText.alignment = TextAlignmentOptions.Right;
+                LE(_timeInfoText, flexW: 1f);
+            }
+
+            // ── Status line ───────────────────────────────────────────────────────
+            {
+                _statusText = Label(col.transform, "Loading\u2026", 10.5f, ColMuted);
+                _statusText.alignment = TextAlignmentOptions.Center;
+                LE(_statusText, minH: 20f);
+            }
+
+            RefreshLangButtons();
+            UpdateLinesDisplay();
+            UpdateFontDisplay();
+        }
+
+        // ── UI factory helpers ────────────────────────────────────────────────────
+
+        private TMP_Text Label(Transform parent, string text, float size, Color color)
+        {
+            var go = new GameObject("Lbl");
+            go.transform.SetParent(parent, false);
+            go.AddComponent<RectTransform>();
+            var t = go.AddComponent<TextMeshProUGUI>();
+            t.text               = text;
+            t.fontSize           = size;
+            t.color              = color;
+            t.textWrappingMode = TextWrappingModes.NoWrap;
+            return t;
+        }
+
+        private Button Btn(Transform parent, string label, Color bg, Action onClick, float minW = 60f)
+        {
+            var go = new GameObject("Btn");
+            go.transform.SetParent(parent, false);
+            go.AddComponent<RectTransform>();
+            go.AddComponent<Image>().color = bg;
+
+            var btn = go.AddComponent<Button>();
+            var c = btn.colors;
+            c.normalColor      = bg;
+            c.highlightedColor = bg * 1.3f;
+            c.pressedColor     = bg * 0.8f;
+            c.disabledColor    = new Color(bg.r, bg.g, bg.b, 0.38f);
+            c.fadeDuration     = 0.05f;
+            btn.colors = c;
+            btn.onClick.AddListener(() => onClick());
+
+            // Button label (child fills the button rect)
+            var lblGo = new GameObject("Lbl");
+            lblGo.transform.SetParent(go.transform, false);
+            var lblRT = lblGo.AddComponent<RectTransform>();
+            lblRT.anchorMin = Vector2.zero;
+            lblRT.anchorMax = Vector2.one;
+            lblRT.offsetMin = new Vector2(4f, 2f);
+            lblRT.offsetMax = new Vector2(-4f, -2f);
+            var t = lblGo.AddComponent<TextMeshProUGUI>();
+            t.text               = label;
+            t.fontSize           = 11f;
+            t.color              = ColTextMain;
+            t.alignment          = TextAlignmentOptions.Center;
+            t.textWrappingMode = TextWrappingModes.NoWrap;
+
+            LE(go, minW: minW, minH: 24f);
+            return btn;
+        }
+
+        private static GameObject MakePanel(Transform parent, Color color, string name)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
             go.AddComponent<RectTransform>();
-            var vl = go.AddComponent<VerticalLayoutGroup>();
-            vl.padding                  = padding ?? new RectOffset(0, 0, 0, 0);
-            vl.spacing                  = spacing;
-            vl.childAlignment           = TextAnchor.UpperCenter;
-            vl.childForceExpandWidth    = true;
-            vl.childForceExpandHeight   = false;
-            vl.childControlWidth        = true;
-            vl.childControlHeight       = true;
+            go.AddComponent<Image>().color = color;
             return go;
         }
 
-        private static GameObject MakeHorizontalLayout(Transform parent, string name, float spacing = 4f)
+        // Horizontal row with HorizontalLayoutGroup + auto-width ContentSizeFitter
+        private static GameObject HRow(Transform parent, string name, float spacing)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
             go.AddComponent<RectTransform>();
             var hl = go.AddComponent<HorizontalLayoutGroup>();
-            hl.spacing                 = spacing;
-            hl.childAlignment          = TextAnchor.MiddleLeft;
-            hl.childForceExpandWidth   = false;
-            hl.childForceExpandHeight  = false;
-            hl.childControlWidth       = true;
-            hl.childControlHeight      = true;
-            var fit = go.AddComponent<ContentSizeFitter>();
-            fit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            fit.verticalFit   = ContentSizeFitter.FitMode.PreferredSize;
+            hl.spacing                = spacing;
+            hl.childAlignment         = TextAnchor.MiddleCenter;
+            hl.childForceExpandWidth  = false;
+            hl.childForceExpandHeight = false;
+            hl.childControlWidth      = true;
+            hl.childControlHeight     = true;
             return go;
         }
 
-        private TMP_Text MakeLabel(Transform parent, string text, float size, Color color)
+        private static void HSpacer(Transform parent, float w)
         {
-            var go  = new GameObject("Label");
+            var go = new GameObject("HSp");
             go.transform.SetParent(parent, false);
             go.AddComponent<RectTransform>();
-            var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.text      = text;
-            tmp.fontSize  = size;
-            tmp.color     = color;
-            tmp.alignment = TextAlignmentOptions.Left;
-            tmp.enableWordWrapping = false;
-            return tmp;
-        }
-
-        private TMP_Text MakeSmallLabel(Transform parent, string text)
-            => MakeLabel(parent, text, 11f, ColTextMain);
-
-        private Button MakeButton(Transform parent, string label, Color bgColor, Action onClick)
-        {
-            var go = new GameObject("Button");
-            go.transform.SetParent(parent, false);
-            go.AddComponent<RectTransform>();
-
-            var img = go.AddComponent<Image>();
-            img.color = bgColor;
-
-            var btn = go.AddComponent<Button>();
-            var colors = btn.colors;
-            colors.normalColor      = bgColor;
-            colors.highlightedColor = bgColor * 1.2f;
-            colors.pressedColor     = bgColor * 0.85f;
-            colors.disabledColor    = new Color(bgColor.r, bgColor.g, bgColor.b, 0.38f);
-            btn.colors = colors;
-            btn.onClick.AddListener(() => onClick());
-
-            var labelGo  = new GameObject("Label");
-            labelGo.transform.SetParent(go.transform, false);
-            var labelRT  = labelGo.AddComponent<RectTransform>();
-            labelRT.anchorMin = Vector2.zero;
-            labelRT.anchorMax = Vector2.one;
-            labelRT.sizeDelta = new Vector2(-8f, -4f);
-            var lbl = labelGo.AddComponent<TextMeshProUGUI>();
-            lbl.text      = label;
-            lbl.fontSize  = 11f;
-            lbl.color     = ColTextMain;
-            lbl.alignment = TextAlignmentOptions.Center;
-            lbl.enableWordWrapping = false;
-
-            AddLayoutElement(go, minWidth: 60f, minHeight: 24f);
-            return btn;
-        }
-
-        private TMP_Dropdown MakeDropdown(Transform parent, float width, string[] options)
-        {
-            var go = new GameObject("Dropdown");
-            go.transform.SetParent(parent, false);
-            go.AddComponent<RectTransform>();
-
-            var img = go.AddComponent<Image>();
-            img.color = ColBgPanel;
-
-            var dd = go.AddComponent<TMP_Dropdown>();
-            dd.captionText = MakeLabel(go.transform, "", 11f, ColTextMain);
-            dd.captionText.alignment = TextAlignmentOptions.Left;
-            dd.captionText.GetComponent<RectTransform>().anchorMin = Vector2.zero;
-            dd.captionText.GetComponent<RectTransform>().anchorMax = Vector2.one;
-            dd.captionText.GetComponent<RectTransform>().sizeDelta = new Vector2(-8f, 0f);
-
-            foreach (var opt in options)
-                dd.options.Add(new TMP_Dropdown.OptionData(opt));
-
-            if (width > 0f)
-                AddLayoutElement(go, minWidth: width, minHeight: 24f, flexWidth: 0f);
-            else
-                AddLayoutElement(go, minHeight: 24f);
-
-            return dd;
-        }
-
-        private static void MakeSpacer(Transform parent, float height)
-        {
-            var go = new GameObject("Spacer");
-            go.transform.SetParent(parent, false);
-            go.AddComponent<RectTransform>();
-            AddLayoutElement(go, minHeight: height, flexHeight: 0f);
-        }
-
-        private static void AddHorizontalSpacer(Transform parent, float width)
-        {
-            var go = new GameObject("HSpacer");
-            go.transform.SetParent(parent, false);
-            go.AddComponent<RectTransform>();
-            AddLayoutElement(go, minWidth: width, flexWidth: 0f);
+            LE(go, minW: w, flexW: 0f);
         }
 
         private static void StretchFill(GameObject go)
         {
-            var rt = go.GetComponent<RectTransform>();
-            if (rt == null) rt = go.AddComponent<RectTransform>();
+            var rt = go.GetComponent<RectTransform>() ?? go.AddComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;
-            rt.sizeDelta = Vector2.zero;
-            rt.offsetMin = Vector2.zero;
-            rt.offsetMax = Vector2.zero;
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
         }
 
-        private static void AddLayoutElement(GameObject go,
-            float minWidth = -1f, float minHeight = -1f,
-            float flexWidth = -1f, float flexHeight = -1f)
+        private static void LE(GameObject go,
+            float minW = -1f, float minH = -1f, float flexW = -1f, float flexH = -1f)
         {
-            var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
-            if (minWidth   >= 0f) le.minWidth       = minWidth;
-            if (minHeight  >= 0f) le.minHeight      = minHeight;
-            if (flexWidth  >= 0f) le.flexibleWidth  = flexWidth;
-            if (flexHeight >= 0f) le.flexibleHeight = flexHeight;
+            var e = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
+            if (minW  >= 0f) e.minWidth       = minW;
+            if (minH  >= 0f) e.minHeight      = minH;
+            if (flexW >= 0f) e.flexibleWidth  = flexW;
+            if (flexH >= 0f) e.flexibleHeight = flexH;
         }
 
-        private static void AddLayoutElement(Component c,
-            float minWidth = -1f, float minHeight = -1f,
-            float flexWidth = -1f, float flexHeight = -1f)
-            => AddLayoutElement(c.gameObject, minWidth, minHeight, flexWidth, flexHeight);
+        private static void LE(Component c,
+            float minW = -1f, float minH = -1f, float flexW = -1f, float flexH = -1f)
+            => LE(c.gameObject, minW, minH, flexW, flexH);
 
-        private static Color HexColor(string hex)
+        private static Color Hex(string hex)
         {
             ColorUtility.TryParseHtmlString(hex, out Color c);
             return c;
@@ -727,34 +655,13 @@ namespace GameSubtitles.Demo
 
         // ── Data types ────────────────────────────────────────────────────────────
 
-        [Serializable]
-        private class RawEntry
-        {
-            public string id;
-            public string speaker;
-            public string subtitle;
-        }
-
-        [Serializable]
-        private class SubtitleEntryList
-        {
-            public RawEntry[] items;
-        }
+        [Serializable] private class RawEntry { public string id; public string speaker; public string subtitle; }
+        [Serializable] private class SubtitleEntryList { public RawEntry[] items; }
 
         private class SubtitleEntry
         {
-            public string id;
-            public string speaker;
-            public string text;
+            public string id, speaker, text;
             public float  duration;
         }
-    }
-
-    // ── String extension ──────────────────────────────────────────────────────────
-
-    internal static class StringExtensions
-    {
-        public static string Left(this string s, int n)
-            => s.Length <= n ? s : s.Substring(0, n);
     }
 }

@@ -94,7 +94,7 @@ namespace GameSubtitles
                 tmp.fontSize          = FontSize;
                 tmp.color             = TextColor;
                 tmp.alignment         = TextAlignmentOptions.Center;
-                tmp.enableWordWrapping = false; // layout is already done by WrapAndPaginate
+                tmp.textWrappingMode = TextWrappingModes.NoWrap; // layout is already done by WrapAndPaginate
                 tmp.text              = line;
 
                 // Anchor: full-width strip, top-aligned, stacked downward
@@ -107,12 +107,16 @@ namespace GameSubtitles
                 rt.anchoredPosition = new Vector2(0f, -y);
                 y += lineH;
             }
+
+            // Tell the parent layout system how tall we are so containers resize correctly
+            SetPreferredHeight(y);
         }
 
         /// <inheritdoc/>
         public void Clear()
         {
             ClearLineObjects();
+            SetPreferredHeight(0f);
         }
 
         // ── Private ───────────────────────────────────────────────────────────────
@@ -128,7 +132,7 @@ namespace GameSubtitles
             go.transform.SetParent(transform, false);
 
             var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.enableWordWrapping = false;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
             SyncProbeFont(tmp);
 
             // Position off-screen so it never appears in the rendered output
@@ -159,6 +163,14 @@ namespace GameSubtitles
                     Destroy(go);
             }
             _lineObjects.Clear();
+        }
+
+        private void SetPreferredHeight(float h)
+        {
+            var le = GetComponent<LayoutElement>() ?? gameObject.AddComponent<LayoutElement>();
+            le.preferredHeight = h;
+            le.minHeight       = h;
+            LayoutRebuilder.MarkLayoutForRebuild(_rectTransform);
         }
     }
 }
