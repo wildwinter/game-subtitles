@@ -73,7 +73,7 @@ namespace GameSubtitles
                 bool     hasSyllables = syllables.Length > 1;
                 string   sep         = lineText.Length == 0 ? "" : " ";
 
-                // 1. Full word fits within the effective width
+                // Full word fits
                 if (measureWidth(lineText + sep + clean) <= effectiveWidth)
                 {
                     lineText += sep + clean;
@@ -81,7 +81,7 @@ namespace GameSubtitles
                     continue;
                 }
 
-                // 2. Syllable-prefix hyphenation — only on non-last slots with content
+                // Syllable-prefix hyphenation — non-last slots with existing content only
                 if (!isLastSlot && hasSyllables && lineText.Length > 0)
                 {
                     int breakAt = FindSyllableBreak(syllables, lineText, sep, measureWidth, effectiveWidth);
@@ -99,15 +99,14 @@ namespace GameSubtitles
                     }
                 }
 
-                // 3. Flush the current line (if non-empty) and retry the word
+                // Flush the current line and retry the word
                 if (lineText.Length > 0)
                 {
                     AdvanceLine();
                     continue;
                 }
 
-                // 4. Line is empty on a last slot with prior lines: close the page so the word
-                //    retries at slot 0 of a fresh page where syllable-breaking is allowed
+                // Empty line on last slot — close the page so syllable-breaking is available on retry
                 if (isLastSlot && pageLines.Count > 0)
                 {
                     pages.Add(new List<string>(pageLines));
@@ -116,7 +115,7 @@ namespace GameSubtitles
                     continue;
                 }
 
-                // 5. Line is empty, non-last slot: try syllable breaking from the start of the line
+                // Empty line, non-last slot — try syllable breaking from line start
                 if (!isLastSlot && hasSyllables)
                 {
                     int breakAt = FindSyllableBreak(syllables, "", "", measureWidth, effectiveWidth);
@@ -134,8 +133,7 @@ namespace GameSubtitles
                     }
                 }
 
-                // 6. Character-level break as a last resort
-                //    Use effectiveWidth on last slots so the subsequently appended ellipsis always fits
+                // Character-level break as a last resort
                 string[] broken = ForceBreak(clean, measureWidth,
                                              isLastSlot ? effectiveWidth : containerWidth);
                 for (int bi = 0; bi < broken.Length - 1; bi++)
@@ -156,16 +154,13 @@ namespace GameSubtitles
                 return new List<List<string>> { new List<string>() };
 
             // Append ellipsis to the last line of every non-final page.
-            // Those lines were built with effectiveWidth, so the ellipsis always fits.
             for (int pi = 0; pi < pages.Count - 1; pi++)
             {
                 var pg = pages[pi];
                 pg[pg.Count - 1] += Ellipsis;
             }
 
-            // Last-line word reconstitution: if the very last line of the last page is a
-            // single token (the tail of a soft-hyphen break) and the preceding line ends with
-            // the matching hyphenated stem, rejoin the whole word when it fits in containerWidth.
+            // Rejoin a trailing hyphen fragment with its stem if the whole word fits.
             var lastPage = pages[pages.Count - 1];
             if (lastPage.Count >= 2)
             {

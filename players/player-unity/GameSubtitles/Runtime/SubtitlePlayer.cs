@@ -14,8 +14,7 @@ namespace GameSubtitles
     ///   player.Initialize(myRenderer, maxLines: 2);
     ///   player.OnComplete += () => Debug.Log("Done");
     ///   player.Start("Hello world", 5.0f);
-    ///   // In MonoBehaviour.Update:
-    ///   player.Tick(Time.deltaTime);
+    ///   player.Tick(Time.deltaTime); // called from Update()
     /// </summary>
     public class SubtitlePlayer
     {

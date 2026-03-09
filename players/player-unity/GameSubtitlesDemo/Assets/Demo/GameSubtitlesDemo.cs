@@ -601,7 +601,6 @@ namespace GameSubtitles.Demo
             return go;
         }
 
-        // Horizontal row with HorizontalLayoutGroup + auto-width ContentSizeFitter
         private static GameObject HRow(Transform parent, string name, float spacing)
         {
             var go = new GameObject(name);

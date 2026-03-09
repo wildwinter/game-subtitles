@@ -59,7 +59,7 @@ namespace GameSubtitles
             EnsureProbe();
             if (_probe == null) return 0f;
 
-            // Always sync font settings in case FontAsset or FontSize changed since probe was created
+            // Sync font settings in case they changed since the probe was created
             SyncProbeFont();
             return _probe.GetPreferredValues(text).x;
         }
@@ -108,7 +108,6 @@ namespace GameSubtitles
                 y += lineH;
             }
 
-            // Tell the parent layout system how tall we are so containers resize correctly
             SetPreferredHeight(y);
         }
 
@@ -135,7 +134,6 @@ namespace GameSubtitles
             tmp.textWrappingMode = TextWrappingModes.NoWrap;
             SyncProbeFont(tmp);
 
-            // Position off-screen so it never appears in the rendered output
             var rt = go.GetComponent<RectTransform>();
             rt.anchoredPosition = new Vector2(-99999f, -99999f);
             rt.sizeDelta        = new Vector2(9999f, 200f);
