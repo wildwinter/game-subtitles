@@ -25,6 +25,15 @@ run(
   ` -o dist/osx-arm64`
 );
 
+// Apple codesign — force-replace dotnet's ad-hoc signature with Developer ID
+const codesignId = process.env.APPLE_CODESIGN_ID;
+if (!codesignId) throw new Error('APPLE_CODESIGN_ID is not set');
+run(
+  `codesign --force --sign ${JSON.stringify(codesignId)}` +
+  ` --options runtime --timestamp` +
+  ` dist/osx-arm64/game-subtitles-preprocess`
+);
+
 // Windows x64
 run(
   `dotnet publish PreprocessorTool -c Release -r win-x64` +
