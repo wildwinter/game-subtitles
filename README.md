@@ -17,6 +17,7 @@ Together they solve the situation where you have a long line of audio, a long su
   - [JavaScript Player (`players/player-js`)](#javascript-player-playersplayer-js)
   - [Unreal Engine Plugin (`players/player-unreal`)](#unreal-engine-plugin-playersplayer-unreal)
   - [Unity Package (`players/player-unity`)](#unity-package-playersplayer-unity)
+- [Security Issues](#security-issues)
 - [Contributors](#contributors)
 - [Acknowledgements](#acknowledgements)
   - [Hyphenation patterns](#hyphenation-patterns)
@@ -84,6 +85,8 @@ Exit codes: 0 = success, 1 = warnings, 2 = error
 ```
 
 The tool skips any output file that is already newer than its input (make-style up-to-date check). Pass `--force-overwrite` to reprocess regardless.
+
+*Is the utility failing to run on Windows? Check the [security issues](#security-issues) note here.*
 
 **Examples:**
 
@@ -608,7 +611,25 @@ Setup:
 4. Go to **Window → TextMeshPro → Import TMP Essential Resources** if the prompt does not appear automatically.
 5. Open the `Demo` scene and enter Play mode, or attach `GameSubtitlesDemo` to an empty GameObject in any scene.
 
----
+## Security Issues
+
+### Note on Windows Security
+
+Because this is a hobbyist project, this app is **currently not digitally signed*** for Windows. If you receive an "Access Denied" or "Unauthorized" error when running this tool in PowerShell/CMD:
+
+1. Right-click the EXE in File Explorer.
+
+2. Select Properties.
+
+3. At the bottom, check the Unblock box and click OK.
+
+Try running the command again.
+
+\* *Because it costs a lot and seems to be impossible outside North America right now for individual developers. Thanks Microsoft!*
+
+### Note on Mac Security
+
+The app is signed. Because it's easier on Mac.
 
 ## Contributors
 
