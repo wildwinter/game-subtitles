@@ -1,4 +1,4 @@
-import { readFileSync, cpSync, rmSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, cpSync, rmSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -13,5 +13,15 @@ mkdirSync(dest, { recursive: true });
 
 // Copy Unity package source (no generated artefacts to exclude for a UPM package)
 cpSync(src, dest, { recursive: true });
+
+// Patch version in the UPM package.json to match the root package.json version
+function patchPackageJson(pkgPath) {
+  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+  pkg.version = version;
+  writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
+}
+
+patchPackageJson(resolve(src,  'package.json'));
+patchPackageJson(resolve(dest, 'package.json'));
 
 console.log(`Built game-subtitles-player-unity v${version}`);

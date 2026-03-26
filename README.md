@@ -50,12 +50,12 @@ Pre-built releases are available in the [Releases](https://github.com/wildwinter
 
 | Zip | Contents | For |
 | --- | --- | --- |
-| `game-subtitles-unreal-v{version}.zip` | Unreal plugin + Windows & macOS preprocessor binaries | **Unreal Engine developers** — everything you need in one download |
-| `game-subtitles-win-v{version}.zip` | Windows preprocessor binary + all players | Windows developers using multiple players |
-| `game-subtitles-osx-v{version}.zip` | macOS preprocessor binary + all players | macOS developers using multiple players |
+| `game-subtitles-js-v{version}.zip` | JS player + Windows & macOS preprocessor binaries | **JavaScript / web / JS game engine developers** |
+| `game-subtitles-unreal-v{version}.zip` | Unreal plugin + Windows & macOS preprocessor binaries | **Unreal Engine developers** |
+| `game-subtitles-unity-v{version}.zip` | Unity UPM package + Windows & macOS preprocessor binaries | **Unity developers** |
 | `game-subtitles-lib-v{version}.zip` | C# `PreprocessorLib.dll` + all players | Custom tooling / calling the preprocessor as a library |
 
-If you are only using the Unreal plugin, download `game-subtitles-unreal-v{version}.zip`.
+Download the zip for your platform. Each contains everything you need with no additional dependencies.
 
 ---
 
@@ -183,11 +183,11 @@ IReadOnlyList<string> langs = SubtitlePreprocessor.SupportedLanguages;
 
 ### JavaScript Player (`players/player-js`)
 
-Copy `player-js/game-subtitles-player.js` from the distribution zip into your project:
+Copy `game-subtitles-player.js` from the `game-subtitles-js-v{version}.zip` release into your project. The zip also contains the preprocessor binaries (`game-subtitles-preprocess` / `game-subtitles-preprocess.exe`) — place these wherever is convenient on your machine (e.g. somewhere on your `PATH`).
 
 | File | Format |
 | --- | --- |
-| `player-js/game-subtitles-player.js` | IIFE — `window.GameSubtitles` |
+| `game-subtitles-player.js` | IIFE — `window.GameSubtitles` |
 
 #### Real-world usage
 
@@ -316,9 +316,7 @@ The Unreal plugin provides the same player logic as a native C++ UE 5.7 plugin w
 
 #### Setup
 
-**From the Unreal release zip (`game-subtitles-unreal-v{version}.zip`):** copy `GameSubtitles/` into your project's `Plugins/` folder (create it if it does not exist). The zip also contains the preprocessor binaries (`game-subtitles-preprocess` / `game-subtitles-preprocess.exe`) — place these wherever is convenient on your machine (e.g. somewhere on your `PATH`).
-
-**From another release zip:** the zip contains a `player-unreal/GameSubtitles/` folder. Copy that `GameSubtitles/` folder into your project's `Plugins/` folder.
+**From the release zip (`game-subtitles-unreal-v{version}.zip`):** copy `GameSubtitles/` into your project's `Plugins/` folder (create it if it does not exist). The zip also contains the preprocessor binaries (`game-subtitles-preprocess` / `game-subtitles-preprocess.exe`) — place these wherever is convenient on your machine (e.g. somewhere on your `PATH`).
 
 **From source:** copy `players/player-unreal/GameSubtitles/` into your project's `Plugins/` folder instead.
 
@@ -458,7 +456,7 @@ TArray<float> Timings = FSubtitleTextLayout::AllocateTimings(Pages, TotalDuratio
 - Script selector, **▶ Start** / **■ Stop** / **↺ Reset** buttons, 1×/2× speed toggle
 - Lines-per-page ±, font size ±, progress bar, elapsed/total time, status line
 
-Setup: copy the `GameSubtitles` plugin (from the Unreal release zip at `GameSubtitles/`, from another release zip at `player-unreal/GameSubtitles/`, or from source at `players/player-unreal/GameSubtitles/`) into `GameSubtitlesDemo/Plugins/GameSubtitles/`, right-click the `.uproject` → *Generate Visual Studio project files*, open in UE 5.7, and Play in Editor.
+Setup: copy the `GameSubtitles` plugin (from the release zip at `GameSubtitles/`, or from source at `players/player-unreal/GameSubtitles/`) into `GameSubtitlesDemo/Plugins/GameSubtitles/`, right-click the `.uproject` → *Generate Visual Studio project files*, open in UE 5.7, and Play in Editor.
 
 ---
 
@@ -468,7 +466,7 @@ The Unity package provides the same player logic as a native C# UPM package usin
 
 #### Setup
 
-**From a release zip:** the zip contains a `player-unity/GameSubtitles/` folder. Copy `GameSubtitles/` into your project's `Packages/` folder (create it if it does not exist).
+**From the release zip (`game-subtitles-unity-v{version}.zip`):** copy `GameSubtitles/` into your project's `Packages/` folder (create it if it does not exist). The zip also contains the preprocessor binaries (`game-subtitles-preprocess` / `game-subtitles-preprocess.exe`) — place these wherever is convenient on your machine (e.g. somewhere on your `PATH`).
 
 **From source:** copy `players/player-unity/GameSubtitles/` into your project's `Packages/` folder instead.
 
@@ -616,7 +614,7 @@ List<float> timings = TextLayout.AllocateTimings(pages, totalDurationSeconds);
 
 Setup:
 
-1. Copy the `GameSubtitles` package (from the release zip at `player-unity/GameSubtitles/`, or from source at `players/player-unity/GameSubtitles/`) into `GameSubtitlesDemo/Packages/GameSubtitles/`.
+1. Copy the `GameSubtitles` package (from the release zip at `GameSubtitles/`, or from source at `players/player-unity/GameSubtitles/`) into `GameSubtitlesDemo/Packages/GameSubtitles/`.
 2. Copy the four JSON files from `players/player-unreal/GameSubtitlesDemo/Content/Demo/` into `GameSubtitlesDemo/Assets/Demo/Resources/`.
 3. Open the project in Unity 6.0 or later.
 4. Go to **Window → TextMeshPro → Import TMP Essential Resources** if the prompt does not appear automatically.
