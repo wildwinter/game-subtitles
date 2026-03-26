@@ -1,4 +1,4 @@
-import { readFileSync, cpSync, rmSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, cpSync, rmSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -19,5 +19,19 @@ cpSync(src, dest, {
     return !rel.includes('/Binaries/') && !rel.includes('/Intermediate/');
   },
 });
+
+// Patch version fields in the .uplugin to match the root package.json version
+const [major, minor, patch] = version.split('.').map(Number);
+const versionInt = major * 10000 + minor * 100 + patch;
+
+function patchUplugin(upluginPath) {
+  const uplugin = JSON.parse(readFileSync(upluginPath, 'utf8'));
+  uplugin.Version = versionInt;
+  uplugin.VersionName = version;
+  writeFileSync(upluginPath, JSON.stringify(uplugin, null, 4) + '\n', 'utf8');
+}
+
+patchUplugin(resolve(src,  'GameSubtitles.uplugin'));
+patchUplugin(resolve(dest, 'GameSubtitles.uplugin'));
 
 console.log(`Built game-subtitles-player-unreal v${version}`);
