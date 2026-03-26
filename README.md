@@ -46,7 +46,16 @@ Source code is on [GitHub](https://github.com/wildwinter/game-subtitles), availa
 
 ## Releases
 
-Pre-built releases are available in the [Releases](https://github.com/wildwinter/game-subtitles/releases) area on GitHub.
+Pre-built releases are available in the [Releases](https://github.com/wildwinter/game-subtitles/releases) area on GitHub. Each release includes the following zips:
+
+| Zip | Contents | For |
+| --- | --- | --- |
+| `game-subtitles-unreal-v{version}.zip` | Unreal plugin + Windows & macOS preprocessor binaries | **Unreal Engine developers** — everything you need in one download |
+| `game-subtitles-win-v{version}.zip` | Windows preprocessor binary + all players | Windows developers using multiple players |
+| `game-subtitles-osx-v{version}.zip` | macOS preprocessor binary + all players | macOS developers using multiple players |
+| `game-subtitles-lib-v{version}.zip` | C# `PreprocessorLib.dll` + all players | Custom tooling / calling the preprocessor as a library |
+
+If you are only using the Unreal plugin, download `game-subtitles-unreal-v{version}.zip`.
 
 ---
 
@@ -307,7 +316,9 @@ The Unreal plugin provides the same player logic as a native C++ UE 5.7 plugin w
 
 #### Setup
 
-**From a release zip:** the zip contains a `player-unreal/GameSubtitles/` folder. Copy `GameSubtitles/` into your project's `Plugins/` folder (create it if it does not exist).
+**From the Unreal release zip (`game-subtitles-unreal-v{version}.zip`):** copy `GameSubtitles/` into your project's `Plugins/` folder (create it if it does not exist). The zip also contains the preprocessor binaries (`game-subtitles-preprocess` / `game-subtitles-preprocess.exe`) — place these wherever is convenient on your machine (e.g. somewhere on your `PATH`).
+
+**From another release zip:** the zip contains a `player-unreal/GameSubtitles/` folder. Copy that `GameSubtitles/` folder into your project's `Plugins/` folder.
 
 **From source:** copy `players/player-unreal/GameSubtitles/` into your project's `Plugins/` folder instead.
 
@@ -447,7 +458,7 @@ TArray<float> Timings = FSubtitleTextLayout::AllocateTimings(Pages, TotalDuratio
 - Script selector, **▶ Start** / **■ Stop** / **↺ Reset** buttons, 1×/2× speed toggle
 - Lines-per-page ±, font size ±, progress bar, elapsed/total time, status line
 
-Setup: copy the `GameSubtitles` plugin (from the release zip at `player-unreal/GameSubtitles/`, or from source at `players/player-unreal/GameSubtitles/`) into `GameSubtitlesDemo/Plugins/GameSubtitles/`, right-click the `.uproject` → *Generate Visual Studio project files*, open in UE 5.7, and Play in Editor.
+Setup: copy the `GameSubtitles` plugin (from the Unreal release zip at `GameSubtitles/`, from another release zip at `player-unreal/GameSubtitles/`, or from source at `players/player-unreal/GameSubtitles/`) into `GameSubtitlesDemo/Plugins/GameSubtitles/`, right-click the `.uproject` → *Generate Visual Studio project files*, open in UE 5.7, and Play in Editor.
 
 ---
 
