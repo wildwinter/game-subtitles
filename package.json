@@ -1,6 +1,6 @@
 {
   "name": "game-subtitles",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": true,
   "description": "Subtitle system for games — preprocessor and runtime render helper",
   "scripts": {

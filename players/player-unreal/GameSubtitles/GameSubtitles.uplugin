@@ -1,7 +1,7 @@
 {
     "FileVersion": 3,
-    "Version": 1,
-    "VersionName": "1.0",
+    "Version": 4,
+    "VersionName": "0.0.4",
     "FriendlyName": "Game Subtitles",
     "Description": "Subtitle layout and playback system for games. Provides soft-hyphen-aware word wrapping, pagination, proportional timing allocation, and a tick-driven player — matching the player-js API.",
     "Category": "UI",
