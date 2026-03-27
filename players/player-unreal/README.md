@@ -151,22 +151,3 @@ FSlateFontInfo USubtitleDemoWidget::SubtitleFont() const
     return Info;
 }
 ```
-
----
-
-## Correspondence with player-js
-
-| player-js | player-unreal |
-|---|---|
-| `TextLayout.js` → `wrapAndPaginate` | `FSubtitleTextLayout::WrapAndPaginate` |
-| `TextLayout.js` → `allocateTimings` | `FSubtitleTextLayout::AllocateTimings` |
-| `SubtitlePlayer` class | `USubtitlePlayer` |
-| `player.start({ text, duration, onComplete })` | `Player->Start(Text, Duration)` + `OnComplete` delegate |
-| `player.tick(dt)` | `Player->Tick(DeltaSeconds)` |
-| `player.stop()` / `player.reset()` | `Player->Stop()` / `Player->Reset()` |
-| `player.pageCount` | `Player->GetPageCount()` |
-| `player.maxLines = n` | `Player->MaxLines = n` |
-| `DomRenderer` | `USubtitleWidget` |
-| custom renderer object | any `UObject` implementing `ISubtitleRenderer` |
-| `demo/index.html` | `USubtitleDemoWidget` |
-| `demo/subtitles.json` | `Content/Demo/subtitles.json` |
