@@ -1,4 +1,5 @@
 using CsvHelper;
+using SimpleVCLib;
 using System.Globalization;
 
 namespace GameSubtitles.CLI.Formatters;
@@ -55,17 +56,27 @@ internal sealed class CsvFormatter : IFormatter
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ".");
-        using var writer = new StreamWriter(outputPath, append: false, outputEncoding);
-        using var csv2 = new CsvWriter(writer, CultureInfo.InvariantCulture);
-
-        foreach (var h in headers) csv2.WriteField(h);
-        csv2.NextRecord();
-
-        foreach (var row in rows)
+        var prep = VCLib.PrepareToWrite(outputPath);
+        if (!prep.Success)
         {
-            foreach (var h in headers) csv2.WriteField(row[h]);
-            csv2.NextRecord();
+            result.AddError(prep.Message);
+            return;
         }
+        using (var writer = new StreamWriter(outputPath, append: false, outputEncoding))
+        using (var csv2 = new CsvWriter(writer, CultureInfo.InvariantCulture))
+        {
+            foreach (var h in headers) csv2.WriteField(h);
+            csv2.NextRecord();
+
+            foreach (var row in rows)
+            {
+                foreach (var h in headers) csv2.WriteField(row[h]);
+                csv2.NextRecord();
+            }
+        }
+        var done = VCLib.FinishedWrite(outputPath);
+        if (!done.Success)
+            result.AddError(done.Message);
     }
 
     private static bool HasUtf8Bom(string path)

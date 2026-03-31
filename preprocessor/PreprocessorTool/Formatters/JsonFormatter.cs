@@ -1,3 +1,4 @@
+using SimpleVCLib;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -59,6 +60,8 @@ internal sealed class JsonFormatter : IFormatter
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ".");
-        File.WriteAllText(outputPath, array.ToJsonString(WriteOptions), System.Text.Encoding.UTF8);
+        var vcResult = VCLib.WriteTextFile(outputPath, array.ToJsonString(WriteOptions), System.Text.Encoding.UTF8);
+        if (!vcResult.Success)
+            result.AddError(vcResult.Message);
     }
 }

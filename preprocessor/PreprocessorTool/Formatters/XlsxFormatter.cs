@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using SimpleVCLib;
 
 namespace GameSubtitles.CLI.Formatters;
 
@@ -53,6 +54,15 @@ internal sealed class XlsxFormatter : IFormatter
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ".");
+        var prep = VCLib.PrepareToWrite(outputPath);
+        if (!prep.Success)
+        {
+            result.AddError(prep.Message);
+            return;
+        }
         workbook.SaveAs(outputPath);
+        var done = VCLib.FinishedWrite(outputPath);
+        if (!done.Success)
+            result.AddError(done.Message);
     }
 }

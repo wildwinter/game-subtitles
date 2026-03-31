@@ -1,4 +1,5 @@
 using Karambolo.PO;
+using SimpleVCLib;
 
 namespace GameSubtitles.CLI.Formatters;
 
@@ -33,7 +34,16 @@ internal sealed class PoFormatter : IFormatter
         }
 
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ".");
-        using var writer = new StreamWriter(outputPath, append: false, System.Text.Encoding.UTF8);
-        new POGenerator().Generate(writer, catalog);
+        var prep = VCLib.PrepareToWrite(outputPath);
+        if (!prep.Success)
+        {
+            result.AddError(prep.Message);
+            return;
+        }
+        using (var writer = new StreamWriter(outputPath, append: false, System.Text.Encoding.UTF8))
+            new POGenerator().Generate(writer, catalog);
+        var done = VCLib.FinishedWrite(outputPath);
+        if (!done.Success)
+            result.AddError(done.Message);
     }
 }
