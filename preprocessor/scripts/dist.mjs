@@ -27,12 +27,19 @@ run(
 
 // Apple codesign — force-replace dotnet's ad-hoc signature with Developer ID
 const codesignId = process.env.APPLE_CODESIGN_ID;
-if (!codesignId) throw new Error('APPLE_CODESIGN_ID is not set');
-run(
-  `codesign --force --sign ${JSON.stringify(codesignId)}` +
-  ` --options runtime --timestamp` +
-  ` dist/osx-arm64/game-subtitles-preprocess`
-);
+if (!codesignId) {
+  console.warn('\nWARN: APPLE_CODESIGN_ID is not set — skipping macOS code signing.');
+} else {
+  const binary = 'dist/osx-arm64/game-subtitles-preprocess';
+  const entitlements = 'entitlements.plist';
+  run(
+    `codesign --force --sign ${JSON.stringify(codesignId)}` +
+    ` --entitlements ${entitlements}` +
+    ` --options runtime --timestamp` +
+    ` ${binary}`
+  );
+  run(`codesign --verify --strict ${binary}`);
+}
 
 // Windows x64
 run(

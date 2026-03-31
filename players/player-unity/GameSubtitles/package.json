@@ -1,6 +1,6 @@
 {
   "name": "net.wildwinter.game-subtitles",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "displayName": "Game Subtitles",
   "description": "Paginated subtitle player with soft-hyphen layout for games.",
   "unity": "6.0",
