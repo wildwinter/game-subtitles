@@ -70,7 +70,8 @@ int32 Pages = Player->GetPageCount();
 Player->MaxLines = 3; // takes effect on next Start()
 ```
 
-All methods are also Blueprint-callable. `OnComplete` is a `BlueprintAssignable` dynamic multicast delegate.
+All methods are also Blueprint-callable. `OnComplete` is a `BlueprintAssignable` dynamic multicast delegate. 
+HandleSubtitleDone() will have to call Stop() to clear the text.
 
 ### `ISubtitleRenderer` (UInterface, `ISubtitleRenderer.h`)
 

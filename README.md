@@ -218,6 +218,8 @@ function showSubtitle(text, durationSeconds, onDone) {
 }
 ```
 
+onDone() will have to call stop() to clear the text.
+
 `start()` lays out the text, renders the first page immediately, and begins timing. If a subtitle is already playing it is stopped first.
 
 **3. Drive it from your game loop.**
@@ -349,6 +351,7 @@ Player->OnComplete.AddDynamic(this, &AMyHUD::HandleSubtitleDone);
 ```
 
 The player and widget are long-lived. Create them once and reuse them for every subtitle.
+HandleSubtitleDone() will have to call Stop() to clear the text.
 
 **3. When your dialogue system triggers a line, call `Start()`.**
 
@@ -513,6 +516,7 @@ player.OnComplete += HandleSubtitleDone;
 ```
 
 The player and widget are long-lived. Create them once and reuse them for every subtitle.
+HandleSubtitleDone() will have to call Stop() to clear the text.
 
 **3. When your dialogue system triggers a line, call `Start()`.**
 
