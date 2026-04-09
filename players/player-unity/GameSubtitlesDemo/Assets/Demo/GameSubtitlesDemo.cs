@@ -375,7 +375,7 @@ namespace GameSubtitles.Demo
             {
                 if (_charSwatches[i] == null) continue;
                 var lbl = _charSwatches[i].GetComponentInChildren<TMP_Text>();
-                if (lbl != null) lbl.text = (i == _charColourIndex) ? "\u2713" : "";
+                if (lbl != null) lbl.text = (i == _charColourIndex) ? "X" : "";
             }
         }
 
@@ -502,6 +502,7 @@ namespace GameSubtitles.Demo
                 swGo.transform.SetParent(bar.transform, false);
                 swGo.AddComponent<RectTransform>();
                 _subWidget = swGo.AddComponent<SubtitleWidget>();
+                _subWidget.FontAsset             = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
                 _subWidget.FontSize               = _fontSize;
                 _subWidget.TextColor              = Color.white;
                 _subWidget.ContainerWidthOverride = 540f; // explicit until widget is on-screen
@@ -574,7 +575,7 @@ namespace GameSubtitles.Demo
                 {
                     int idx = i; // capture
                     Color swCol = ColCharOptions[i];
-                    var sw = Btn(row.transform, i == 0 ? "\u2713" : "", swCol, () => OnCharColourSelect(idx), 22f);
+                    var sw = Btn(row.transform, i == 0 ? "X" : "", swCol, () => OnCharColourSelect(idx), 22f);
                     // Make the check-mark visible against any swatch colour
                     var swLbl = sw.GetComponentInChildren<TMP_Text>();
                     if (swLbl != null) swLbl.color = Color.black;

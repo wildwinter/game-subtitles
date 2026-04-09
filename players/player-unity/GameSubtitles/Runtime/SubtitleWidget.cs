@@ -97,12 +97,14 @@ namespace GameSubtitles
                 tmp.alignment        = TextAlignmentOptions.Center;
                 tmp.textWrappingMode = TextWrappingModes.NoWrap; // layout is already done by WrapAndPaginate
 
+                tmp.fontMaterial.EnableKeyword("BOLD_ON");
+
                 if (i == 0 && characterContext.HasValue)
                 {
                     var ctx = characterContext.Value;
                     tmp.richText = true;
                     string prefix = ctx.Name + ": ";
-                    if (ctx.Bold)  prefix = $"<b>{prefix}</b>";
+                    if (ctx.Bold) prefix = $"<b>{prefix}</b>";
                     if (ctx.Color.HasValue)
                     {
                         string hex = ColorUtility.ToHtmlStringRGB(ctx.Color.Value);
