@@ -86,9 +86,9 @@ await makeZip(`game-subtitles-lib-v${version}.zip`, archive => {
 await makeZip(`game-subtitles-unreal-v${version}.zip`, archive => {
   archive.directory(unrealPlugin, 'GameSubtitles');
   archive.file(resolve(rootDir, 'preprocessor/dist/win-x64/game-subtitles-preprocess.exe'),
-    { name: 'game-subtitles-preprocess.exe' });
+    { name: 'GameSubtitles/ThirdParty/game-subtitles-preprocess.exe' });
   archive.file(resolve(rootDir, 'preprocessor/dist/osx-arm64/game-subtitles-preprocess'),
-    { name: 'game-subtitles-preprocess' });
+    { name: 'GameSubtitles/ThirdParty/game-subtitles-preprocess' });
   archive.file(readme,            { name: 'README.md' });
 });
 
