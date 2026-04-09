@@ -46,10 +46,11 @@ namespace Palette
     {
         static const TArray<FLinearColor> Opts = {
             FLinearColor(0.941f, 0.800f, 0.533f, 1.f), // amber (#f0cc88, default)
-            FLinearColor::White,
             FLinearColor(0.000f, 0.831f, 1.000f, 1.f), // sky blue
             FLinearColor(1.000f, 0.420f, 0.616f, 1.f), // rose
             FLinearColor(0.302f, 0.871f, 0.502f, 1.f), // lime
+            FLinearColor(0.678f, 0.506f, 0.871f, 1.f), // lavender
+            FLinearColor(1.000f, 0.584f, 0.000f, 1.f), // orange
         };
         return Opts;
     }
@@ -914,19 +915,23 @@ UButton* USubtitleDemoWidget::MakeButton(const FString& Label, FLinearColor BgCo
 
 FSlateFontInfo USubtitleDemoWidget::SubtitleFont() const
 {
-    FSlateFontInfo Info;
-    Info.Size       = CurrentFontSize;
-    // Resolve the engine default font so the widget works out of the box.
-    // In a real project, replace with a project-specific font asset.
-    Info.FontObject = GEngine ? GEngine->GetMediumFont() : nullptr;
+    FSlateFontInfo Info = FSlateFontInfo(
+        FCoreStyle::GetDefaultFontStyle("Regular", CurrentFontSize)
+    );
     return Info;
 }
 
 FSlateFontInfo USubtitleDemoWidget::SubtitleBoldFont() const
 {
-    FSlateFontInfo Info = SubtitleFont();
-    // The engine's default Roboto composite font includes a "Bold" typeface.
-    // In a real project, set this to whichever bold typeface your font asset exposes.
-    Info.TypefaceFontName = FName("Bold");
-    return Info;
+    // Make it super-big so the change is obvious:
+    /*FSlateFontInfo Info = FSlateFontInfo(
+        FCoreStyle::GetDefaultFontStyle("Bold", CurrentFontSize)
+    );
+    return Info;*/
+
+    FSlateFontInfo ExtraBoldFont(
+        FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Black.ttf"),
+        CurrentFontSize
+    );
+	return ExtraBoldFont;
 }
