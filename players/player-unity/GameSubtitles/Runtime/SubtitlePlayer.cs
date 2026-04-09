@@ -96,7 +96,7 @@ namespace GameSubtitles
                 {
                     _done    = true;
                     _running = false;
-                    _renderer?.Clear();
+                    //_renderer?.Clear(); // This is the responsibility of the caller after receiving the OnComplete event, so they can choose to leave the final page visible if desired. They can call Stop()
                     OnComplete?.Invoke();
                     return;
                 }

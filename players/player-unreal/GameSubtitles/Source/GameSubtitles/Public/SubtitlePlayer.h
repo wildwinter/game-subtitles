@@ -36,7 +36,8 @@ public:
     USubtitlePlayer();
 
     /**
-     * Fired when all pages have been displayed and the subtitle has finished.
+     * Fired when all pages have been displayed and the animation has finished.
+     * The last page remains visible until Stop() is called.
      */
     UPROPERTY(BlueprintAssignable, Category = "Subtitles")
     FOnSubtitleComplete OnComplete;

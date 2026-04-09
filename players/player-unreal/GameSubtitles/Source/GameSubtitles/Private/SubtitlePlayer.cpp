@@ -68,12 +68,7 @@ void USubtitlePlayer::Tick(float DeltaSeconds)
         {
             bDone    = true;
             bRunning = false;
-
-            if (Renderer.GetObject())
-            {
-                ISubtitleRenderer::Execute_Clear(Renderer.GetObject());
-            }
-
+            // Hold the last page visible - caller is responsible for clearing via Stop().
             OnComplete.Broadcast();
             return;
         }

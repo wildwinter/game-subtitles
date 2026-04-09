@@ -90,7 +90,7 @@ export class SubtitlePlayer {
       if (this._pageIndex >= this._pages.length) {
         this._done = true;
         this._running = false;
-        this._renderer.clear();
+        //this._renderer.clear(); // This is the responsibility of the caller after receiving the onComplete event, so they can choose to leave the final page visible if desired. They can call stop()
         if (this._onComplete) this._onComplete();
         return;
       }
