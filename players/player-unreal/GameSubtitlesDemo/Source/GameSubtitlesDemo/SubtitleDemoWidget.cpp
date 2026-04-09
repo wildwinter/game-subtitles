@@ -266,8 +266,9 @@ void USubtitleDemoWidget::BuildUI()
 
         // Subtitle widget (implements ISubtitleRenderer)
         SubWidget = WidgetTree->ConstructWidget<USubtitleWidget>(USubtitleWidget::StaticClass());
-        SubWidget->FontInfo  = SubtitleFont();
-        SubWidget->TextColor = Palette::White;
+        SubWidget->FontInfo      = SubtitleFont();
+        SubWidget->BoldFontInfo  = SubtitleBoldFont();
+        SubWidget->TextColor     = Palette::White;
         {
             UVerticalBoxSlot* Slot = Footer->AddChildToVerticalBox(SubWidget);
             Slot->SetHorizontalAlignment(HAlign_Fill);
@@ -662,7 +663,8 @@ void USubtitleDemoWidget::ApplyFont()
 {
     if (SubWidget)
     {
-        SubWidget->FontInfo = SubtitleFont();
+        SubWidget->FontInfo     = SubtitleFont();
+        SubWidget->BoldFontInfo = SubtitleBoldFont();
     }
 }
 
@@ -913,9 +915,18 @@ UButton* USubtitleDemoWidget::MakeButton(const FString& Label, FLinearColor BgCo
 FSlateFontInfo USubtitleDemoWidget::SubtitleFont() const
 {
     FSlateFontInfo Info;
-    Info.Size = CurrentFontSize;
+    Info.Size       = CurrentFontSize;
     // Resolve the engine default font so the widget works out of the box.
     // In a real project, replace with a project-specific font asset.
     Info.FontObject = GEngine ? GEngine->GetMediumFont() : nullptr;
+    return Info;
+}
+
+FSlateFontInfo USubtitleDemoWidget::SubtitleBoldFont() const
+{
+    FSlateFontInfo Info = SubtitleFont();
+    // The engine's default Roboto composite font includes a "Bold" typeface.
+    // In a real project, set this to whichever bold typeface your font asset exposes.
+    Info.TypefaceFontName = FName("Bold");
     return Info;
 }

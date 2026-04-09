@@ -150,4 +150,5 @@ private:
     UTextBlock* MakeLabel(const FString& Text, float Size = 11.f, FLinearColor Color = FLinearColor(0.545f, 0.580f, 0.620f, 1.f));
     UButton*    MakeButton(const FString& Label, FLinearColor BgColor = FLinearColor(0.129f, 0.149f, 0.176f, 1.f));
     FSlateFontInfo SubtitleFont() const;
+    FSlateFontInfo SubtitleBoldFont() const;
 };
