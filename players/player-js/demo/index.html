@@ -630,8 +630,8 @@
         currentMaxLines,
       ).length;
 
-      domPlayer.start({ text: script.text, duration: script.duration, onComplete });
-      canvasPlayer.start({ text: script.text, duration: script.duration, onComplete: () => {} });
+      domPlayer.start({ text: script.text, duration: script.duration, onComplete:() => {domPlayer.stop();} });
+      canvasPlayer.start({ text: script.text, duration: script.duration, onComplete: () => {canvasPlayer.stop();} });
 
       setButtons(true);
       btnReset.disabled = false;

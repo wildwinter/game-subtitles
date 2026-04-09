@@ -274,6 +274,7 @@ namespace GameSubtitles.Demo
             _elapsedMs = _totalMs;
             UpdateProgress();
             if (_speakerNameText != null) _speakerNameText.text = "";
+            _player?.Stop();
             SetStatus("Finished.");
         }
 

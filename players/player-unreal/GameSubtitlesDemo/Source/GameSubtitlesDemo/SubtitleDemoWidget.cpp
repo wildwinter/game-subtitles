@@ -750,6 +750,10 @@ void USubtitleDemoWidget::OnSubtitleComplete()
     ElapsedMs = TotalMs;
     UpdateProgress();
     if (SpeakerNameText) SpeakerNameText->SetText(FText::GetEmpty());
+    if (Player)
+    {
+        Player->Stop();
+    }
     if (StatusText)      StatusText->SetText(FText::FromString(TEXT("Finished.")));
 }
 
