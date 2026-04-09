@@ -71,12 +71,14 @@ protected:
     UPROPERTY()
     USubtitleWidget* SubWidget = nullptr;
 
-    bool  bIsRunning   = false;
-    float ElapsedMs    = 0.f;
-    float TotalMs      = 0.f;
+    bool  bIsRunning      = false;
+    float ElapsedMs       = 0.f;
+    float TotalMs         = 0.f;
     int32 CurrentMaxLines = 2;
     int32 CurrentFontSize = 16;
-    bool  bDoubleSpeed = false;
+    bool  bDoubleSpeed    = false;
+    bool  bCharNameEnabled = true;
+    int32 CharColourIndex  = 0;
 
     // ── Built UI widgets ───────────────────────────────────────────────────────
 
@@ -97,6 +99,8 @@ protected:
     UPROPERTY() UTextBlock*     LinesCountText   = nullptr;
     UPROPERTY() UTextBlock*     FontSizeText     = nullptr;
     UPROPERTY() UTextBlock*     SpeakerNameText  = nullptr;
+    UPROPERTY() UButton*        BtnCharToggle    = nullptr;
+    UPROPERTY() UButton*        BtnCharColour    = nullptr;
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -112,6 +116,7 @@ protected:
     void SetRunning(bool bRunning);
     void UpdateLinesDisplay();
     void UpdateFontDisplay();
+    void UpdateCharNameDisplay();
 
     UFUNCTION()
     void OnStartClicked();
@@ -135,6 +140,10 @@ protected:
     void OnScriptSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
     UFUNCTION()
     void OnSubtitleComplete();
+    UFUNCTION()
+    void OnCharToggleClicked();
+    UFUNCTION()
+    void OnCharColourClicked();
 
 private:
     // Helper factories

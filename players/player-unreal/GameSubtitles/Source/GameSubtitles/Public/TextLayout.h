@@ -35,7 +35,8 @@ public:
         const FString& Text,
         TFunction<float(const FString&)> MeasureWidth,
         float ContainerWidth,
-        int32 MaxLines
+        int32 MaxLines,
+        float FirstLineIndent = 0.f
     );
 
     /**

@@ -109,6 +109,48 @@ describe('SubtitlePlayer', () => {
     });
   });
 
+  describe('characterName', () => {
+    it('passes character context to renderer on each page', () => {
+      const contexts = [];
+      const r = {
+        ...makeRenderer(),
+        render(lines, charCtx) { contexts.push(charCtx); },
+      };
+      // Container is 100px, chars are 10px each.
+      // 'V: ' prefix = 30px; effectiveWidth per page = 100 - 10 (ellipsis) - 30 = 60px.
+      // 'aaaaa'=50px fits; 'aaaaa bbbbb'=110px does not → two pages, as required.
+      const player = new SubtitlePlayer({ maxLines: 1, renderer: r });
+      player.start({ text: 'aaaaa bbbbb', duration: 4, characterName: 'V', characterNameColour: '#f0c' });
+      expect(contexts.length).toBe(1);
+      expect(contexts[0]).toEqual({ name: 'V', colour: '#f0c', bold: true });
+      player.tick(2.1);
+      expect(contexts.length).toBe(2);
+      expect(contexts[1]).toEqual({ name: 'V', colour: '#f0c', bold: true });
+    });
+
+    it('passes null character context when characterName is omitted', () => {
+      const contexts = [];
+      const r = {
+        ...makeRenderer(),
+        render(lines, charCtx) { contexts.push(charCtx); },
+      };
+      const player = new SubtitlePlayer({ maxLines: 2, renderer: r });
+      player.start({ text: 'hello', duration: 2 });
+      expect(contexts[0]).toBeNull();
+    });
+
+    it('respects boldCharacterName=false', () => {
+      const contexts = [];
+      const r = {
+        ...makeRenderer(),
+        render(lines, charCtx) { contexts.push(charCtx); },
+      };
+      const player = new SubtitlePlayer({ maxLines: 2, renderer: r, boldCharacterName: false });
+      player.start({ text: 'hello', duration: 2, characterName: 'Rex' });
+      expect(contexts[0]).toEqual({ name: 'Rex', colour: null, bold: false });
+    });
+  });
+
   it('tick() is a no-op before start()', () => {
     const r = makeRenderer();
     const player = new SubtitlePlayer({ maxLines: 2, renderer: r });

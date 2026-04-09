@@ -67,9 +67,12 @@ function findSyllableBreak(syllables, lineText, sep, measureWidth, maxWidth) {
  * @param {(t: string) => number} measureWidth  Returns pixel width of a string.
  * @param {number} containerWidth               Max pixel width per line.
  * @param {number} maxLines                     Lines per page (integer ≥ 1).
+ * @param {number} [firstLineIndent=0]          Pixels already consumed on line 0 of
+ *   every page (e.g. by a character-name prefix).  Only that slot is narrowed;
+ *   subsequent lines use the full `containerWidth`.
  * @returns {string[][]}  Pages, each an array of line strings.
  */
-export function wrapAndPaginate(text, measureWidth, containerWidth, maxLines) {
+export function wrapAndPaginate(text, measureWidth, containerWidth, maxLines, firstLineIndent = 0) {
   const ellipsisWidth = measureWidth(ELLIPSIS);
 
   const rawWords = text.split(/\s+/).filter(w => w.length > 0);
@@ -96,9 +99,12 @@ export function wrapAndPaginate(text, measureWidth, containerWidth, maxLines) {
   let wi = 0;
 
   while (wi < words.length) {
-    const isLastSlot = lineSlot === maxLines - 1;
+    const isLastSlot  = lineSlot === maxLines - 1;
+    const isFirstSlot = lineSlot === 0;
     // Reserve ellipsis space on last-line slots so '…' always fits later.
-    const effectiveWidth = isLastSlot ? containerWidth - ellipsisWidth : containerWidth;
+    // Reserve indent space on the first slot of each page for a name prefix.
+    let effectiveWidth = isLastSlot ? containerWidth - ellipsisWidth : containerWidth;
+    if (isFirstSlot && firstLineIndent > 0) effectiveWidth -= firstLineIndent;
     const syllables = words[wi].split(SOFT_HYPHEN);
     const clean = syllables.join('');
     const hasSyllables = syllables.length > 1;

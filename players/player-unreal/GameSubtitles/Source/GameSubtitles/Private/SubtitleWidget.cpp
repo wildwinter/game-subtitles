@@ -1,6 +1,8 @@
 #include "SubtitleWidget.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
+#include "Components/HorizontalBox.h"
+#include "Components/HorizontalBoxSlot.h"
 #include "Components/TextBlock.h"
 #include "Blueprint/WidgetTree.h"
 #include "Framework/Application/SlateApplication.h"
@@ -23,7 +25,7 @@ void USubtitleWidget::NativeConstruct()
 
 // ── ISubtitleRenderer implementation ──────────────────────────────────────────
 
-float USubtitleWidget::MeasureLineWidth_Implementation(const FString& Text)
+float USubtitleWidget::MeasureLineWidth_Implementation(const FString& Text, bool bBold)
 {
     if (!FSlateApplication::IsInitialized() || !FSlateApplication::Get().GetRenderer())
     {
@@ -46,7 +48,8 @@ float USubtitleWidget::MeasureLineWidth_Implementation(const FString& Text)
         Scale = 1.f;
     }
 
-    const FVector2D Size = FontMeasure->Measure(FText::FromString(Text), FontInfo, Scale);
+    const FSlateFontInfo& MeasureFont = (bBold && BoldFontInfo.HasValidFont()) ? BoldFontInfo : FontInfo;
+    const FVector2D Size = FontMeasure->Measure(FText::FromString(Text), MeasureFont, Scale);
     return Size.X / Scale;
 }
 
@@ -62,7 +65,7 @@ float USubtitleWidget::GetContainerWidth_Implementation()
     return W > 0.f ? W : 540.f; // fall back to a sensible default before first layout pass
 }
 
-void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines)
+void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const FSubtitleCharacterContext& CharacterContext)
 {
     EnsureTextContainer();
     if (!TextContainer)
@@ -72,25 +75,88 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines)
 
     TextContainer->ClearChildren();
 
-    for (const FString& Line : Lines)
+    for (int32 i = 0; i < Lines.Num(); ++i)
     {
-        UTextBlock* TextBlock = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
-        if (!TextBlock)
+        if (i == 0 && CharacterContext.bValid)
         {
-            continue;
+            // Line 0 with a character prefix: build a horizontal box so the name and
+            // body text sit side-by-side and the whole line can be centered as a unit.
+            UHorizontalBox* HBox = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass());
+            if (!HBox)
+            {
+                continue;
+            }
+
+            const FSlateFontInfo& NameFont   = (CharacterContext.bBold && BoldFontInfo.HasValidFont())
+                                                 ? BoldFontInfo : FontInfo;
+            const FSlateColor     NameColor  = CharacterContext.bHasColor
+                                                 ? FSlateColor(CharacterContext.Color)
+                                                 : FSlateColor(TextColor);
+
+            // Name prefix text block
+            UTextBlock* NameBlock = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
+            if (NameBlock)
+            {
+                NameBlock->SetText(FText::FromString(CharacterContext.Name + TEXT(": ")));
+                NameBlock->SetFont(NameFont);
+                NameBlock->SetColorAndOpacity(NameColor);
+                NameBlock->SetAutoWrapText(false);
+
+                UHorizontalBoxSlot* NameSlot = HBox->AddChildToHorizontalBox(NameBlock);
+                if (NameSlot)
+                {
+                    NameSlot->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
+                    NameSlot->SetHorizontalAlignment(HAlign_Left);
+                    NameSlot->SetVerticalAlignment(VAlign_Center);
+                }
+            }
+
+            // Line body text block
+            UTextBlock* LineBlock = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
+            if (LineBlock)
+            {
+                LineBlock->SetText(FText::FromString(Lines[i]));
+                LineBlock->SetFont(FontInfo);
+                LineBlock->SetColorAndOpacity(FSlateColor(TextColor));
+                LineBlock->SetAutoWrapText(false);
+
+                UHorizontalBoxSlot* LineSlot = HBox->AddChildToHorizontalBox(LineBlock);
+                if (LineSlot)
+                {
+                    LineSlot->SetSize(FSlateChildSize(ESlateSizeRule::Automatic));
+                    LineSlot->SetHorizontalAlignment(HAlign_Left);
+                    LineSlot->SetVerticalAlignment(VAlign_Center);
+                }
+            }
+
+            // Center the horizontal box within the vertical box
+            UVerticalBoxSlot* VSlot = TextContainer->AddChildToVerticalBox(HBox);
+            if (VSlot)
+            {
+                VSlot->SetHorizontalAlignment(HAlign_Center);
+                VSlot->SetVerticalAlignment(VAlign_Center);
+            }
         }
-
-        TextBlock->SetText(FText::FromString(Line));
-        TextBlock->SetFont(FontInfo);
-        TextBlock->SetColorAndOpacity(FSlateColor(TextColor));
-        TextBlock->SetJustification(ETextJustify::Center);
-        TextBlock->SetAutoWrapText(false); // layout is already done by WrapAndPaginate
-
-        UVerticalBoxSlot* NewSlot = TextContainer->AddChildToVerticalBox(TextBlock);
-        if (NewSlot)
+        else
         {
-            NewSlot->SetHorizontalAlignment(HAlign_Fill);
-            NewSlot->SetVerticalAlignment(VAlign_Center);
+            UTextBlock* TextBlock = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
+            if (!TextBlock)
+            {
+                continue;
+            }
+
+            TextBlock->SetText(FText::FromString(Lines[i]));
+            TextBlock->SetFont(FontInfo);
+            TextBlock->SetColorAndOpacity(FSlateColor(TextColor));
+            TextBlock->SetJustification(ETextJustify::Center);
+            TextBlock->SetAutoWrapText(false); // layout is already done by WrapAndPaginate
+
+            UVerticalBoxSlot* NewSlot = TextContainer->AddChildToVerticalBox(TextBlock);
+            if (NewSlot)
+            {
+                NewSlot->SetHorizontalAlignment(HAlign_Fill);
+                NewSlot->SetVerticalAlignment(VAlign_Center);
+            }
         }
     }
 }

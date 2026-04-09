@@ -40,6 +40,19 @@ namespace Palette
     static const FLinearColor BtnGreen   = FLinearColor(0.137f, 0.525f, 0.212f, 1.f); // #238636
     static const FLinearColor BtnGray    = FLinearColor(0.129f, 0.149f, 0.176f, 1.f); // #21262d
     static const FLinearColor White      = FLinearColor::White;
+
+    // Character-name colour presets (swatches)
+    static const TArray<FLinearColor>& CharColourOptions()
+    {
+        static const TArray<FLinearColor> Opts = {
+            FLinearColor(0.941f, 0.800f, 0.533f, 1.f), // amber (#f0cc88, default)
+            FLinearColor::White,
+            FLinearColor(0.000f, 0.831f, 1.000f, 1.f), // sky blue
+            FLinearColor(1.000f, 0.420f, 0.616f, 1.f), // rose
+            FLinearColor(0.302f, 0.871f, 0.502f, 1.f), // lime
+        };
+        return Opts;
+    }
 }
 
 // ── Lifecycle ──────────────────────────────────────────────────────────────────
@@ -451,6 +464,55 @@ PRAGMA_ENABLE_DEPRECATION_WARNINGS
         }
 
         UVerticalBoxSlot* RowSlot = Root->AddChildToVerticalBox(OptRow);
+        RowSlot->SetPadding(FMargin(0.f, 0.f, 0.f, 8.f));
+        RowSlot->SetHorizontalAlignment(HAlign_Center);
+    }
+
+    // ── Char name: toggle | colour cycle ─────────────────────────────────────
+    {
+        UHorizontalBox* CharRow = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass());
+
+        {
+            UTextBlock* Lbl = MakeLabel(TEXT("Char name:"), 11.f, Palette::TextMain);
+            UHorizontalBoxSlot* Slot = CharRow->AddChildToHorizontalBox(Lbl);
+            Slot->SetPadding(FMargin(0.f, 0.f, 6.f, 0.f));
+            Slot->SetVerticalAlignment(VAlign_Center);
+        }
+
+        BtnCharToggle = MakeButton(TEXT("ON"), Palette::BtnGreen);
+        BtnCharToggle->OnClicked.AddDynamic(this, &USubtitleDemoWidget::OnCharToggleClicked);
+        {
+            USizeBox* SzBox = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
+            SzBox->SetWidthOverride(46.f);
+            SzBox->AddChild(BtnCharToggle);
+            UHorizontalBoxSlot* Slot = CharRow->AddChildToHorizontalBox(SzBox);
+            Slot->SetPadding(FMargin(0.f, 0.f, 16.f, 0.f));
+            Slot->SetVerticalAlignment(VAlign_Center);
+        }
+
+        {
+            UTextBlock* Lbl = MakeLabel(TEXT("Colour:"), 11.f, Palette::TextMain);
+            UHorizontalBoxSlot* Slot = CharRow->AddChildToHorizontalBox(Lbl);
+            Slot->SetPadding(FMargin(0.f, 0.f, 6.f, 0.f));
+            Slot->SetVerticalAlignment(VAlign_Center);
+        }
+
+        // Colour cycle button — background tint IS the current colour
+        BtnCharColour = MakeButton(TEXT("\u25BA"), Palette::CharColourOptions()[0]);
+        BtnCharColour->OnClicked.AddDynamic(this, &USubtitleDemoWidget::OnCharColourClicked);
+        if (UTextBlock* Lbl = Cast<UTextBlock>(BtnCharColour->GetContent()))
+        {
+            Lbl->SetColorAndOpacity(FSlateColor(FLinearColor::Black));
+        }
+        {
+            USizeBox* SzBox = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass());
+            SzBox->SetWidthOverride(46.f);
+            SzBox->AddChild(BtnCharColour);
+            UHorizontalBoxSlot* Slot = CharRow->AddChildToHorizontalBox(SzBox);
+            Slot->SetVerticalAlignment(VAlign_Center);
+        }
+
+        UVerticalBoxSlot* RowSlot = Root->AddChildToVerticalBox(CharRow);
         RowSlot->SetPadding(FMargin(0.f, 0.f, 0.f, 12.f));
         RowSlot->SetHorizontalAlignment(HAlign_Center);
     }
@@ -513,6 +575,7 @@ PRAGMA_ENABLE_DEPRECATION_WARNINGS
 
     UpdateLinesDisplay();
     UpdateFontDisplay();
+    UpdateCharNameDisplay();
 }
 PRAGMA_ENABLE_SHADOW_VARIABLE_WARNINGS
 
@@ -543,8 +606,18 @@ void USubtitleDemoWidget::DoStart()
         SpeakerNameText->SetText(FText::FromString(S.Speaker.ToUpper()));
     }
 
+    const FString CharName = bCharNameEnabled ? S.Speaker : FString();
+    const FLinearColor CharColour = Palette::CharColourOptions()[CharColourIndex];
+
+    // Show the separate speaker label only when the inline name is disabled
+    if (SpeakerNameText)
+    {
+        SpeakerNameText->SetText(FText::FromString(
+            CharName.IsEmpty() ? S.Speaker.ToUpper() : TEXT("")));
+    }
+
     Player->MaxLines = CurrentMaxLines;
-    Player->Start(S.Text, S.Duration);
+    Player->Start(S.Text, S.Duration, CharName, /*bHasColor=*/!CharName.IsEmpty(), CharColour);
 
     SetRunning(true);
 
@@ -628,6 +701,49 @@ void USubtitleDemoWidget::SetRunning(bool bRunning)
     bIsRunning = bRunning;
     if (BtnStart) BtnStart->SetIsEnabled(!bRunning && Scripts.Num() > 0);
     if (BtnStop)  BtnStop->SetIsEnabled(bRunning);
+}
+
+void USubtitleDemoWidget::OnCharToggleClicked()
+{
+    bCharNameEnabled = !bCharNameEnabled;
+    UpdateCharNameDisplay();
+    if (bIsRunning) DoStart();
+}
+
+void USubtitleDemoWidget::OnCharColourClicked()
+{
+    CharColourIndex = (CharColourIndex + 1) % Palette::CharColourOptions().Num();
+    UpdateCharNameDisplay();
+    if (bIsRunning) DoStart();
+}
+
+void USubtitleDemoWidget::UpdateCharNameDisplay()
+{
+    if (BtnCharToggle)
+    {
+        const FLinearColor BgColor = bCharNameEnabled ? Palette::BtnGreen : Palette::BtnGray;
+        FButtonStyle Style;
+        Style.Normal.TintColor    = FSlateColor(BgColor);
+        Style.Hovered.TintColor   = FSlateColor(BgColor * 1.2f);
+        Style.Pressed.TintColor   = FSlateColor(BgColor * 0.85f);
+        Style.Disabled.TintColor  = FSlateColor(BgColor * FLinearColor(1,1,1,0.38f));
+        BtnCharToggle->SetStyle(Style);
+        if (UTextBlock* Lbl = Cast<UTextBlock>(BtnCharToggle->GetContent()))
+        {
+            Lbl->SetText(FText::FromString(bCharNameEnabled ? TEXT("ON") : TEXT("OFF")));
+        }
+    }
+
+    if (BtnCharColour)
+    {
+        const FLinearColor Col = Palette::CharColourOptions()[CharColourIndex];
+        FButtonStyle Style;
+        Style.Normal.TintColor    = FSlateColor(Col);
+        Style.Hovered.TintColor   = FSlateColor(Col * 1.2f);
+        Style.Pressed.TintColor   = FSlateColor(Col * 0.85f);
+        Style.Disabled.TintColor  = FSlateColor(Col * FLinearColor(1,1,1,0.38f));
+        BtnCharColour->SetStyle(Style);
+    }
 }
 
 void USubtitleDemoWidget::UpdateLinesDisplay()

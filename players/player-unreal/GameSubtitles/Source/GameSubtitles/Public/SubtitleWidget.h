@@ -38,9 +38,16 @@ class GAMESUBTITLES_API USubtitleWidget : public UUserWidget, public ISubtitleRe
     GENERATED_BODY()
 
 public:
-    /** Font used for both measuring and rendering subtitle lines. */
+    /** Font used for measuring and rendering subtitle lines. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles")
     FSlateFontInfo FontInfo;
+
+    /**
+     * Bold font used for the character-name prefix when a subtitle has a character name.
+     * If not set (HasValidFont() == false), FontInfo is used as a fallback (not actually bold).
+     */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles")
+    FSlateFontInfo BoldFontInfo;
 
     /** Text colour for rendered subtitle lines. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles")
@@ -55,9 +62,9 @@ public:
 
     // ── ISubtitleRenderer ──────────────────────────────────────────────────────
 
-    virtual float MeasureLineWidth_Implementation(const FString& Text) override;
+    virtual float MeasureLineWidth_Implementation(const FString& Text, bool bBold) override;
     virtual float GetContainerWidth_Implementation() override;
-    virtual void  Render_Implementation(const TArray<FString>& Lines) override;
+    virtual void  Render_Implementation(const TArray<FString>& Lines, const FSubtitleCharacterContext& CharacterContext) override;
     virtual void  Clear_Implementation() override;
 
     // ── UUserWidget ────────────────────────────────────────────────────────────

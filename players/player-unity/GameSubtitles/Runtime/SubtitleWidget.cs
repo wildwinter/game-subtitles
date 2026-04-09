@@ -54,14 +54,15 @@ namespace GameSubtitles
         // ── ISubtitleRenderer ─────────────────────────────────────────────────────
 
         /// <inheritdoc/>
-        public float MeasureLineWidth(string text)
+        public float MeasureLineWidth(string text, bool bold = false)
         {
             EnsureProbe();
             if (_probe == null) return 0f;
 
             // Sync font settings in case they changed since the probe was created
             SyncProbeFont();
-            return _probe.GetPreferredValues(text).x;
+            string measured = bold ? $"<b>{text}</b>" : text;
+            return _probe.GetPreferredValues(measured).x;
         }
 
         /// <inheritdoc/>
@@ -78,12 +79,12 @@ namespace GameSubtitles
         }
 
         /// <inheritdoc/>
-        public void Render(string[] lines)
+        public void Render(string[] lines, CharacterContext? characterContext = null)
         {
             ClearLineObjects();
 
             float y = 0f;
-            foreach (string line in lines)
+            for (int i = 0; i < lines.Length; i++)
             {
                 var go = new GameObject("SubtitleLine");
                 go.transform.SetParent(transform, false);
@@ -91,11 +92,28 @@ namespace GameSubtitles
 
                 var tmp = go.AddComponent<TextMeshProUGUI>();
                 if (FontAsset != null) tmp.font = FontAsset;
-                tmp.fontSize          = FontSize;
-                tmp.color             = TextColor;
-                tmp.alignment         = TextAlignmentOptions.Center;
+                tmp.fontSize         = FontSize;
+                tmp.color            = TextColor;
+                tmp.alignment        = TextAlignmentOptions.Center;
                 tmp.textWrappingMode = TextWrappingModes.NoWrap; // layout is already done by WrapAndPaginate
-                tmp.text              = line;
+
+                if (i == 0 && characterContext.HasValue)
+                {
+                    var ctx = characterContext.Value;
+                    tmp.richText = true;
+                    string prefix = ctx.Name + ": ";
+                    if (ctx.Bold)  prefix = $"<b>{prefix}</b>";
+                    if (ctx.Color.HasValue)
+                    {
+                        string hex = ColorUtility.ToHtmlStringRGB(ctx.Color.Value);
+                        prefix = $"<color=#{hex}>{prefix}</color>";
+                    }
+                    tmp.text = prefix + lines[i];
+                }
+                else
+                {
+                    tmp.text = lines[i];
+                }
 
                 // Anchor: full-width strip, top-aligned, stacked downward
                 var rt = go.GetComponent<RectTransform>();

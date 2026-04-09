@@ -74,7 +74,8 @@ TArray<TArray<FString>> FSubtitleTextLayout::WrapAndPaginate(
     const FString& Text,
     TFunction<float(const FString&)> MeasureWidth,
     float ContainerWidth,
-    int32 MaxLines)
+    int32 MaxLines,
+    float FirstLineIndent)
 {
     const float EllipsisWidth = MeasureWidth(Ellipsis);
 
@@ -116,7 +117,12 @@ TArray<TArray<FString>> FSubtitleTextLayout::WrapAndPaginate(
     while (wi < Words.Num())
     {
         const bool  bIsLastSlot    = (LineSlot == MaxLines - 1);
-        const float EffectiveWidth = bIsLastSlot ? (ContainerWidth - EllipsisWidth) : ContainerWidth;
+        const bool  bIsFirstSlot   = (LineSlot == 0);
+        float EffectiveWidth = bIsLastSlot ? (ContainerWidth - EllipsisWidth) : ContainerWidth;
+        if (bIsFirstSlot && FirstLineIndent > 0.f)
+        {
+            EffectiveWidth -= FirstLineIndent;
+        }
 
         // Split current word on soft hyphens to get syllables
         TArray<FString> Syllables;

@@ -16,7 +16,10 @@ void USubtitlePlayer::Initialize(TScriptInterface<ISubtitleRenderer> InRenderer,
     MaxLines  = FMath::Max(1, InMaxLines);
 }
 
-void USubtitlePlayer::Start(const FString& Text, float Duration)
+void USubtitlePlayer::Start(const FString& Text, float Duration,
+                            const FString& CharacterName,
+                            bool bHasCharacterNameColor,
+                            FLinearColor CharacterNameColor)
 {
     bRunning = false; // stop any current playback
 
@@ -29,21 +32,43 @@ void USubtitlePlayer::Start(const FString& Text, float Duration)
     PageIndex = 0;
     bDone     = false;
 
+    // Build CurrentCharacterContext
+    CurrentCharacterContext = FSubtitleCharacterContext();
+    if (!CharacterName.IsEmpty())
+    {
+        CurrentCharacterContext.bValid     = true;
+        CurrentCharacterContext.Name       = CharacterName;
+        CurrentCharacterContext.bBold      = bBoldCharacterName;
+        CurrentCharacterContext.bHasColor  = bHasCharacterNameColor;
+        CurrentCharacterContext.Color      = CharacterNameColor;
+    }
+
     if (!Renderer.GetObject())
     {
         return;
     }
 
-    // Build a MeasureWidth callable that dispatches through the renderer interface
     UObject* RendererObj = Renderer.GetObject();
+
+    // Build a MeasureWidth callable that dispatches through the renderer interface
     TFunction<float(const FString&)> MeasureWidth = [RendererObj](const FString& T) -> float
     {
-        return ISubtitleRenderer::Execute_MeasureLineWidth(RendererObj, T);
+        return ISubtitleRenderer::Execute_MeasureLineWidth(RendererObj, T, /*bBold=*/false);
     };
 
     const float ContainerWidth = ISubtitleRenderer::Execute_GetContainerWidth(RendererObj);
 
-    Pages   = FSubtitleTextLayout::WrapAndPaginate(Text, MeasureWidth, ContainerWidth, FMath::Max(1, MaxLines));
+    // Reserve space on line 0 of each page for the bold character-name prefix
+    float FirstLineIndent = 0.f;
+    if (CurrentCharacterContext.bValid)
+    {
+        const float RawIndent = ISubtitleRenderer::Execute_MeasureLineWidth(
+            RendererObj, CharacterName + TEXT(": "), bBoldCharacterName);
+        FirstLineIndent = FMath::CeilToFloat(RawIndent);
+    }
+
+    Pages   = FSubtitleTextLayout::WrapAndPaginate(Text, MeasureWidth, ContainerWidth,
+                                                    FMath::Max(1, MaxLines), FirstLineIndent);
     Timings = FSubtitleTextLayout::AllocateTimings(Pages, Duration);
 
     bRunning = true;
@@ -106,6 +131,6 @@ void USubtitlePlayer::RenderCurrent()
 {
     if (Renderer.GetObject() && Pages.IsValidIndex(PageIndex))
     {
-        ISubtitleRenderer::Execute_Render(Renderer.GetObject(), Pages[PageIndex]);
+        ISubtitleRenderer::Execute_Render(Renderer.GetObject(), Pages[PageIndex], CurrentCharacterContext);
     }
 }

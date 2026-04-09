@@ -8,11 +8,16 @@ export class DomRenderer {
   constructor(element) {
     this._element = element;
     this._measureEl = null;
+    this._measureElBold = null;
   }
 
-  /** @returns {number} Pixel width of `text` in the element's font. */
-  measureLineWidth(text) {
-    const el = this._ensureMeasureEl();
+  /**
+   * @param {string}  text
+   * @param {boolean} [bold=false] Measure in bold weight.
+   * @returns {number} Pixel width of `text` in the element's font.
+   */
+  measureLineWidth(text, bold = false) {
+    const el = this._ensureMeasureEl(bold);
     el.textContent = text;
     return el.getBoundingClientRect().width;
   }
@@ -25,13 +30,32 @@ export class DomRenderer {
 
   /**
    * Clears the element and renders each line as a <p>.
+   * When `characterContext` is provided, the first line is prefixed with
+   * "Name: " rendered in a styled <span>.
+   *
    * @param {string[]} lines
+   * @param {{ name: string, colour: string|null, bold: boolean }|null} [characterContext]
    */
-  render(lines) {
+  render(lines, characterContext = null) {
     this._element.innerHTML = '';
-    for (const line of lines) {
-      const p = this._element.ownerDocument.createElement('p');
-      p.textContent = line;
+    const doc = this._element.ownerDocument;
+    for (let i = 0; i < lines.length; i++) {
+      const p = doc.createElement('p');
+      if (i === 0 && characterContext) {
+        // Prevent the browser word-wrapping this line if the bold prefix plus
+        // the text land fractionally over the container width.  Any residual
+        // overflow is clipped invisibly; text-align:center still applies.
+        p.style.whiteSpace = 'nowrap';
+        p.style.overflow   = 'hidden';
+        const span = doc.createElement('span');
+        span.textContent = `${characterContext.name}: `;
+        if (characterContext.colour) span.style.color = characterContext.colour;
+        if (characterContext.bold) span.style.fontWeight = 'bold';
+        p.appendChild(span);
+        p.appendChild(doc.createTextNode(lines[i]));
+      } else {
+        p.textContent = lines[i];
+      }
       this._element.appendChild(p);
     }
   }
@@ -42,19 +66,24 @@ export class DomRenderer {
   }
 
   /**
-   * Invalidates the cached measure element so the next measurement re-reads
+   * Invalidates the cached measure elements so the next measurement re-reads
    * the container's computed font.  Call this after changing the element's
    * font via CSS or inline style.
    */
   invalidateFont() {
-    if (this._measureEl) {
-      this._measureEl.remove();
-      this._measureEl = null;
-    }
+    if (this._measureEl)     { this._measureEl.remove();     this._measureEl = null; }
+    if (this._measureElBold) { this._measureElBold.remove(); this._measureElBold = null; }
   }
 
-  _ensureMeasureEl() {
-    if (this._measureEl) return this._measureEl;
+  /**
+   * Returns (creating if needed) a hidden measurement span.
+   * A separate persistent span is kept for bold to avoid CSS shorthand /
+   * longhand interaction issues when toggling fontWeight on a shared element.
+   * @param {boolean} bold
+   */
+  _ensureMeasureEl(bold) {
+    const field = bold ? '_measureElBold' : '_measureEl';
+    if (this[field]) return this[field];
     const doc = this._element.ownerDocument;
     const span = doc.createElement('span');
     span.style.cssText =
@@ -63,8 +92,9 @@ export class DomRenderer {
     const style = doc.defaultView.getComputedStyle(this._element);
     span.style.font = style.font;
     span.style.letterSpacing = style.letterSpacing;
+    if (bold) span.style.fontWeight = 'bold';
     doc.body.appendChild(span);
-    this._measureEl = span;
+    this[field] = span;
     return span;
   }
 }

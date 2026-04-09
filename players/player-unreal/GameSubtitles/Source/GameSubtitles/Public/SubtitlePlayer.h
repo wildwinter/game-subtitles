@@ -56,11 +56,18 @@ public:
      * Loads a subtitle, lays out text, and renders page 0 immediately.
      * Calling this while another subtitle is playing stops it first.
      *
-     * @param Text      Text; may contain U+00AD soft hyphens.
-     * @param Duration  Total display seconds (> 0).
+     * @param Text                  Text; may contain U+00AD soft hyphens.
+     * @param Duration              Total display seconds (> 0).
+     * @param CharacterName         If non-empty, "Name: " is prepended to the first line of
+     *                              every page. The text is laid out with space reserved for the prefix.
+     * @param bHasCharacterNameColor When true, CharacterNameColor is applied to the name prefix.
+     * @param CharacterNameColor    Colour for the character name prefix.
      */
     UFUNCTION(BlueprintCallable, Category = "Subtitles")
-    void Start(const FString& Text, float Duration);
+    void Start(const FString& Text, float Duration,
+               const FString& CharacterName = TEXT(""),
+               bool bHasCharacterNameColor = false,
+               FLinearColor CharacterNameColor = FLinearColor::White);
 
     /**
      * Advances the internal clock. Call once per frame from your game loop.
@@ -92,15 +99,23 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "Subtitles")
     int32 MaxLines;
 
+    /**
+     * Whether the character name prefix is rendered in bold.
+     * Set before calling Initialize(); takes effect on the next Start().
+     */
+    UPROPERTY(BlueprintReadWrite, Category = "Subtitles")
+    bool bBoldCharacterName = true;
+
 private:
     TScriptInterface<ISubtitleRenderer> Renderer;
 
-    TArray<TArray<FString>> Pages;
-    TArray<float>           Timings;
-    int32                   PageIndex;
-    float                   Elapsed;
-    bool                    bRunning;
-    bool                    bDone;
+    TArray<TArray<FString>>    Pages;
+    TArray<float>              Timings;
+    int32                      PageIndex;
+    float                      Elapsed;
+    bool                       bRunning;
+    bool                       bDone;
+    FSubtitleCharacterContext  CurrentCharacterContext;
 
     void RenderCurrent();
 };

@@ -18,12 +18,14 @@ import { wrapAndPaginate, allocateTimings } from './TextLayout.js';
 export class SubtitlePlayer {
   /**
    * @param {object} opts
-   * @param {object}   opts.renderer     An object implementing the IRenderer interface.
-   * @param {number}   [opts.maxLines=2] Lines per page (integer ≥ 1).
+   * @param {object}   opts.renderer              An object implementing the IRenderer interface.
+   * @param {number}   [opts.maxLines=2]          Lines per page (integer ≥ 1).
+   * @param {boolean}  [opts.boldCharacterName=true] Whether to render the character name in bold.
    */
-  constructor({ renderer, maxLines = 2 }) {
+  constructor({ renderer, maxLines = 2, boldCharacterName = true }) {
     this._renderer = renderer;
     this._maxLines = maxLines;
+    this._boldCharacterName = boldCharacterName;
 
     this._pages = [];
     this._timings = [];
@@ -32,6 +34,8 @@ export class SubtitlePlayer {
     this._running = false;
     this._done = false;
     this._onComplete = null;
+    this._characterName = null;
+    this._characterNameColour = null;
   }
 
   /**
@@ -39,22 +43,34 @@ export class SubtitlePlayer {
    * Calling this while another subtitle is playing stops it first.
    *
    * @param {object}   opts
-   * @param {string}   opts.text        Text, may contain U+00AD soft hyphens.
-   * @param {number}   opts.duration    Total display seconds (> 0).
-   * @param {Function} [opts.onComplete] Called when all pages have been shown.
+   * @param {string}   opts.text                  Text, may contain U+00AD soft hyphens.
+   * @param {number}   opts.duration              Total display seconds (> 0).
+   * @param {Function} [opts.onComplete]          Called when all pages have been shown.
+   * @param {string}   [opts.characterName]       If present, prepended to the first line of
+   *                                              every page as "Name: ", styled per the
+   *                                              renderer's character-context support.
+   * @param {string}   [opts.characterNameColour] CSS colour string for the character name.
+   *                                              Only used when `characterName` is set.
    */
-  start({ text, duration, onComplete = null }) {
+  start({ text, duration, onComplete = null, characterName = null, characterNameColour = null }) {
     this._running = false;
     this._renderer.clear();
 
     this._onComplete = onComplete;
+    this._characterName = characterName;
+    this._characterNameColour = characterNameColour;
     this._elapsed = 0;
     this._pageIndex = 0;
     this._done = false;
 
-    const measure = t => this._renderer.measureLineWidth(t);
-    const width   = this._renderer.getContainerWidth();
-    this._pages   = wrapAndPaginate(text, measure, width, this._maxLines);
+    const measure         = t => this._renderer.measureLineWidth(t);
+    const width           = this._renderer.getContainerWidth();
+    // Ceil so subpixel measurement differences never tip the rendered line over
+    // the container edge (measurement and rendering can differ slightly).
+    const firstLineIndent = characterName
+      ? Math.ceil(this._renderer.measureLineWidth(`${characterName}: `, this._boldCharacterName))
+      : 0;
+    this._pages           = wrapAndPaginate(text, measure, width, this._maxLines, firstLineIndent);
     this._timings = allocateTimings(this._pages, duration);
 
     this._running = true;
@@ -122,6 +138,9 @@ export class SubtitlePlayer {
   }
 
   _renderCurrent() {
-    this._renderer.render(this._pages[this._pageIndex]);
+    const charCtx = this._characterName
+      ? { name: this._characterName, colour: this._characterNameColour, bold: this._boldCharacterName }
+      : null;
+    this._renderer.render(this._pages[this._pageIndex], charCtx);
   }
 }

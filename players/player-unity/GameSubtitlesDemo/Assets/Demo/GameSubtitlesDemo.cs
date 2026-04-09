@@ -44,6 +44,16 @@ namespace GameSubtitles.Demo
         private static readonly Color ColGray     = Hex("#21262d");
         private static readonly Color ColGrayLit  = Hex("#2d333b");
 
+        // Character-name colour presets (swatches)
+        private static readonly Color[] ColCharOptions =
+        {
+            Hex("#f0cc88"), // amber (default)
+            Color.white,
+            Hex("#00d4ff"), // sky blue
+            Hex("#ff6b9d"), // rose
+            Hex("#4ade80"), // lime
+        };
+
         // ── Constant data ─────────────────────────────────────────────────────────
 
         private static readonly string[] LangFiles  = { "subtitles", "subtitles-fr", "subtitles-sv", "subtitles-es" };
@@ -55,14 +65,16 @@ namespace GameSubtitles.Demo
         private SubtitlePlayer _player;
         private SubtitleWidget _subWidget;
 
-        private int   _scriptIndex = 0;
-        private int   _langIndex   = 0;
-        private bool  _isRunning   = false;
-        private float _elapsedMs   = 0f;
-        private float _totalMs     = 0f;
-        private int   _maxLines    = 2;
-        private int   _fontSize    = 16;
-        private bool  _doubleSpeed = false;
+        private int   _scriptIndex     = 0;
+        private int   _langIndex       = 0;
+        private bool  _isRunning       = false;
+        private float _elapsedMs       = 0f;
+        private float _totalMs         = 0f;
+        private int   _maxLines        = 2;
+        private int   _fontSize        = 16;
+        private bool  _doubleSpeed     = false;
+        private bool  _charNameEnabled = true;
+        private int   _charColourIndex = 0;
 
         // ── UI references ─────────────────────────────────────────────────────────
 
@@ -71,6 +83,8 @@ namespace GameSubtitles.Demo
         private Button   _btnFontDec, _btnFontInc;
         private Button   _btnScriptPrev, _btnScriptNext;
         private Button[] _langBtns = new Button[4];
+        private Button   _btnCharToggle;
+        private Button[] _charSwatches = new Button[5];
         private TMP_Text _scriptLabel;
         private TMP_Text _statusText, _pageInfoText, _timeInfoText;
         private TMP_Text _linesCountText, _fontSizeText;
@@ -186,10 +200,16 @@ namespace GameSubtitles.Demo
 
             _totalMs   = s.duration * 1000f;
             _elapsedMs = 0f;
-            if (_speakerNameText != null) _speakerNameText.text = s.speaker.ToUpper();
+
+            string charName   = (_charNameEnabled && !string.IsNullOrEmpty(s.speaker)) ? s.speaker : null;
+            Color? charColour = charName != null ? (Color?)ColCharOptions[_charColourIndex] : null;
+
+            // Show the separate speaker label only when the inline name is disabled
+            if (_speakerNameText != null)
+                _speakerNameText.text = charName == null ? s.speaker.ToUpper() : "";
 
             _player.MaxLines = _maxLines;
-            _player.Start(s.text, s.duration);
+            _player.Start(s.text, s.duration, charName, charColour);
 
             SetRunning(true);
             SetStatus($"Playing: [{s.id}] {s.speaker}");
@@ -318,6 +338,45 @@ namespace GameSubtitles.Demo
             if (_fontSizeText != null) _fontSizeText.text = $"{_fontSize}px";
             if (_btnFontDec   != null) _btnFontDec.interactable = _fontSize > 10;
             if (_btnFontInc   != null) _btnFontInc.interactable = _fontSize < 32;
+        }
+
+        private void OnCharToggle()
+        {
+            _charNameEnabled = !_charNameEnabled;
+            UpdateCharNameDisplay();
+            if (_isRunning) DoStart();
+        }
+
+        private void OnCharColourSelect(int idx)
+        {
+            _charColourIndex = idx;
+            UpdateCharNameDisplay();
+            if (_isRunning) DoStart();
+        }
+
+        private void UpdateCharNameDisplay()
+        {
+            if (_btnCharToggle != null)
+            {
+                Color bg = _charNameEnabled ? ColGreen : ColGray;
+                var img = _btnCharToggle.GetComponent<Image>();
+                if (img != null) img.color = bg;
+                var c = _btnCharToggle.colors;
+                c.normalColor      = bg;
+                c.highlightedColor = bg * 1.3f;
+                c.pressedColor     = bg * 0.8f;
+                c.disabledColor    = new Color(bg.r, bg.g, bg.b, 0.38f);
+                _btnCharToggle.colors = c;
+                var lbl = _btnCharToggle.GetComponentInChildren<TMP_Text>();
+                if (lbl != null) lbl.text = _charNameEnabled ? "ON" : "OFF";
+            }
+
+            for (int i = 0; i < _charSwatches.Length; i++)
+            {
+                if (_charSwatches[i] == null) continue;
+                var lbl = _charSwatches[i].GetComponentInChildren<TMP_Text>();
+                if (lbl != null) lbl.text = (i == _charColourIndex) ? "\u2713" : "";
+            }
         }
 
         private void RefreshLangButtons()
@@ -503,6 +562,26 @@ namespace GameSubtitles.Demo
                 _btnFontInc  = Btn(row.transform, "+", ColGray, () => ChangeFont(+2), 28f);
             }
 
+            // ── Char name: toggle | colour swatches ───────────────────────────────
+            {
+                var row = HRow(col.transform, "CharRow", 6f);
+                LE(row, minH: 26f);
+                Label(row.transform, "Char name:", 11f, ColTextMain);
+                _btnCharToggle = Btn(row.transform, "ON", ColGreen, OnCharToggle, 46f);
+                HSpacer(row.transform, 10f);
+                Label(row.transform, "Colour:", 11f, ColTextMain);
+                for (int i = 0; i < ColCharOptions.Length; i++)
+                {
+                    int idx = i; // capture
+                    Color swCol = ColCharOptions[i];
+                    var sw = Btn(row.transform, i == 0 ? "\u2713" : "", swCol, () => OnCharColourSelect(idx), 22f);
+                    // Make the check-mark visible against any swatch colour
+                    var swLbl = sw.GetComponentInChildren<TMP_Text>();
+                    if (swLbl != null) swLbl.color = Color.black;
+                    _charSwatches[i] = sw;
+                }
+            }
+
             // ── Progress bar (anchor-based fill — no sprite required) ────────────
             {
                 var bg = MakePanel(col.transform, ColBgPanel, "ProgressBg");
@@ -540,6 +619,7 @@ namespace GameSubtitles.Demo
             RefreshLangButtons();
             UpdateLinesDisplay();
             UpdateFontDisplay();
+            UpdateCharNameDisplay();
         }
 
         // ── UI factory helpers ────────────────────────────────────────────────────

@@ -21,12 +21,17 @@ namespace GameSubtitles
         /// <param name="measureWidth">Callback that returns the rendered pixel-width of a string.</param>
         /// <param name="containerWidth">Maximum line width in the same units as <paramref name="measureWidth"/>.</param>
         /// <param name="maxLines">Lines per page (&gt;= 1).</param>
+        /// <param name="firstLineIndent">
+        /// Pixels already consumed on line 0 of every page (e.g. by a bold character-name prefix).
+        /// Only that slot is narrowed; subsequent lines use the full <paramref name="containerWidth"/>.
+        /// </param>
         /// <returns>List of pages; each page is a list of line strings.</returns>
         public static List<List<string>> WrapAndPaginate(
             string text,
             Func<string, float> measureWidth,
             float containerWidth,
-            int maxLines)
+            int maxLines,
+            float firstLineIndent = 0f)
         {
             float ellipsisWidth = measureWidth(Ellipsis.ToString());
 
@@ -65,7 +70,10 @@ namespace GameSubtitles
             while (wi < words.Length)
             {
                 bool  isLastSlot    = (lineSlot == maxLines - 1);
+                bool  isFirstSlot   = (lineSlot == 0);
                 float effectiveWidth = isLastSlot ? (containerWidth - ellipsisWidth) : containerWidth;
+                if (isFirstSlot && firstLineIndent > 0f)
+                    effectiveWidth -= firstLineIndent;
 
                 // Split current word on soft hyphens to get syllables
                 string[] syllables   = words[wi].Split(SoftHyphen);

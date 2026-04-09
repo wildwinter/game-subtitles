@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace GameSubtitles
 {
@@ -24,6 +25,12 @@ namespace GameSubtitles
         /// <summary>Lines per page. Change takes effect on the next <see cref="Start"/>.</summary>
         public int MaxLines = 2;
 
+        /// <summary>
+        /// Whether the character name is rendered in bold.
+        /// Set before calling <see cref="Initialize"/>; takes effect on the next <see cref="Start"/>.
+        /// </summary>
+        public bool BoldCharacterName = true;
+
         /// <summary>Number of pages in the current subtitle layout. Valid after <see cref="Start"/>; 0 before.</summary>
         public int PageCount => _pages.Count;
 
@@ -34,6 +41,8 @@ namespace GameSubtitles
         private float                _elapsed;
         private bool                 _running;
         private bool                 _done;
+        private string               _characterName;
+        private Color?               _characterNameColor;
 
         // ── Public API ────────────────────────────────────────────────────────────
 
@@ -55,20 +64,36 @@ namespace GameSubtitles
         /// </summary>
         /// <param name="text">Text; may contain U+00AD soft hyphens.</param>
         /// <param name="duration">Total display seconds (&gt; 0).</param>
-        public void Start(string text, float duration)
+        /// <param name="characterName">
+        /// If non-null, "Name: " is prepended to the first line of every page.
+        /// The text is laid out with space reserved for the prefix.
+        /// </param>
+        /// <param name="characterNameColor">
+        /// Colour for the character name. Pass <c>null</c> to use the renderer's default text colour.
+        /// Only used when <paramref name="characterName"/> is non-null.
+        /// </param>
+        public void Start(string text, float duration,
+                          string characterName = null, Color? characterNameColor = null)
         {
             _running = false;
             _renderer?.Clear();
 
-            _elapsed   = 0f;
-            _pageIndex = 0;
-            _done      = false;
+            _characterName      = characterName;
+            _characterNameColor = characterNameColor;
+            _elapsed            = 0f;
+            _pageIndex          = 0;
+            _done               = false;
 
             if (_renderer == null)
                 return;
 
-            float containerWidth = _renderer.GetContainerWidth();
-            _pages   = TextLayout.WrapAndPaginate(text, _renderer.MeasureLineWidth, containerWidth, Math.Max(1, MaxLines));
+            float containerWidth  = _renderer.GetContainerWidth();
+            float firstLineIndent = string.IsNullOrEmpty(characterName)
+                ? 0f
+                : Mathf.Ceil(_renderer.MeasureLineWidth(characterName + ": ", BoldCharacterName));
+
+            _pages   = TextLayout.WrapAndPaginate(text, t => _renderer.MeasureLineWidth(t),
+                                                  containerWidth, Math.Max(1, MaxLines), firstLineIndent);
             _timings = TextLayout.AllocateTimings(_pages, duration);
 
             _running = true;
@@ -131,8 +156,21 @@ namespace GameSubtitles
 
         private void RenderCurrent()
         {
-            if (_renderer != null && _pageIndex < _pages.Count)
-                _renderer.Render(_pages[_pageIndex].ToArray());
+            if (_renderer == null || _pageIndex >= _pages.Count)
+                return;
+
+            CharacterContext? ctx = null;
+            if (!string.IsNullOrEmpty(_characterName))
+            {
+                ctx = new CharacterContext
+                {
+                    Name  = _characterName,
+                    Color = _characterNameColor,
+                    Bold  = BoldCharacterName,
+                };
+            }
+
+            _renderer.Render(_pages[_pageIndex].ToArray(), ctx);
         }
     }
 }

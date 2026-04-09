@@ -66,28 +66,12 @@
       height: 100%;
     }
 
-    /* Footer: speaker label + subtitle bar, stacked at the bottom of the scene */
+    /* Subtitle bar pinned to the bottom of the scene */
     #dom-footer {
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Speaker name sits directly above the subtitle bar, auto-tracks its height */
-    #speaker-name {
-      text-align: center;
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: #f0cc88;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.9);
-      min-height: 1em;
-      padding-bottom: 4px;
-      pointer-events: none;
     }
 
     /* DomRenderer target — no horizontal padding so getContainerWidth() is accurate */
@@ -212,6 +196,16 @@
 
     .options input[type="checkbox"] { cursor: pointer; accent-color: #f0cc88; }
 
+    .options input[type="color"] {
+      width: 1.6rem;
+      height: 1.4rem;
+      padding: 0;
+      border: 1px solid #30363d;
+      border-radius: 3px;
+      background: none;
+      cursor: pointer;
+    }
+
     .lines-control { display: flex; align-items: center; gap: 0.4rem; }
 
     button.lines-btn {
@@ -275,7 +269,6 @@
           <circle cx="316" cy="22" r="1"   fill="white" opacity="0.5"/>
         </svg>
         <div id="dom-footer">
-          <div id="speaker-name"></div>
           <div id="dom-sub"></div>
         </div>
       </div>
@@ -309,6 +302,12 @@
   <div class="controls options">
     <label>
       <input type="checkbox" id="chk-speed"> 2&#xD7; speed
+    </label>
+    <label>
+      <input type="checkbox" id="chk-charname" checked> Character name
+    </label>
+    <label>
+      Name colour: <input type="color" id="char-colour" value="#f0cc88">
     </label>
     <div class="lines-control">
       <span>Lines:</span>
@@ -352,7 +351,6 @@
 
     // ── DOM renderer ─────────────────────────────────────────────────────────
     const domEl       = document.getElementById('dom-sub');
-    const speakerEl   = document.getElementById('speaker-name');
     const domRenderer = new DomRenderer(domEl);
 
     // ── Canvas renderer (draws game scene + subtitle bar) ────────────────────
@@ -361,12 +359,13 @@
     const CW = canvas.width;   // 540
     const CH = canvas.height;  // 304
     let currentFontSize = 16;
-    let SUB_FONT       = `${currentFontSize}px Georgia, "Times New Roman", serif`;
-    const SPEAKER_FONT = 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    let SUB_FONT = `${currentFontSize}px Georgia, "Times New Roman", serif`;
 
-    let canvasSpeaker = '';
+    function makeBoldFont(font) {
+      return /^\s*bold\b/i.test(font) ? font : `bold ${font}`;
+    }
 
-    function drawCanvasScene(lines) {
+    function drawCanvasScene(lines, charCtx = null) {
       // Bar height: 8px top pad + maxLines × lineH + gaps + 12px bottom pad,
       // minimum 60px to match the DOM bar's min-height.
       const lineH = Math.round(currentFontSize * 1.375); // 16px → 22px
@@ -420,54 +419,70 @@
       ctx.fillStyle = 'rgba(0,0,0,0.75)';
       ctx.fillRect(0, CH - BAR_H, CW, BAR_H);
 
-      // Speaker name (above the bar)
-      if (canvasSpeaker) {
-        ctx.font         = SPEAKER_FONT;
-        ctx.fillStyle    = '#f0cc88';
-        ctx.textBaseline = 'bottom';
-        ctx.textAlign    = 'center';
-        ctx.fillText(canvasSpeaker.toUpperCase(), CW / 2, CH - BAR_H - 4);
-      }
-
-      // Subtitle lines (centred in the bar)
+      // Subtitle lines (centred in the bar), with optional character name prefix on line 0
       if (lines && lines.length > 0) {
-        ctx.font         = SUB_FONT;
-        ctx.fillStyle    = '#ffffff';
         ctx.textBaseline = 'middle';
-        ctx.textAlign    = 'center';
         const totalH = lines.length * lineH;
         const startY = CH - BAR_H + (BAR_H - totalH) / 2 + lineH / 2;
-        lines.forEach((line, i) => ctx.fillText(line, CW / 2, startY + i * lineH));
+        lines.forEach((line, i) => {
+          const y = startY + i * lineH;
+          if (i === 0 && charCtx) {
+            const prefix     = `${charCtx.name}: `;
+            const prefixFont = charCtx.bold ? makeBoldFont(SUB_FONT) : SUB_FONT;
+            // Measure both parts to centre the combined run
+            ctx.font = prefixFont;
+            const prefixW = ctx.measureText(prefix).width;
+            ctx.font = SUB_FONT;
+            const lineW  = ctx.measureText(line).width;
+            const startX = CW / 2 - (prefixW + lineW) / 2;
+            // Draw prefix
+            ctx.textAlign = 'left';
+            ctx.font      = prefixFont;
+            ctx.fillStyle = charCtx.colour || '#ffffff';
+            ctx.fillText(prefix, startX, y);
+            // Draw rest of line
+            ctx.font      = SUB_FONT;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(line, startX + prefixW, y);
+            ctx.textAlign = 'center';
+          } else {
+            ctx.font      = SUB_FONT;
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.fillText(line, CW / 2, y);
+          }
+        });
       }
     }
 
     const canvasRenderer = {
-      measureLineWidth(text) {
-        ctx.font = SUB_FONT;
+      measureLineWidth(text, bold = false) {
+        ctx.font = bold ? makeBoldFont(SUB_FONT) : SUB_FONT;
         return ctx.measureText(text).width;
       },
       getContainerWidth() { return CW; },
-      render(lines) { drawCanvasScene(lines); },
-      clear()        { drawCanvasScene([]); },
+      render(lines, charCtx) { drawCanvasScene(lines, charCtx); },
+      clear()               { drawCanvasScene([]); },
     };
 
     // ── State ─────────────────────────────────────────────────────────────────
-    let SCRIPTS       = [];   // populated after JSON fetch
-    let raf           = null;
-    let lastTs        = null;
-    let elapsedMs     = 0;
-    let totalMs       = 0;
-    let pageIdx       = 0;
-    let totalPages    = 1;
-    let isRunning     = false;
+    let SCRIPTS         = [];   // populated after JSON fetch
+    let raf             = null;
+    let lastTs          = null;
+    let elapsedMs       = 0;
+    let totalMs         = 0;
+    let pageIdx         = 0;
+    let totalPages      = 1;
+    let isRunning       = false;
     let currentMaxLines = 2;
+    let charNameColour  = '#f0cc88';
 
     // ── Persistent players (created once, reused across subtitles) ────────────
     let renderCount = 0;
     const trackingRenderer = {
-      measureLineWidth: t  => domRenderer.measureLineWidth(t),
+      measureLineWidth: (t, bold) => domRenderer.measureLineWidth(t, bold),
       getContainerWidth: () => domRenderer.getContainerWidth(),
-      render(lines) { pageIdx = renderCount++;  domRenderer.render(lines); },
+      render(lines, charCtx) { pageIdx = renderCount++; domRenderer.render(lines, charCtx); },
       clear()        { renderCount = 0; pageIdx = 0; domRenderer.clear(); },
     };
 
@@ -475,22 +490,24 @@
     const canvasPlayer = new SubtitlePlayer({ renderer: canvasRenderer,   maxLines: currentMaxLines });
 
     // ── UI refs ───────────────────────────────────────────────────────────────
-    const btnStart    = document.getElementById('btn-start');
-    const btnStop     = document.getElementById('btn-stop');
-    const btnReset    = document.getElementById('btn-reset');
-    const progFill    = document.getElementById('prog-fill');
-    const pageInfoEl  = document.getElementById('page-info');
-    const timeInfoEl  = document.getElementById('time-info');
-    const statusEl    = document.getElementById('status');
-    const scriptSel   = document.getElementById('script-sel');
-    const langSel     = document.getElementById('lang-sel');
-    const chkSpeed    = document.getElementById('chk-speed');
-    const btnLinesDec = document.getElementById('btn-lines-dec');
-    const btnLinesInc = document.getElementById('btn-lines-inc');
+    const btnStart     = document.getElementById('btn-start');
+    const btnStop      = document.getElementById('btn-stop');
+    const btnReset     = document.getElementById('btn-reset');
+    const progFill     = document.getElementById('prog-fill');
+    const pageInfoEl   = document.getElementById('page-info');
+    const timeInfoEl   = document.getElementById('time-info');
+    const statusEl     = document.getElementById('status');
+    const scriptSel    = document.getElementById('script-sel');
+    const langSel      = document.getElementById('lang-sel');
+    const chkSpeed     = document.getElementById('chk-speed');
+    const chkCharName  = document.getElementById('chk-charname');
+    const charColourEl = document.getElementById('char-colour');
+    const btnLinesDec  = document.getElementById('btn-lines-dec');
+    const btnLinesInc  = document.getElementById('btn-lines-inc');
     const linesCountEl = document.getElementById('lines-count');
-    const btnFontDec  = document.getElementById('btn-font-dec');
-    const btnFontInc  = document.getElementById('btn-font-inc');
-    const fontSizeEl  = document.getElementById('font-size');
+    const btnFontDec   = document.getElementById('btn-font-dec');
+    const btnFontInc   = document.getElementById('btn-font-inc');
+    const fontSizeEl   = document.getElementById('font-size');
 
     // ── Load subtitles from a named JSON file ─────────────────────────────────
     function loadSubtitles(filename) {
@@ -600,8 +617,6 @@
       setButtons(false);
       btnReset.disabled = false;
       statusEl.textContent = 'Finished.';
-      speakerEl.textContent = '';
-      canvasSpeaker = '';
       drawCanvasScene([]);
     }
 
@@ -618,20 +633,21 @@
       elapsedMs = 0;
       pageIdx   = 0;
 
-      // Update speaker labels
-      speakerEl.textContent = script.speaker;
-      canvasSpeaker = script.speaker;
+      const charName   = (chkCharName.checked && script.speaker) ? script.speaker : null;
+      const charColour = charName ? charNameColour : null;
+      const prefixWidth = charName ? domRenderer.measureLineWidth(`${charName}: `, /*bold=*/true) : 0;
 
-      // Pre-compute total pages for the progress indicator
+      // Re-compute total pages using the same indent the player will use.
       totalPages = wrapAndPaginate(
         script.text,
         t => domRenderer.measureLineWidth(t),
         domRenderer.getContainerWidth(),
         currentMaxLines,
+        prefixWidth,
       ).length;
 
-      domPlayer.start({ text: script.text, duration: script.duration, onComplete:() => {domPlayer.stop();} });
-      canvasPlayer.start({ text: script.text, duration: script.duration, onComplete: () => {canvasPlayer.stop();} });
+      domPlayer.start({ text: script.text, duration: script.duration, characterName: charName, characterNameColour: charColour, onComplete: () => { domPlayer.stop(); } });
+      canvasPlayer.start({ text: script.text, duration: script.duration, characterName: charName, characterNameColour: charColour, onComplete: () => { canvasPlayer.stop(); } });
 
       setButtons(true);
       btnReset.disabled = false;
@@ -654,8 +670,6 @@
       stopRaf();
       domPlayer?.reset();
       canvasPlayer?.reset();
-      speakerEl.textContent = '';
-      canvasSpeaker = '';
       elapsedMs = 0; pageIdx = 0; totalPages = 1;
       progFill.style.width   = '0%';
       pageInfoEl.textContent = '';
@@ -667,6 +681,12 @@
     }
 
     langSel.addEventListener('change', () => loadSubtitles(langSel.value));
+
+    chkCharName.addEventListener('change', () => { if (isRunning) start(); });
+    charColourEl.addEventListener('input', () => {
+      charNameColour = charColourEl.value;
+      if (isRunning) start();
+    });
 
     btnStart.addEventListener('click', start);
     btnStop.addEventListener('click', stop);

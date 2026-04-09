@@ -209,11 +209,13 @@ The player and renderer are long-lived objects. Create them once and reuse them 
 **2. When your dialogue system triggers a line, call `start()`.**
 
 ```javascript
-function showSubtitle(text, durationSeconds, onDone) {
+function showSubtitle(text, durationSeconds, speaker, onDone) {
   player.start({
-    text,                  // the annotated string from your subtitle data
+    text,                      // the annotated string from your subtitle data
     duration: durationSeconds,
-    onComplete: onDone,    // called automatically when the last page expires
+    characterName: speaker,    // optional — displayed bold at the start of each page
+    characterNameColour: '#f0cc88', // optional colour for the name prefix
+    onComplete: onDone,        // called automatically when the last page expires
   });
 }
 ```
@@ -256,10 +258,12 @@ Everything else is the same.
 #### `SubtitlePlayer` API
 
 ```javascript
-const player = new SubtitlePlayer({ renderer, maxLines });
+// boldCharacterName: whether the name prefix is rendered bold (default: true)
+const player = new SubtitlePlayer({ renderer, maxLines, boldCharacterName: true });
 
 // Start playing a subtitle (stops any currently playing subtitle first)
-player.start({ text, duration, onComplete });
+// characterName and characterNameColour are optional
+player.start({ text, duration, onComplete, characterName, characterNameColour });
 
 // Call once per frame from your game loop
 player.tick(deltaSeconds);
@@ -276,6 +280,8 @@ player.pageCount;
 // Change lines-per-page (takes effect on the next start() call)
 player.maxLines = 3;
 ```
+
+When `characterName` is set, `"Name: "` is prepended to the first line of every page. The name is measured in bold to reserve the exact space needed, so the remaining body text always fits on the line.
 
 #### `DomRenderer`
 
@@ -303,10 +309,12 @@ Any object with these four methods will work as a renderer, so you can integrate
 
 ```javascript
 const myRenderer = {
-  measureLineWidth(text) { /* return pixel width of text as a number */ },
-  getContainerWidth()    { /* return available width in pixels */ },
-  render(lines)          { /* display the string[] of lines */ },
-  clear()                { /* remove the current subtitle display */ },
+  // bold = true when measuring the character-name prefix (measure in bold weight)
+  measureLineWidth(text, bold = false) { /* return pixel width of text as a number */ },
+  getContainerWidth()                  { /* return available width in pixels */ },
+  // characterContext is { name, colour, bold } or null
+  render(lines, characterContext)      { /* display the string[] of lines */ },
+  clear()                              { /* remove the current subtitle display */ },
 };
 ```
 
@@ -356,9 +364,13 @@ HandleSubtitleDone() will have to call Stop() to clear the text.
 **3. When your dialogue system triggers a line, call `Start()`.**
 
 ```cpp
-void AMyHUD::ShowSubtitle(const FString& Text, float DurationSeconds)
+void AMyHUD::ShowSubtitle(const FString& Text, float DurationSeconds,
+                           const FString& Speaker)
 {
-    Player->Start(Text, DurationSeconds);
+    Player->Start(Text, DurationSeconds,
+                  Speaker,           // optional character name (shown bold at start of each page)
+                  /*bHasColor=*/true,
+                  FLinearColor(0.941f, 0.800f, 0.533f, 1.f)); // amber
 }
 ```
 
@@ -383,8 +395,15 @@ void AMyHUD::Tick(float DeltaSeconds)
 USubtitlePlayer* Player = NewObject<USubtitlePlayer>(this);
 Player->Initialize(RendererObject, MaxLines);  // RendererObject implements ISubtitleRenderer
 
+// Whether the character-name prefix is rendered bold (default: true)
+Player->bBoldCharacterName = true;
+
 // Start playing (stops any currently playing subtitle first)
-Player->Start(Text, DurationSeconds);
+// CharacterName, bHasCharacterNameColor, CharacterNameColor are optional
+Player->Start(Text, DurationSeconds,
+              CharacterName,         // FString — displayed at the start of each page
+              bHasCharacterNameColor,// bool   — false = use default text colour
+              CharacterNameColor);   // FLinearColor
 
 // Call once per frame
 Player->Tick(DeltaSeconds);
@@ -405,17 +424,20 @@ Player->MaxLines = 3;
 Player->OnComplete.AddDynamic(this, &AMyActor::HandleDone);
 ```
 
+When `CharacterName` is non-empty, `"Name: "` is prepended to the first line of every page. The name is measured using `BoldFontInfo` (if set) to reserve the exact space before wrapping the body text.
+
 All methods are also Blueprint-callable. The player is a plain `UObject` — not a component — so you own its lifetime and call `Tick` yourself. This matches the JS player's design exactly.
 
 #### `USubtitleWidget`
 
 ```cpp
 SubWidget->FontInfo             = FSlateFontInfo(FontAsset, 16);
+SubWidget->BoldFontInfo         = FSlateFontInfo(BoldFontAsset, 16); // used for character-name prefix
 SubWidget->TextColor            = FLinearColor::White;
 SubWidget->ContainerWidthOverride = 540.f; // bypass geometry lookup before first layout pass
 ```
 
-Text is measured using Slate's font measure service with the same `FontInfo`, so measurements always match what is rendered. To use a Blueprint-designed layout, subclass `USubtitleWidget` in a Widget Blueprint and add a `UVerticalBox` named **`TextContainer`**.
+Text is measured using Slate's font measure service with the same `FontInfo`, so measurements always match what is rendered. `BoldFontInfo` is used only for the character-name prefix; if it is not set the widget falls back to `FontInfo`. To use a Blueprint-designed layout, subclass `USubtitleWidget` in a Widget Blueprint and add a `UVerticalBox` named **`TextContainer`**.
 
 #### Custom renderer
 
@@ -427,14 +449,17 @@ class UMyRenderer : public UObject, public ISubtitleRenderer
 {
     GENERATED_BODY()
 public:
-    virtual float MeasureLineWidth_Implementation(const FString& Text) override;
+    // bBold = true when measuring the character-name prefix
+    virtual float MeasureLineWidth_Implementation(const FString& Text, bool bBold) override;
     virtual float GetContainerWidth_Implementation() override;
-    virtual void  Render_Implementation(const TArray<FString>& Lines) override;
+    // CharacterContext.bValid = true when a name prefix should be drawn on the first line
+    virtual void  Render_Implementation(const TArray<FString>& Lines,
+                                        const FSubtitleCharacterContext& CharacterContext) override;
     virtual void  Clear_Implementation() override;
 };
 ```
 
-Blueprint implementations are equally supported — bind the interface events in any Blueprint class.
+`FSubtitleCharacterContext` is defined in `ISubtitleRenderer.h` and carries `Name`, `Color`, `bHasColor`, and `bBold`. Blueprint implementations are equally supported — bind the interface events in any Blueprint class.
 
 #### Low-level layout API
 
@@ -521,9 +546,11 @@ HandleSubtitleDone() will have to call Stop() to clear the text.
 **3. When your dialogue system triggers a line, call `Start()`.**
 
 ```csharp
-void ShowSubtitle(string text, float durationSeconds)
+void ShowSubtitle(string text, float durationSeconds, string speaker)
 {
-    player.Start(text, durationSeconds);
+    player.Start(text, durationSeconds,
+                 characterName: speaker,                        // optional
+                 characterNameColor: new Color(0.94f, 0.8f, 0.53f)); // optional amber
 }
 ```
 
@@ -545,8 +572,14 @@ void Update()
 var player = new SubtitlePlayer();
 player.Initialize(renderer, maxLines);  // renderer implements ISubtitleRenderer
 
+// Whether the character-name prefix is rendered bold (default: true)
+player.BoldCharacterName = true;
+
 // Start playing (stops any currently playing subtitle first)
-player.Start(text, durationSeconds);
+// characterName and characterNameColor are optional
+player.Start(text, durationSeconds,
+             characterName: speaker,          // string or null
+             characterNameColor: Color.yellow); // Color? or null
 
 // Call once per frame
 player.Tick(deltaTime);
@@ -567,6 +600,8 @@ player.MaxLines = 3;
 player.OnComplete += HandleDone;
 ```
 
+When `characterName` is non-null, `"Name: "` is prepended to the first line of every page. The name is measured using TMP's bold rich-text probe to reserve the exact space before wrapping the body text.
+
 #### `SubtitleWidget`
 
 ```csharp
@@ -585,12 +620,16 @@ Implement `ISubtitleRenderer` on any MonoBehaviour or plain C# class to plug in 
 ```csharp
 public class MyRenderer : MonoBehaviour, ISubtitleRenderer
 {
-    public float MeasureLineWidth(string text) { /* return pixel width of text */ }
-    public float GetContainerWidth()           { /* return available width in pixels */ }
-    public void  Render(string[] lines)        { /* display the lines */ }
-    public void  Clear()                       { /* remove the current subtitle display */ }
+    // bold = true when measuring the character-name prefix
+    public float MeasureLineWidth(string text, bool bold = false) { /* return pixel width */ }
+    public float GetContainerWidth()                              { /* return available width */ }
+    // characterContext is non-null when a name prefix should appear on the first line
+    public void  Render(string[] lines, CharacterContext? characterContext = null) { /* display */ }
+    public void  Clear()                                          { /* remove display */ }
 }
 ```
+
+`CharacterContext` is a struct with `Name` (string), `Color` (Color?), and `Bold` (bool).
 
 #### Low-level layout API
 
