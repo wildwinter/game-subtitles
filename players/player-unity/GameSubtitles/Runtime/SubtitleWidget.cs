@@ -93,7 +93,8 @@ namespace GameSubtitles
                 var tmp = go.AddComponent<TextMeshProUGUI>();
                 if (FontAsset != null) tmp.font = FontAsset;
                 tmp.fontSize         = FontSize;
-                tmp.color            = TextColor;
+                tmp.color            = (characterContext.HasValue && characterContext.Value.LineColor.HasValue)
+                                           ? characterContext.Value.LineColor.Value : TextColor;
                 tmp.alignment        = TextAlignmentOptions.Center;
                 tmp.textWrappingMode = TextWrappingModes.NoWrap; // layout is already done by WrapAndPaginate
 

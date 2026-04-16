@@ -32,6 +32,14 @@ struct GAMESUBTITLES_API FSubtitleCharacterContext
     /** Whether the name prefix should be rendered in bold. */
     UPROPERTY(BlueprintReadWrite, Category = "Subtitles")
     bool bBold = true;
+
+    /** Colour for the subtitle body text on all lines. Only used when bHasLineColor is true. */
+    UPROPERTY(BlueprintReadWrite, Category = "Subtitles")
+    FLinearColor LineColor = FLinearColor::White;
+
+    /** When false the renderer uses its default text colour for body lines. */
+    UPROPERTY(BlueprintReadWrite, Category = "Subtitles")
+    bool bHasLineColor = false;
 };
 
 /**

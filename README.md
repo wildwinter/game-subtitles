@@ -214,7 +214,8 @@ function showSubtitle(text, durationSeconds, speaker, onDone) {
     text,                      // the annotated string from your subtitle data
     duration: durationSeconds,
     characterName: speaker,    // optional — displayed bold at the start of each page
-    characterNameColour: '#f0cc88', // optional colour for the name prefix
+    characterNameColor: '#f0cc88', // optional color for the name prefix
+    lineColor: '#ffffff',     // optional color for the subtitle body text
     onComplete: onDone,        // called automatically when the last page expires
   });
 }
@@ -262,8 +263,8 @@ Everything else is the same.
 const player = new SubtitlePlayer({ renderer, maxLines, boldCharacterName: true });
 
 // Start playing a subtitle (stops any currently playing subtitle first)
-// characterName and characterNameColour are optional
-player.start({ text, duration, onComplete, characterName, characterNameColour });
+// characterName, characterNameColor, and lineColor are all optional
+player.start({ text, duration, onComplete, characterName, characterNameColor, lineColor });
 
 // Call once per frame from your game loop
 player.tick(deltaSeconds);
@@ -281,7 +282,7 @@ player.pageCount;
 player.maxLines = 3;
 ```
 
-When `characterName` is set, `"Name: "` is prepended to the first line of every page. The name is measured in bold to reserve the exact space needed, so the remaining body text always fits on the line.
+When `characterName` is set, `"Name: "` is prepended to the first line of every page. The name is measured in bold to reserve the exact space needed, so the remaining body text always fits on the line. `lineColor` applies to all body text lines; `characterNameColor` applies only to the name prefix.
 
 #### `DomRenderer`
 
@@ -312,7 +313,7 @@ const myRenderer = {
   // bold = true when measuring the character-name prefix (measure in bold weight)
   measureLineWidth(text, bold = false) { /* return pixel width of text as a number */ },
   getContainerWidth()                  { /* return available width in pixels */ },
-  // characterContext is { name, colour, bold } or null
+  // characterContext is { name, color, bold } or null
   render(lines, characterContext)      { /* display the string[] of lines */ },
   clear()                              { /* remove the current subtitle display */ },
 };
@@ -399,11 +400,13 @@ Player->Initialize(RendererObject, MaxLines);  // RendererObject implements ISub
 Player->bBoldCharacterName = true;
 
 // Start playing (stops any currently playing subtitle first)
-// CharacterName, bHasCharacterNameColor, CharacterNameColor are optional
+// All parameters after Duration are optional
 Player->Start(Text, DurationSeconds,
               CharacterName,         // FString — displayed at the start of each page
-              bHasCharacterNameColor,// bool   — false = use default text colour
-              CharacterNameColor);   // FLinearColor
+              bHasCharacterNameColor,// bool   — false = use default text color for name
+              CharacterNameColor,    // FLinearColor — color for the name prefix
+              bHasLineColor,         // bool   — false = use default text color for body lines
+              LineColor);            // FLinearColor — color for all body text lines
 
 // Call once per frame
 Player->Tick(DeltaSeconds);
@@ -424,7 +427,7 @@ Player->MaxLines = 3;
 Player->OnComplete.AddDynamic(this, &AMyActor::HandleDone);
 ```
 
-When `CharacterName` is non-empty, `"Name: "` is prepended to the first line of every page. The name is measured using `BoldFontInfo` (if set) to reserve the exact space before wrapping the body text.
+When `CharacterName` is non-empty, `"Name: "` is prepended to the first line of every page. The name is measured using `BoldFontInfo` (if set) to reserve the exact space before wrapping the body text. `LineColor` applies to all body text lines; `CharacterNameColor` applies only to the name prefix.
 
 All methods are also Blueprint-callable. The player is a plain `UObject` — not a component — so you own its lifetime and call `Tick` yourself. This matches the JS player's design exactly.
 
@@ -549,8 +552,9 @@ HandleSubtitleDone() will have to call Stop() to clear the text.
 void ShowSubtitle(string text, float durationSeconds, string speaker)
 {
     player.Start(text, durationSeconds,
-                 characterName: speaker,                        // optional
-                 characterNameColor: new Color(0.94f, 0.8f, 0.53f)); // optional amber
+                 characterName: speaker,                         // optional
+                 characterNameColor: new Color(0.94f, 0.8f, 0.53f), // optional amber
+                 lineColor: Color.white);                        // optional body text color
 }
 ```
 
@@ -576,10 +580,11 @@ player.Initialize(renderer, maxLines);  // renderer implements ISubtitleRenderer
 player.BoldCharacterName = true;
 
 // Start playing (stops any currently playing subtitle first)
-// characterName and characterNameColor are optional
+// All parameters after durationSeconds are optional
 player.Start(text, durationSeconds,
-             characterName: speaker,          // string or null
-             characterNameColor: Color.yellow); // Color? or null
+             characterName: speaker,           // string or null
+             characterNameColor: Color.yellow, // Color? or null — color for name prefix
+             lineColor: Color.white);          // Color? or null — color for all body lines
 
 // Call once per frame
 player.Tick(deltaTime);
@@ -600,7 +605,7 @@ player.MaxLines = 3;
 player.OnComplete += HandleDone;
 ```
 
-When `characterName` is non-null, `"Name: "` is prepended to the first line of every page. The name is measured using TMP's bold rich-text probe to reserve the exact space before wrapping the body text.
+When `characterName` is non-null, `"Name: "` is prepended to the first line of every page. The name is measured using TMP's bold rich-text probe to reserve the exact space before wrapping the body text. `lineColor` applies to all body text lines; `characterNameColor` applies only to the name prefix.
 
 #### `SubtitleWidget`
 

@@ -34,14 +34,15 @@ export class DomRenderer {
    * "Name: " rendered in a styled <span>.
    *
    * @param {string[]} lines
-   * @param {{ name: string, colour: string|null, bold: boolean }|null} [characterContext]
+   * @param {{ name: string|null, color: string|null, bold: boolean, lineColor: string|null }|null} [characterContext]
    */
   render(lines, characterContext = null) {
     this._element.innerHTML = '';
     const doc = this._element.ownerDocument;
     for (let i = 0; i < lines.length; i++) {
       const p = doc.createElement('p');
-      if (i === 0 && characterContext) {
+      if (characterContext?.lineColor) p.style.color = characterContext.lineColor;
+      if (i === 0 && characterContext?.name) {
         // Prevent the browser word-wrapping this line if the bold prefix plus
         // the text land fractionally over the container width.  Any residual
         // overflow is clipped invisibly; text-align:center still applies.
@@ -49,7 +50,8 @@ export class DomRenderer {
         p.style.overflow   = 'hidden';
         const span = doc.createElement('span');
         span.textContent = `${characterContext.name}: `;
-        if (characterContext.colour) span.style.color = characterContext.colour;
+        // Name color is set explicitly on the span; it overrides the p-level lineColor.
+        if (characterContext.color) span.style.color = characterContext.color;
         if (characterContext.bold) span.style.fontWeight = 'bold';
         p.appendChild(span);
         p.appendChild(doc.createTextNode(lines[i]));

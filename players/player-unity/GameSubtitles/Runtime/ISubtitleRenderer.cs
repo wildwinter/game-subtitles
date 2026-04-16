@@ -18,6 +18,12 @@ namespace GameSubtitles
 
         /// <summary>Whether to render the name in bold.</summary>
         public bool Bold;
+
+        /// <summary>
+        /// Colour for the subtitle body text on all lines.
+        /// <c>null</c> means the renderer's default text colour is used.
+        /// </summary>
+        public Color? LineColor;
     }
 
     /// <summary>

@@ -19,7 +19,9 @@ void USubtitlePlayer::Initialize(TScriptInterface<ISubtitleRenderer> InRenderer,
 void USubtitlePlayer::Start(const FString& Text, float Duration,
                             const FString& CharacterName,
                             bool bHasCharacterNameColor,
-                            FLinearColor CharacterNameColor)
+                            FLinearColor CharacterNameColor,
+                            bool bHasLineColor,
+                            FLinearColor LineColor)
 {
     bRunning = false; // stop any current playback
 
@@ -42,6 +44,8 @@ void USubtitlePlayer::Start(const FString& Text, float Duration,
         CurrentCharacterContext.bHasColor  = bHasCharacterNameColor;
         CurrentCharacterContext.Color      = CharacterNameColor;
     }
+    CurrentCharacterContext.bHasLineColor = bHasLineColor;
+    CurrentCharacterContext.LineColor     = LineColor;
 
     if (!Renderer.GetObject())
     {

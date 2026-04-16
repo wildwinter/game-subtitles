@@ -117,7 +117,9 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
             {
                 LineBlock->SetText(FText::FromString(Lines[i]));
                 LineBlock->SetFont(FontInfo);
-                LineBlock->SetColorAndOpacity(FSlateColor(TextColor));
+                const FSlateColor BodyColor = CharacterContext.bHasLineColor
+                    ? FSlateColor(CharacterContext.LineColor) : FSlateColor(TextColor);
+                LineBlock->SetColorAndOpacity(BodyColor);
                 LineBlock->SetAutoWrapText(false);
 
                 UHorizontalBoxSlot* LineSlot = HBox->AddChildToHorizontalBox(LineBlock);
@@ -147,7 +149,9 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
 
             TextBlock->SetText(FText::FromString(Lines[i]));
             TextBlock->SetFont(FontInfo);
-            TextBlock->SetColorAndOpacity(FSlateColor(TextColor));
+            const FSlateColor BodyColor = CharacterContext.bHasLineColor
+                ? FSlateColor(CharacterContext.LineColor) : FSlateColor(TextColor);
+            TextBlock->SetColorAndOpacity(BodyColor);
             TextBlock->SetJustification(ETextJustify::Center);
             TextBlock->SetAutoWrapText(false); // layout is already done by WrapAndPaginate
 

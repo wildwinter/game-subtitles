@@ -35,7 +35,8 @@ export class SubtitlePlayer {
     this._done = false;
     this._onComplete = null;
     this._characterName = null;
-    this._characterNameColour = null;
+    this._characterNameColor = null;
+    this._lineColor = null;
   }
 
   /**
@@ -49,16 +50,20 @@ export class SubtitlePlayer {
    * @param {string}   [opts.characterName]       If present, prepended to the first line of
    *                                              every page as "Name: ", styled per the
    *                                              renderer's character-context support.
-   * @param {string}   [opts.characterNameColour] CSS colour string for the character name.
+   * @param {string}   [opts.characterNameColor] CSS color string for the character name.
    *                                              Only used when `characterName` is set.
+   * @param {string}   [opts.lineColor]          CSS color string for the subtitle body text.
+   *                                              Applies to all lines. When omitted the renderer's
+   *                                              default text color is used.
    */
-  start({ text, duration, onComplete = null, characterName = null, characterNameColour = null }) {
+  start({ text, duration, onComplete = null, characterName = null, characterNameColor = null, lineColor = null }) {
     this._running = false;
     this._renderer.clear();
 
     this._onComplete = onComplete;
     this._characterName = characterName;
-    this._characterNameColour = characterNameColour;
+    this._characterNameColor = characterNameColor;
+    this._lineColor = lineColor;
     this._elapsed = 0;
     this._pageIndex = 0;
     this._done = false;
@@ -138,8 +143,8 @@ export class SubtitlePlayer {
   }
 
   _renderCurrent() {
-    const charCtx = this._characterName
-      ? { name: this._characterName, colour: this._characterNameColour, bold: this._boldCharacterName }
+    const charCtx = (this._characterName || this._lineColor)
+      ? { name: this._characterName, color: this._characterNameColor, bold: this._boldCharacterName, lineColor: this._lineColor }
       : null;
     this._renderer.render(this._pages[this._pageIndex], charCtx);
   }

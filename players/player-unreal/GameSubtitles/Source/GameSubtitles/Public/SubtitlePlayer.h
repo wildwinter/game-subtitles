@@ -62,12 +62,16 @@ public:
      *                              every page. The text is laid out with space reserved for the prefix.
      * @param bHasCharacterNameColor When true, CharacterNameColor is applied to the name prefix.
      * @param CharacterNameColor    Colour for the character name prefix.
+     * @param bHasLineColor         When true, LineColor is applied to all body text lines.
+     * @param LineColor             Colour for the subtitle body text on all lines.
      */
     UFUNCTION(BlueprintCallable, Category = "Subtitles")
     void Start(const FString& Text, float Duration,
                const FString& CharacterName = TEXT(""),
                bool bHasCharacterNameColor = false,
-               FLinearColor CharacterNameColor = FLinearColor::White);
+               FLinearColor CharacterNameColor = FLinearColor::White,
+               bool bHasLineColor = false,
+               FLinearColor LineColor = FLinearColor::White);
 
     /**
      * Advances the internal clock. Call once per frame from your game loop.

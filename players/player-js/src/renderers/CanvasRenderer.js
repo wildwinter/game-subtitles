@@ -39,33 +39,36 @@ export class CanvasRenderer {
   /**
    * Clears the canvas and draws each line of text.
    * When `characterContext` is provided, the first line is prefixed with
-   * "Name: " drawn in the specified colour and optionally bold weight.
+   * "Name: " drawn in the specified color and optionally bold weight.
    *
    * @param {string[]} lines
-   * @param {{ name: string, colour: string|null, bold: boolean }|null} [characterContext]
+   * @param {{ name: string|null, color: string|null, bold: boolean, lineColor: string|null }|null} [characterContext]
    */
   render(lines, characterContext = null) {
     this.clear();
     this._ctx.font = this._font;
     const lh = this._lineHeight;
+    const defaultFill = this._ctx.fillStyle;
+    const lineFill = characterContext?.lineColor ?? defaultFill;
     lines.forEach((line, i) => {
       const y = (i + 1) * lh;
-      if (i === 0 && characterContext) {
+      if (i === 0 && characterContext?.name) {
         const prefix = `${characterContext.name}: `;
-        const savedFill = this._ctx.fillStyle;
-        // Draw the character name prefix (optionally bold, optionally coloured)
+        // Draw the character name prefix (optionally bold, optionally colored)
         if (characterContext.bold) this._ctx.font = this._makeBoldFont(this._font);
-        if (characterContext.colour) this._ctx.fillStyle = characterContext.colour;
+        this._ctx.fillStyle = characterContext.color ?? defaultFill;
         this._ctx.fillText(prefix, 0, y);
         const prefixWidth = this._ctx.measureText(prefix).width;
-        // Restore style and draw the subtitle text
-        this._ctx.font = this._font;
-        this._ctx.fillStyle = savedFill;
+        // Draw the subtitle body text in the line color
+        this._ctx.font      = this._font;
+        this._ctx.fillStyle = lineFill;
         this._ctx.fillText(line, prefixWidth, y);
       } else {
+        this._ctx.fillStyle = lineFill;
         this._ctx.fillText(line, 0, y);
       }
     });
+    this._ctx.fillStyle = defaultFill; // restore
   }
 
   /** @param {string} font  @returns {string} */

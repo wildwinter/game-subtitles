@@ -43,6 +43,7 @@ namespace GameSubtitles
         private bool                 _done;
         private string               _characterName;
         private Color?               _characterNameColor;
+        private Color?               _lineColor;
 
         // ── Public API ────────────────────────────────────────────────────────────
 
@@ -72,14 +73,20 @@ namespace GameSubtitles
         /// Colour for the character name. Pass <c>null</c> to use the renderer's default text colour.
         /// Only used when <paramref name="characterName"/> is non-null.
         /// </param>
+        /// <param name="lineColor">
+        /// Colour for the subtitle body text on all lines.
+        /// Pass <c>null</c> to use the renderer's default text colour.
+        /// </param>
         public void Start(string text, float duration,
-                          string characterName = null, Color? characterNameColor = null)
+                          string characterName = null, Color? characterNameColor = null,
+                          Color? lineColor = null)
         {
             _running = false;
             _renderer?.Clear();
 
             _characterName      = characterName;
             _characterNameColor = characterNameColor;
+            _lineColor          = lineColor;
             _elapsed            = 0f;
             _pageIndex          = 0;
             _done               = false;
@@ -160,13 +167,14 @@ namespace GameSubtitles
                 return;
 
             CharacterContext? ctx = null;
-            if (!string.IsNullOrEmpty(_characterName))
+            if (!string.IsNullOrEmpty(_characterName) || _lineColor.HasValue)
             {
                 ctx = new CharacterContext
                 {
-                    Name  = _characterName,
-                    Color = _characterNameColor,
-                    Bold  = BoldCharacterName,
+                    Name      = _characterName,
+                    Color     = _characterNameColor,
+                    Bold      = BoldCharacterName,
+                    LineColor = _lineColor,
                 };
             }
 
