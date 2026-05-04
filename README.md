@@ -111,6 +111,9 @@ game-subtitles-preprocess ./loc/ -o ./out/ --field text -l es_ES
 
 # Process an XLSX spreadsheet
 game-subtitles-preprocess sheet.xlsx -o out.xlsx --field Subtitle -l en_GB
+
+# Process a compiled Ink JSON file (auto-detected; no --field needed)
+game-subtitles-preprocess story.json -o story-processed.json -l en_US
 ```
 
 #### What the preprocessor does
@@ -131,10 +134,31 @@ No visible characters are added or removed. The strings are otherwise identical 
 | --- | --- |
 | `.po` | Processes all `msgstr` values; `--field` is ignored |
 | `.csv` | `--field` required; processes the named column; all other columns pass through unchanged |
-| `.json` | `--field` required; input must be a JSON array of objects `[{…}]` |
+| `.json` (subtitle array) | `--field` required; input must be a JSON array of objects `[{…}]` |
+| `.json` (compiled Ink) | Auto-detected by `"inkVersion"` key; `--field` is ignored (see below) |
 | `.xlsx` | `--field` required; first sheet only; header row on row 1 |
 
 > **CSV and UTF-8:** Always save CSV files as **UTF-8 with BOM**. Without a BOM, tools like Microsoft Excel on Windows assume a legacy code page and will silently corrupt any non-ASCII characters — including soft hyphens — before they reach this tool. Most editors (VS Code, Notepad++, JetBrains) have an explicit UTF-8 BOM option in their encoding selector.
+
+#### Ink compiled JSON support
+
+If you use [Ink](https://www.inklestudios.com/ink/) for narrative scripting, the preprocessor can annotate your compiled `.json` output directly — no need to work from the original `.ink` source files.
+
+The tool detects a compiled Ink JSON file by the presence of `"inkVersion"` at the root of the object. Pass it like any other input file; `--field` is not used:
+
+```bash
+# Annotate a compiled Ink story for English
+game-subtitles-preprocess story.json -o story-processed.json -l en_US
+```
+
+The preprocessor walks the compiled JSON tree and inserts soft hyphens into every **displayable text string**:
+
+- **Narrative / dialogue lines** — bare `^`-prefixed strings in instruction arrays — are always processed.
+- **Choice text** — strings inside `str`/`/str` blocks followed by a choice pointer (`{"*":…}`) — are also processed.
+- **Tag content** — strings between `"#"` / `"/#"` delimiters — is left unchanged.
+- **String expression values** — strings in `str`/`/str` blocks used for comparisons, variable assignments, or other expressions — are left unchanged, so runtime logic is never broken.
+
+The output file is the same compiled JSON with soft hyphens embedded in the displayable strings. Load it with your Ink runtime exactly as you would the original.
 
 #### Supported languages
 
@@ -313,7 +337,7 @@ const myRenderer = {
   // bold = true when measuring the character-name prefix (measure in bold weight)
   measureLineWidth(text, bold = false) { /* return pixel width of text as a number */ },
   getContainerWidth()                  { /* return available width in pixels */ },
-  // characterContext is { name, color, bold } or null
+  // characterContext is { name, color, bold, lineColor } or null
   render(lines, characterContext)      { /* display the string[] of lines */ },
   clear()                              { /* remove the current subtitle display */ },
 };
@@ -634,7 +658,7 @@ public class MyRenderer : MonoBehaviour, ISubtitleRenderer
 }
 ```
 
-`CharacterContext` is a struct with `Name` (string), `Color` (Color?), and `Bold` (bool).
+`CharacterContext` is a struct with `Name` (string), `Color` (Color?), `Bold` (bool), and `LineColor` (Color?).
 
 #### Low-level layout API
 

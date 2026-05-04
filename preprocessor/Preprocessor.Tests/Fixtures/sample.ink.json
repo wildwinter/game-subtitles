@@ -1,0 +1,37 @@
+{
+  "inkVersion": 21,
+  "root": [
+    [
+      "\n",
+      {"->": "Scene"},
+      ["done", {"#n": "g-0"}],
+      null
+    ],
+    "done",
+    {
+      "Scene": [
+        "#", "^ws:final", "/#",
+        "^Internationalization is extraordinarily difficult.", "\n",
+        "^Short.", "\n",
+        "ev",
+        "str", "^Internationalization choice text", "/str",
+        "/ev",
+        {"*": ".^.c-0", "flg": 4},
+        {
+          "c-0": ["\n", "^You chose well.", "\n", {"->": ".^.^.g-0"}, {"#f": 5}],
+          "g-0": ["done", null]
+        }
+      ],
+      "Check": [
+        "ev", {"VAR?": "v"}, "/ev",
+        ["du", "ev", "str", "^internationalization", "/str", "==", "/ev",
+          {"->": ".^.b", "c": true},
+          {"b": ["pop", "\n", "^Matched.", "\n", {"->": ".^.^.^.2"}, null]}
+        ],
+        "nop", "\n", "done", null
+      ],
+      "global decl": ["ev", false, {"VAR=": "v"}, "/ev", "end", null]
+    }
+  ],
+  "listDefs": {}
+}

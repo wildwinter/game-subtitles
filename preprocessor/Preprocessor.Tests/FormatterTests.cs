@@ -129,4 +129,70 @@ public class FormatterTests : IDisposable
 
         Assert.True(result.HasErrors);
     }
+
+    // ── Ink JSON ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void InkJson_ProcessesNarrativeText()
+    {
+        var input  = Path.Combine(FixturesDir, "sample.ink.json");
+        var output = Path.Combine(_tmpDir, "out.ink.json");
+        var result = MakeProcessor().ProcessFile(input, output);
+
+        Assert.False(result.HasErrors, string.Join(", ", result.Errors));
+        Assert.True(result.ProcessedCount > 0);
+        var content = File.ReadAllText(output);
+        Assert.Contains('­', content);
+    }
+
+    [Fact]
+    public void InkJson_DoesNotHyphenateTagContent()
+    {
+        var input  = Path.Combine(FixturesDir, "sample.ink.json");
+        var output = Path.Combine(_tmpDir, "tag.ink.json");
+        MakeProcessor().ProcessFile(input, output);
+
+        // "ws:final" is inside a "#"/"/#" tag block — must pass through unchanged.
+        var content = File.ReadAllText(output);
+        Assert.Contains("\"^ws:final\"", content);
+    }
+
+    [Fact]
+    public void InkJson_DoesNotHyphenateStringComparisons()
+    {
+        var input  = Path.Combine(FixturesDir, "sample.ink.json");
+        var output = Path.Combine(_tmpDir, "cmp.ink.json");
+        MakeProcessor().ProcessFile(input, output);
+
+        // "^internationalization" is in a str/.../str == /ev block — must not be modified.
+        // Ordinal comparison required: CurrentCulture ignores soft hyphens (U+00AD).
+        var content = File.ReadAllText(output);
+        Assert.Contains("\"^internationalization\"", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void InkJson_ProcessesChoiceText()
+    {
+        var input  = Path.Combine(FixturesDir, "sample.ink.json");
+        var output = Path.Combine(_tmpDir, "choice.ink.json");
+        var result = MakeProcessor().ProcessFile(input, output);
+        Assert.False(result.HasErrors, string.Join(", ", result.Errors));
+
+        // Choice text "^Internationalization choice text" is in a str.../str /ev {"*":...}
+        // block and must have soft hyphens inserted.
+        // Use Ordinal comparison so soft hyphens (U+00AD) are not ignored by culture rules.
+        var content = File.ReadAllText(output);
+        Assert.DoesNotContain("\"^Internationalization choice text\"", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void InkJson_RejectsNonInkJson()
+    {
+        // sample.json is a subtitle array, not compiled Ink — expect an error.
+        var input  = Path.Combine(FixturesDir, "sample.json");
+        var output = Path.Combine(_tmpDir, "rejected.json");
+        var result = MakeProcessor().ProcessFile(input, output);
+
+        Assert.True(result.HasErrors);
+    }
 }

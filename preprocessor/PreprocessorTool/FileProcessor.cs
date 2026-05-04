@@ -14,6 +14,8 @@ internal sealed class FileProcessor
             [".xlsx"] = new XlsxFormatter(),
         };
 
+    private static readonly InkJsonFormatter _inkJsonFormatter = new();
+
     private readonly SubtitlePreprocessor _preprocessor;
     private readonly string? _languageCode;
     private readonly string? _fieldName;
@@ -40,7 +42,13 @@ internal sealed class FileProcessor
 
         var ext = Path.GetExtension(inputPath);
 
-        if (!Formatters.TryGetValue(ext, out var formatter))
+        IFormatter? formatter = null;
+        if (ext.Equals(".json", StringComparison.OrdinalIgnoreCase) && InkJsonFormatter.IsInkJson(inputPath))
+            formatter = _inkJsonFormatter;
+        else
+            Formatters.TryGetValue(ext, out formatter);
+
+        if (formatter is null)
         {
             result.AddError($"Unsupported file format '{ext}' for: {inputPath}");
             return result;
