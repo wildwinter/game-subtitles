@@ -71,9 +71,17 @@ void USubtitlePlayer::Start(const FString& Text, float Duration,
         FirstLineIndent = FMath::CeilToFloat(RawIndent);
     }
 
+	float DurationUsed = Duration;
+	if (DurationUsed <= 0.f)	// Let's guess from the text length
+	{
+		FString CleanText = Text.Replace(TEXT("\u00AD"), TEXT(""));
+		const int32 CharCount = CleanText.Len();
+		DurationUsed = FMath::Clamp(FMath::RoundToFloat(CharCount / 14.f), 3.f, 18.f);
+	}
+
     Pages   = FSubtitleTextLayout::WrapAndPaginate(Text, MeasureWidth, ContainerWidth,
                                                     FMath::Max(1, MaxLines), FirstLineIndent);
-    Timings = FSubtitleTextLayout::AllocateTimings(Pages, Duration);
+    Timings = FSubtitleTextLayout::AllocateTimings(Pages, DurationUsed);
 
     bRunning = true;
     RenderCurrent();

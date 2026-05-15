@@ -4,6 +4,7 @@
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "Components/TextBlock.h"
+#include "Components/Spacer.h"
 #include "Blueprint/WidgetTree.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Fonts/FontMeasure.h"
@@ -93,6 +94,14 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
                                                  ? FSlateColor(CharacterContext.Color)
                                                  : FSlateColor(TextColor);
 
+            // Lead fill-spacer: expands to push name+body to center
+            if (USpacer* LeadSpacer = WidgetTree->ConstructWidget<USpacer>(USpacer::StaticClass()))
+            {
+                UHorizontalBoxSlot* SpacerSlot = HBox->AddChildToHorizontalBox(LeadSpacer);
+                if (SpacerSlot)
+                    SpacerSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+            }
+
             // Name prefix text block
             UTextBlock* NameBlock = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
             if (NameBlock)
@@ -131,11 +140,21 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
                 }
             }
 
-            // Center the horizontal box within the vertical box
+            // Trail fill-spacer: mirrors the lead spacer, completing the centering
+            if (USpacer* TrailSpacer = WidgetTree->ConstructWidget<USpacer>(USpacer::StaticClass()))
+            {
+                UHorizontalBoxSlot* SpacerSlot = HBox->AddChildToHorizontalBox(TrailSpacer);
+                if (SpacerSlot)
+                    SpacerSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+            }
+
+            // HBox fills the full TextContainer width; spacers handle centering without
+            // depending on the HBox's own measured width (which avoids a one-frame position
+            // jump when Slate hasn't yet measured the new STextBlock children).
             UVerticalBoxSlot* VSlot = TextContainer->AddChildToVerticalBox(HBox);
             if (VSlot)
             {
-                VSlot->SetHorizontalAlignment(HAlign_Center);
+                VSlot->SetHorizontalAlignment(HAlign_Fill);
                 VSlot->SetVerticalAlignment(VAlign_Center);
             }
         }
