@@ -74,6 +74,11 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
         return;
     }
 
+    // Hide while rebuilding so the frame that creates new (unmeasured) text widgets
+    // is never painted. Slate defers paint to end-of-frame so the Hidden state is
+    // never actually seen; we restore visibility after ForceLayoutPrepass below.
+    SetVisibility(ESlateVisibility::Hidden);
+
     TextContainer->ClearChildren();
 
     for (int32 i = 0; i < Lines.Num(); ++i)
@@ -182,6 +187,11 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
             }
         }
     }
+
+    // Synchronously measure the new widgets before the next paint so their desired
+    // sizes are correct the moment the widget becomes visible.
+    ForceLayoutPrepass();
+    SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 }
 
 void USubtitleWidget::Clear_Implementation()

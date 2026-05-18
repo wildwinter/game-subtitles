@@ -178,7 +178,12 @@ namespace GameSubtitles
                 };
             }
 
-            _renderer.Render(_pages[_pageIndex].ToArray(), ctx);
+            // Pad to MaxLines so the renderer always receives a full-height page.
+            List<string> page = new List<string>(_pages[_pageIndex]);
+            while (page.Count < MaxLines)
+                page.Add(" ");
+
+            _renderer.Render(page.ToArray(), ctx);
         }
     }
 }

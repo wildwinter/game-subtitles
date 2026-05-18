@@ -146,6 +146,9 @@ export class SubtitlePlayer {
     const charCtx = (this._characterName || this._lineColor)
       ? { name: this._characterName, color: this._characterNameColor, bold: this._boldCharacterName, lineColor: this._lineColor }
       : null;
-    this._renderer.render(this._pages[this._pageIndex], charCtx);
+    // Pad to maxLines so the renderer always receives a full-height page.
+    const page = [...this._pages[this._pageIndex]];
+    while (page.length < this._maxLines) page.push(' ');
+    this._renderer.render(page, charCtx);
   }
 }

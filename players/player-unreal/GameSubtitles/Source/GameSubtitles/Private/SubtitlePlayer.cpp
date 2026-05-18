@@ -143,6 +143,14 @@ void USubtitlePlayer::RenderCurrent()
 {
     if (Renderer.GetObject() && Pages.IsValidIndex(PageIndex))
     {
-        ISubtitleRenderer::Execute_Render(Renderer.GetObject(), Pages[PageIndex], CurrentCharacterContext);
+        // Pad to MaxLines so the renderer always receives a full-height page.
+        // A single space per padding line is invisible when centered but guarantees
+        // the text block reports a non-zero line height from the font metrics.
+        TArray<FString> PaddedLines = Pages[PageIndex];
+        while (PaddedLines.Num() < MaxLines)
+        {
+            PaddedLines.Add(TEXT(" "));
+        }
+        ISubtitleRenderer::Execute_Render(Renderer.GetObject(), PaddedLines, CurrentCharacterContext);
     }
 }

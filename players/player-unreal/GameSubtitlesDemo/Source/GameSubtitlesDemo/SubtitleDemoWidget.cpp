@@ -923,15 +923,5 @@ FSlateFontInfo USubtitleDemoWidget::SubtitleFont() const
 
 FSlateFontInfo USubtitleDemoWidget::SubtitleBoldFont() const
 {
-    // Make it super-big so the change is obvious:
-    /*FSlateFontInfo Info = FSlateFontInfo(
-        FCoreStyle::GetDefaultFontStyle("Bold", CurrentFontSize)
-    );
-    return Info;*/
-
-    FSlateFontInfo ExtraBoldFont(
-        FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Black.ttf"),
-        CurrentFontSize
-    );
-	return ExtraBoldFont;
+    return FCoreStyle::GetDefaultFontStyle("Bold", CurrentFontSize);
 }
