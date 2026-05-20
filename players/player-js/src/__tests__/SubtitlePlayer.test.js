@@ -24,7 +24,7 @@ describe('SubtitlePlayer', () => {
     const player = new SubtitlePlayer({ maxLines: 2, renderer: r });
     player.start({ text: 'hello', duration: 4 });
     expect(r.rendered.length).toBe(1);
-    expect(r.rendered[0]).toEqual(['hello']);
+    expect(r.rendered[0]).toEqual(['hello', ' ']);
   });
 
   it('advances to the next page when elapsed >= page duration', () => {
@@ -122,10 +122,10 @@ describe('SubtitlePlayer', () => {
       const player = new SubtitlePlayer({ maxLines: 1, renderer: r });
       player.start({ text: 'aaaaa bbbbb', duration: 4, characterName: 'V', characterNameColor: '#f0c' });
       expect(contexts.length).toBe(1);
-      expect(contexts[0]).toEqual({ name: 'V', color: '#f0c', bold: true, lineColor: null });
+      expect(contexts[0]).toEqual({ name: 'V', color: '#f0c', lineColor: null });
       player.tick(2.1);
       expect(contexts.length).toBe(2);
-      expect(contexts[1]).toEqual({ name: 'V', color: '#f0c', bold: true, lineColor: null });
+      expect(contexts[1]).toEqual({ name: 'V', color: '#f0c', lineColor: null });
     });
 
     it('passes null character context when characterName is omitted', () => {
@@ -139,15 +139,21 @@ describe('SubtitlePlayer', () => {
       expect(contexts[0]).toBeNull();
     });
 
-    it('respects boldCharacterName=false', () => {
-      const contexts = [];
+    it('measures the character-name prefix with the character-name font', () => {
+      const measured = [];
       const r = {
         ...makeRenderer(),
-        render(lines, charCtx) { contexts.push(charCtx); },
+        measureLineWidth: (text, useCharacterNameFont = false) => {
+          measured.push({ text, useCharacterNameFont });
+          return text.length * 10;
+        },
       };
-      const player = new SubtitlePlayer({ maxLines: 2, renderer: r, boldCharacterName: false });
+      const player = new SubtitlePlayer({ maxLines: 2, renderer: r });
       player.start({ text: 'hello', duration: 2, characterName: 'Rex' });
-      expect(contexts[0]).toEqual({ name: 'Rex', color: null, bold: false, lineColor: null });
+      // The "Rex: " prefix must be measured with the character-name font.
+      expect(measured.some(m => m.text === 'Rex: ' && m.useCharacterNameFont === true)).toBe(true);
+      // Body text is measured with the subtitle font.
+      expect(measured.some(m => m.text !== 'Rex: ' && m.useCharacterNameFont === true)).toBe(false);
     });
   });
 

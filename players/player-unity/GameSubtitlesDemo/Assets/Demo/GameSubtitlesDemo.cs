@@ -283,7 +283,11 @@ namespace GameSubtitles.Demo
             int next = Mathf.Clamp(_fontSize + delta, 10, 32);
             if (next == _fontSize) return;
             _fontSize = next;
-            if (_subWidget != null) _subWidget.FontSize = _fontSize;
+            if (_subWidget != null)
+            {
+                _subWidget.SubtitleFontSize      = _fontSize;
+                _subWidget.CharacterNameFontSize = _fontSize + 2f;
+            }
             UpdateFontDisplay();
             if (_isRunning) DoStart();
         }
@@ -502,8 +506,12 @@ namespace GameSubtitles.Demo
                 swGo.transform.SetParent(bar.transform, false);
                 swGo.AddComponent<RectTransform>();
                 _subWidget = swGo.AddComponent<SubtitleWidget>();
-                _subWidget.FontAsset             = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
-                _subWidget.FontSize               = _fontSize;
+                var demoFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+                _subWidget.SubtitleFontAsset      = demoFont;
+                _subWidget.SubtitleFontSize       = _fontSize;
+                // Give the character name its own, slightly larger font to show the distinct styling.
+                _subWidget.CharacterNameFontAsset = demoFont;
+                _subWidget.CharacterNameFontSize  = _fontSize + 2f;
                 _subWidget.TextColor              = Color.white;
                 _subWidget.ContainerWidthOverride = 540f; // explicit until widget is on-screen
             }

@@ -24,10 +24,16 @@ namespace GameSubtitles
     [RequireComponent(typeof(RectTransform))]
     public class SubtitleWidget : MonoBehaviour, ISubtitleRenderer
     {
-        [Header("Font")]
-        public TMP_FontAsset FontAsset;
-        public float         FontSize  = 16f;
-        public Color         TextColor = Color.white;
+        [Header("Subtitle Font")]
+        public TMP_FontAsset SubtitleFontAsset;
+        public float         SubtitleFontSize = 16f;
+        public Color         TextColor        = Color.white;
+
+        [Header("Character Name Font")]
+        [Tooltip("Font for the character-name prefix. Leave unset to use the subtitle font.")]
+        public TMP_FontAsset CharacterNameFontAsset;
+        [Tooltip("Size for the character-name prefix. Leave 0 to use the subtitle font size.")]
+        public float         CharacterNameFontSize = 0f;
 
         [Header("Layout")]
         [Tooltip("Override container width in pixels. Leave 0 to use the RectTransform width.")]
@@ -54,15 +60,18 @@ namespace GameSubtitles
         // ── ISubtitleRenderer ─────────────────────────────────────────────────────
 
         /// <inheritdoc/>
-        public float MeasureLineWidth(string text, bool bold = false)
+        public float MeasureLineWidth(string text, bool useCharacterNameFont = false)
         {
             EnsureProbe();
             if (_probe == null) return 0f;
 
-            // Sync font settings in case they changed since the probe was created
-            SyncProbeFont();
-            string measured = bold ? $"<b>{text}</b>" : text;
-            return _probe.GetPreferredValues(measured).x;
+            // Sync the probe to the font being measured (settings may have changed).
+            if (useCharacterNameFont)
+                ApplyFont(_probe, CharacterFontOrFallback, CharacterSizeOrFallback);
+            else
+                ApplyFont(_probe, SubtitleFontAsset, SubtitleFontSize);
+
+            return _probe.GetPreferredValues(text).x;
         }
 
         /// <inheritdoc/>
@@ -86,46 +95,11 @@ namespace GameSubtitles
             float y = 0f;
             for (int i = 0; i < lines.Length; i++)
             {
-                var go = new GameObject("SubtitleLine");
-                go.transform.SetParent(transform, false);
-                _lineObjects.Add(go);
-
-                var tmp = go.AddComponent<TextMeshProUGUI>();
-                if (FontAsset != null) tmp.font = FontAsset;
-                tmp.fontSize         = FontSize;
-                tmp.color            = (characterContext.HasValue && characterContext.Value.LineColor.HasValue)
-                                           ? characterContext.Value.LineColor.Value : TextColor;
-                tmp.alignment        = TextAlignmentOptions.Center;
-                tmp.textWrappingMode = TextWrappingModes.NoWrap; // layout is already done by WrapAndPaginate
-
-                tmp.fontMaterial.EnableKeyword("BOLD_ON");
-
-                if (i == 0 && characterContext.HasValue)
-                {
-                    var ctx = characterContext.Value;
-                    tmp.richText = true;
-                    string prefix = ctx.Name + ": ";
-                    if (ctx.Bold) prefix = $"<b>{prefix}</b>";
-                    if (ctx.Color.HasValue)
-                    {
-                        string hex = ColorUtility.ToHtmlStringRGB(ctx.Color.Value);
-                        prefix = $"<color=#{hex}>{prefix}</color>";
-                    }
-                    tmp.text = prefix + lines[i];
-                }
-                else
-                {
-                    tmp.text = lines[i];
-                }
-
-                // Anchor: full-width strip, top-aligned, stacked downward
-                var rt = go.GetComponent<RectTransform>();
-                rt.anchorMin        = new Vector2(0f, 1f);
-                rt.anchorMax        = new Vector2(1f, 1f);
-                rt.pivot            = new Vector2(0.5f, 1f);
-                float lineH         = tmp.preferredHeight;
-                rt.sizeDelta        = new Vector2(0f, lineH);
-                rt.anchoredPosition = new Vector2(0f, -y);
+                bool hasName = i == 0 && characterContext.HasValue
+                                       && !string.IsNullOrEmpty(characterContext.Value.Name);
+                float lineH = hasName
+                    ? CreateNameLine(lines[i], characterContext.Value, y)
+                    : CreateBodyLine(lines[i], characterContext, y);
                 y += lineH;
             }
 
@@ -141,6 +115,101 @@ namespace GameSubtitles
 
         // ── Private ───────────────────────────────────────────────────────────────
 
+        /// <summary>Font asset for the character name, falling back to the subtitle font.</summary>
+        private TMP_FontAsset CharacterFontOrFallback =>
+            CharacterNameFontAsset != null ? CharacterNameFontAsset : SubtitleFontAsset;
+
+        /// <summary>Font size for the character name, falling back to the subtitle size.</summary>
+        private float CharacterSizeOrFallback =>
+            CharacterNameFontSize > 0f ? CharacterNameFontSize : SubtitleFontSize;
+
+        private static void ApplyFont(TMP_Text t, TMP_FontAsset font, float size)
+        {
+            if (t == null) return;
+            if (font != null) t.font = font;
+            t.fontSize = size;
+        }
+
+        /// <summary>A single full-width centred line in the subtitle (body) font.</summary>
+        private float CreateBodyLine(string text, CharacterContext? ctx, float y)
+        {
+            var go = new GameObject("SubtitleLine");
+            go.transform.SetParent(transform, false);
+            _lineObjects.Add(go);
+
+            var tmp = go.AddComponent<TextMeshProUGUI>();
+            ApplyFont(tmp, SubtitleFontAsset, SubtitleFontSize);
+            tmp.color            = (ctx.HasValue && ctx.Value.LineColor.HasValue)
+                                       ? ctx.Value.LineColor.Value : TextColor;
+            tmp.alignment        = TextAlignmentOptions.Center;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap; // layout is already done by WrapAndPaginate
+            tmp.text             = text;
+
+            var rt = go.GetComponent<RectTransform>();
+            AnchorRow(rt, tmp.preferredHeight, y);
+            return tmp.preferredHeight;
+        }
+
+        /// <summary>
+        /// Line 0 with a character name: a horizontal row holding the name segment
+        /// (character-name font) and the body segment (subtitle font), centred as a unit.
+        /// </summary>
+        private float CreateNameLine(string text, CharacterContext ctx, float y)
+        {
+            var rowGo = new GameObject("SubtitleLine");
+            rowGo.transform.SetParent(transform, false);
+            _lineObjects.Add(rowGo);
+            var rowRt = rowGo.AddComponent<RectTransform>();
+
+            var hlg = rowGo.AddComponent<HorizontalLayoutGroup>();
+            hlg.childAlignment         = TextAnchor.MiddleCenter;
+            hlg.childControlWidth       = true;
+            hlg.childControlHeight      = true;
+            hlg.childForceExpandWidth   = false;
+            hlg.childForceExpandHeight  = false;
+
+            Vector2 nameSize = AddRowSegment(rowGo.transform, ctx.Name + ": ",
+                                             CharacterFontOrFallback, CharacterSizeOrFallback,
+                                             ctx.Color ?? TextColor);
+            Vector2 bodySize = AddRowSegment(rowGo.transform, text,
+                                             SubtitleFontAsset, SubtitleFontSize,
+                                             ctx.LineColor ?? TextColor);
+
+            float lineH = Mathf.Max(nameSize.y, bodySize.y);
+            AnchorRow(rowRt, lineH, y);
+            return lineH;
+        }
+
+        /// <summary>Creates one TMP segment inside a name row and returns its preferred size.</summary>
+        private Vector2 AddRowSegment(Transform parent, string text, TMP_FontAsset font, float size, Color color)
+        {
+            var go = new GameObject("Segment");
+            go.transform.SetParent(parent, false);
+
+            var tmp = go.AddComponent<TextMeshProUGUI>();
+            ApplyFont(tmp, font, size);
+            tmp.color            = color;
+            tmp.alignment        = TextAlignmentOptions.Center;
+            tmp.textWrappingMode = TextWrappingModes.NoWrap;
+            tmp.text             = text;
+
+            Vector2 pref = tmp.GetPreferredValues(text);
+            var le = go.AddComponent<LayoutElement>();
+            le.preferredWidth  = pref.x;
+            le.preferredHeight = pref.y;
+            return pref;
+        }
+
+        // Anchor a line as a full-width strip, top-aligned, stacked downward.
+        private static void AnchorRow(RectTransform rt, float height, float y)
+        {
+            rt.anchorMin        = new Vector2(0f, 1f);
+            rt.anchorMax        = new Vector2(1f, 1f);
+            rt.pivot            = new Vector2(0.5f, 1f);
+            rt.sizeDelta        = new Vector2(0f, height);
+            rt.anchoredPosition = new Vector2(0f, -y);
+        }
+
         private void EnsureProbe()
         {
             if (_probe != null)
@@ -153,7 +222,7 @@ namespace GameSubtitles
 
             var tmp = go.AddComponent<TextMeshProUGUI>();
             tmp.textWrappingMode = TextWrappingModes.NoWrap;
-            SyncProbeFont(tmp);
+            ApplyFont(tmp, SubtitleFontAsset, SubtitleFontSize);
 
             var rt = go.GetComponent<RectTransform>();
             rt.anchoredPosition = new Vector2(-99999f, -99999f);
@@ -164,14 +233,6 @@ namespace GameSubtitles
             le.ignoreLayout = true;
 
             _probe = tmp;
-        }
-
-        private void SyncProbeFont(TMP_Text tmp = null)
-        {
-            var t = tmp ?? _probe;
-            if (t == null) return;
-            if (FontAsset != null) t.font = FontAsset;
-            t.fontSize = FontSize;
         }
 
         private void ClearLineObjects()

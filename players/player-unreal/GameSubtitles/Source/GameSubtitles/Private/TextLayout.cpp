@@ -229,9 +229,9 @@ TArray<TArray<FString>> FSubtitleTextLayout::WrapAndPaginate(
 
     // Append ellipsis to the last line of every non-final page.
     // Those lines were built with EffectiveWidth, so the ellipsis always fits.
-    for (int32 pi = 0; pi < Pages.Num() - 1; ++pi)
+    for (int32 PageIdx = 0; PageIdx < Pages.Num() - 1; ++PageIdx)
     {
-        Pages[pi].Last() += Ellipsis;
+        Pages[PageIdx].Last() += Ellipsis;
     }
 
     // Last-line word reconstitution: if the very last line of the last page is a single

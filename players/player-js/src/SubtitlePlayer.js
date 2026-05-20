@@ -20,12 +20,10 @@ export class SubtitlePlayer {
    * @param {object} opts
    * @param {object}   opts.renderer              An object implementing the IRenderer interface.
    * @param {number}   [opts.maxLines=2]          Lines per page (integer ≥ 1).
-   * @param {boolean}  [opts.boldCharacterName=true] Whether to render the character name in bold.
    */
-  constructor({ renderer, maxLines = 2, boldCharacterName = true }) {
+  constructor({ renderer, maxLines = 2 }) {
     this._renderer = renderer;
     this._maxLines = maxLines;
-    this._boldCharacterName = boldCharacterName;
 
     this._pages = [];
     this._timings = [];
@@ -72,8 +70,9 @@ export class SubtitlePlayer {
     const width           = this._renderer.getContainerWidth();
     // Ceil so subpixel measurement differences never tip the rendered line over
     // the container edge (measurement and rendering can differ slightly).
+    // Measure the prefix with the character-name font so the body always fits beside it.
     const firstLineIndent = characterName
-      ? Math.ceil(this._renderer.measureLineWidth(`${characterName}: `, this._boldCharacterName))
+      ? Math.ceil(this._renderer.measureLineWidth(`${characterName}: `, /*useCharacterNameFont=*/true))
       : 0;
     this._pages           = wrapAndPaginate(text, measure, width, this._maxLines, firstLineIndent);
     this._timings = allocateTimings(this._pages, duration);
@@ -144,7 +143,7 @@ export class SubtitlePlayer {
 
   _renderCurrent() {
     const charCtx = (this._characterName || this._lineColor)
-      ? { name: this._characterName, color: this._characterNameColor, bold: this._boldCharacterName, lineColor: this._lineColor }
+      ? { name: this._characterName, color: this._characterNameColor, lineColor: this._lineColor }
       : null;
     // Pad to maxLines so the renderer always receives a full-height page.
     const page = [...this._pages[this._pageIndex]];

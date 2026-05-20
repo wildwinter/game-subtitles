@@ -25,12 +25,6 @@ namespace GameSubtitles
         /// <summary>Lines per page. Change takes effect on the next <see cref="Start"/>.</summary>
         public int MaxLines = 2;
 
-        /// <summary>
-        /// Whether the character name is rendered in bold.
-        /// Set before calling <see cref="Initialize"/>; takes effect on the next <see cref="Start"/>.
-        /// </summary>
-        public bool BoldCharacterName = true;
-
         /// <summary>Number of pages in the current subtitle layout. Valid after <see cref="Start"/>; 0 before.</summary>
         public int PageCount => _pages.Count;
 
@@ -97,7 +91,7 @@ namespace GameSubtitles
             float containerWidth  = _renderer.GetContainerWidth();
             float firstLineIndent = string.IsNullOrEmpty(characterName)
                 ? 0f
-                : Mathf.Ceil(_renderer.MeasureLineWidth(characterName + ": ", BoldCharacterName));
+                : Mathf.Ceil(_renderer.MeasureLineWidth(characterName + ": ", useCharacterNameFont: true));
 
             _pages   = TextLayout.WrapAndPaginate(text, t => _renderer.MeasureLineWidth(t),
                                                   containerWidth, Math.Max(1, MaxLines), firstLineIndent);
@@ -173,7 +167,6 @@ namespace GameSubtitles
                 {
                     Name      = _characterName,
                     Color     = _characterNameColor,
-                    Bold      = BoldCharacterName,
                     LineColor = _lineColor,
                 };
             }

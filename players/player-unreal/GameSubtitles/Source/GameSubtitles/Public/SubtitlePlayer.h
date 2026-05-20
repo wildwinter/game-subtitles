@@ -103,13 +103,6 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "Subtitles")
     int32 MaxLines;
 
-    /**
-     * Whether the character name prefix is rendered in bold.
-     * Set before calling Initialize(); takes effect on the next Start().
-     */
-    UPROPERTY(BlueprintReadWrite, Category = "Subtitles")
-    bool bBoldCharacterName = true;
-
 private:
     TScriptInterface<ISubtitleRenderer> Renderer;
 

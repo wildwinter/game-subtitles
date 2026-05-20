@@ -237,7 +237,7 @@ function showSubtitle(text, durationSeconds, speaker, onDone) {
   player.start({
     text,                      // the annotated string from your subtitle data
     duration: durationSeconds,
-    characterName: speaker,    // optional — displayed bold at the start of each page
+    characterName: speaker,    // optional — shown at the start of each page
     characterNameColor: '#f0cc88', // optional color for the name prefix
     lineColor: '#ffffff',     // optional color for the subtitle body text
     onComplete: onDone,        // called automatically when the last page expires
@@ -283,8 +283,7 @@ Everything else is the same.
 #### `SubtitlePlayer` API
 
 ```javascript
-// boldCharacterName: whether the name prefix is rendered bold (default: true)
-const player = new SubtitlePlayer({ renderer, maxLines, boldCharacterName: true });
+const player = new SubtitlePlayer({ renderer, maxLines });
 
 // Start playing a subtitle (stops any currently playing subtitle first)
 // characterName, characterNameColor, and lineColor are all optional
@@ -306,7 +305,19 @@ player.pageCount;
 player.maxLines = 3;
 ```
 
-When `characterName` is set, `"Name: "` is prepended to the first line of every page. The name is measured in bold to reserve the exact space needed, so the remaining body text always fits on the line. `lineColor` applies to all body text lines; `characterNameColor` applies only to the name prefix.
+When `characterName` is set, `"Name: "` is prepended to the first line of every page. The name is measured with the character-name font (see below) to reserve the exact space needed, so the remaining body text always fits on the line. `lineColor` applies to all body text lines; `characterNameColor` applies only to the name prefix.
+
+#### Styling the character name
+
+The character name is rendered separately from the body text so you can give it its own look. How you supply that styling depends on the renderer:
+
+- **`DomRenderer`** applies the CSS class `gs-character-name` (exported as `CHARACTER_NAME_CLASS`) to the name's `<span>`. Style it from your own stylesheet and the renderer will measure with the same class, so the reserved layout space stays accurate:
+
+  ```css
+  #subtitle-bar .gs-character-name { font-weight: bold; color: #f0cc88; }
+  ```
+
+- **`CanvasRenderer`** takes an explicit character-name font string (canvas cannot read CSS), passed as the fourth constructor argument. If omitted, the body font is used.
 
 #### `DomRenderer`
 
@@ -314,7 +325,7 @@ When `characterName` is set, `"Name: "` is prepended to the first line of every 
 const renderer = new DomRenderer(element);
 ```
 
-Renders each line as a `<p>` inside `element`. Measures text width using the element's own computed CSS font, so it automatically respects whatever font you apply via your stylesheet.
+Renders each line as a `<p>` inside `element`. Measures text width using the element's own computed CSS font, so it automatically respects whatever font you apply via your stylesheet. The character-name prefix is wrapped in a `<span class="gs-character-name">` — style that class to control its appearance.
 
 If you change the element's font at runtime (e.g. to adjust font size), call `renderer.invalidateFont()` afterwards so the measurement cache is refreshed.
 
@@ -322,9 +333,10 @@ If you change the element's font at runtime (e.g. to adjust font size), call `re
 
 ```javascript
 const renderer = new CanvasRenderer(
-  canvas,       // HTMLCanvasElement
-  '16px Arial', // CSS font string
-  22            // optional: line height in px (defaults to 1.2 × font size)
+  canvas,           // HTMLCanvasElement
+  '16px Arial',     // CSS font string for the subtitle body
+  22,               // optional: line height in px (defaults to 1.2 × font size)
+  'bold 18px Arial' // optional: CSS font string for the character name (defaults to the body font)
 );
 ```
 
@@ -334,12 +346,12 @@ Any object with these four methods will work as a renderer, so you can integrate
 
 ```javascript
 const myRenderer = {
-  // bold = true when measuring the character-name prefix (measure in bold weight)
-  measureLineWidth(text, bold = false) { /* return pixel width of text as a number */ },
-  getContainerWidth()                  { /* return available width in pixels */ },
-  // characterContext is { name, color, bold, lineColor } or null
-  render(lines, characterContext)      { /* display the string[] of lines */ },
-  clear()                              { /* remove the current subtitle display */ },
+  // useCharacterNameFont = true when measuring the character-name prefix
+  measureLineWidth(text, useCharacterNameFont = false) { /* return pixel width of text as a number */ },
+  getContainerWidth()                                  { /* return available width in pixels */ },
+  // characterContext is { name, color, lineColor } or null
+  render(lines, characterContext)                      { /* display the string[] of lines */ },
+  clear()                                              { /* remove the current subtitle display */ },
 };
 ```
 
@@ -369,7 +381,7 @@ In your Widget Blueprint, subclass `USubtitleWidget` and place a `UVerticalBox` 
 
 ```cpp
 USubtitleWidget* SubWidget = CreateWidget<USubtitleWidget>(PlayerController, USubtitleWidget::StaticClass());
-SubWidget->FontInfo = FSlateFontInfo(MyFontAsset, 16);
+SubWidget->SubtitleFontInfo = FSlateFontInfo(MyFontAsset, 16);
 SubWidget->ContainerWidthOverride = 540.f; // set if calling Start() before the widget is on screen
 SubWidget->AddToViewport();
 ```
@@ -393,7 +405,7 @@ void AMyHUD::ShowSubtitle(const FString& Text, float DurationSeconds,
                            const FString& Speaker)
 {
     Player->Start(Text, DurationSeconds,
-                  Speaker,           // optional character name (shown bold at start of each page)
+                  Speaker,           // optional character name (shown at start of each page)
                   /*bHasColor=*/true,
                   FLinearColor(0.941f, 0.800f, 0.533f, 1.f)); // amber
 }
@@ -419,9 +431,6 @@ void AMyHUD::Tick(float DeltaSeconds)
 // Create and configure
 USubtitlePlayer* Player = NewObject<USubtitlePlayer>(this);
 Player->Initialize(RendererObject, MaxLines);  // RendererObject implements ISubtitleRenderer
-
-// Whether the character-name prefix is rendered bold (default: true)
-Player->bBoldCharacterName = true;
 
 // Start playing (stops any currently playing subtitle first)
 // All parameters after Duration are optional
@@ -451,20 +460,20 @@ Player->MaxLines = 3;
 Player->OnComplete.AddDynamic(this, &AMyActor::HandleDone);
 ```
 
-When `CharacterName` is non-empty, `"Name: "` is prepended to the first line of every page. The name is measured using `BoldFontInfo` (if set) to reserve the exact space before wrapping the body text. `LineColor` applies to all body text lines; `CharacterNameColor` applies only to the name prefix.
+When `CharacterName` is non-empty, `"Name: "` is prepended to the first line of every page. The name is measured using `CharacterNameFontInfo` (if set) to reserve the exact space before wrapping the body text. `LineColor` applies to all body text lines; `CharacterNameColor` applies only to the name prefix.
 
 All methods are also Blueprint-callable. The player is a plain `UObject` — not a component — so you own its lifetime and call `Tick` yourself. This matches the JS player's design exactly.
 
 #### `USubtitleWidget`
 
 ```cpp
-SubWidget->FontInfo             = FSlateFontInfo(FontAsset, 16);
-SubWidget->BoldFontInfo         = FSlateFontInfo(BoldFontAsset, 16); // used for character-name prefix
-SubWidget->TextColor            = FLinearColor::White;
+SubWidget->SubtitleFontInfo      = FSlateFontInfo(FontAsset, 16);
+SubWidget->CharacterNameFontInfo = FSlateFontInfo(NameFontAsset, 18); // used for the character-name prefix
+SubWidget->TextColor             = FLinearColor::White;
 SubWidget->ContainerWidthOverride = 540.f; // bypass geometry lookup before first layout pass
 ```
 
-Text is measured using Slate's font measure service with the same `FontInfo`, so measurements always match what is rendered. `BoldFontInfo` is used only for the character-name prefix; if it is not set the widget falls back to `FontInfo`. To use a Blueprint-designed layout, subclass `USubtitleWidget` in a Widget Blueprint and add a `UVerticalBox` named **`TextContainer`**.
+Text is measured using Slate's font measure service with the same `SubtitleFontInfo`, so measurements always match what is rendered. `CharacterNameFontInfo` carries its own typeface and size and is used only for the character-name prefix; if it is not set the widget falls back to `SubtitleFontInfo`. To use a Blueprint-designed layout, subclass `USubtitleWidget` in a Widget Blueprint and add a `UVerticalBox` named **`TextContainer`**.
 
 #### Custom renderer
 
@@ -476,8 +485,8 @@ class UMyRenderer : public UObject, public ISubtitleRenderer
 {
     GENERATED_BODY()
 public:
-    // bBold = true when measuring the character-name prefix
-    virtual float MeasureLineWidth_Implementation(const FString& Text, bool bBold) override;
+    // bUseCharacterNameFont = true when measuring the character-name prefix
+    virtual float MeasureLineWidth_Implementation(const FString& Text, bool bUseCharacterNameFont) override;
     virtual float GetContainerWidth_Implementation() override;
     // CharacterContext.bValid = true when a name prefix should be drawn on the first line
     virtual void  Render_Implementation(const TArray<FString>& Lines,
@@ -486,7 +495,7 @@ public:
 };
 ```
 
-`FSubtitleCharacterContext` is defined in `ISubtitleRenderer.h` and carries `Name`, `Color`, `bHasColor`, and `bBold`. Blueprint implementations are equally supported — bind the interface events in any Blueprint class.
+`FSubtitleCharacterContext` is defined in `ISubtitleRenderer.h` and carries `Name`, `Color`, `bHasColor`, `LineColor`, and `bHasLineColor`. Blueprint implementations are equally supported — bind the interface events in any Blueprint class.
 
 #### Low-level layout API
 
@@ -551,7 +560,7 @@ var widgetGo = new GameObject("SubtitleWidget");
 widgetGo.transform.SetParent(myCanvasTransform, false);
 widgetGo.AddComponent<RectTransform>();
 var widget = widgetGo.AddComponent<SubtitleWidget>();
-widget.FontSize               = 16f;
+widget.SubtitleFontSize       = 16f;
 widget.TextColor              = Color.white;
 widget.ContainerWidthOverride = 540f; // set if calling Start() before the widget is laid out
 ```
@@ -600,9 +609,6 @@ void Update()
 var player = new SubtitlePlayer();
 player.Initialize(renderer, maxLines);  // renderer implements ISubtitleRenderer
 
-// Whether the character-name prefix is rendered bold (default: true)
-player.BoldCharacterName = true;
-
 // Start playing (stops any currently playing subtitle first)
 // All parameters after durationSeconds are optional
 player.Start(text, durationSeconds,
@@ -629,18 +635,21 @@ player.MaxLines = 3;
 player.OnComplete += HandleDone;
 ```
 
-When `characterName` is non-null, `"Name: "` is prepended to the first line of every page. The name is measured using TMP's bold rich-text probe to reserve the exact space before wrapping the body text. `lineColor` applies to all body text lines; `characterNameColor` applies only to the name prefix.
+When `characterName` is non-null, `"Name: "` is prepended to the first line of every page. The name is measured using the character-name font (see below) to reserve the exact space before wrapping the body text. `lineColor` applies to all body text lines; `characterNameColor` applies only to the name prefix.
 
 #### `SubtitleWidget`
 
 ```csharp
-widget.FontAsset              = myTMPFontAsset;  // optional; defaults to TMP default font
-widget.FontSize               = 16f;
+widget.SubtitleFontAsset      = myTMPFontAsset;  // optional; defaults to TMP default font
+widget.SubtitleFontSize       = 16f;
 widget.TextColor              = Color.white;
+// Optional: give the character name its own font and/or size.
+widget.CharacterNameFontAsset = myNameFontAsset; // optional; falls back to SubtitleFontAsset
+widget.CharacterNameFontSize  = 18f;             // optional; 0 falls back to SubtitleFontSize
 widget.ContainerWidthOverride = 540f;            // bypass geometry lookup before first layout pass
 ```
 
-Text is measured using TMP's `GetPreferredValues()` with the same font settings, so measurements always match what is rendered. The widget is a MonoBehaviour implementing `ISubtitleRenderer` and can be used anywhere in a standard uGUI hierarchy.
+Text is measured using TMP's `GetPreferredValues()` with the same font settings, so measurements always match what is rendered. The character name is rendered as a separate `TextMeshProUGUI` segment alongside the body text, so it can carry its own font and size. The widget is a MonoBehaviour implementing `ISubtitleRenderer` and can be used anywhere in a standard uGUI hierarchy.
 
 #### Custom renderer
 
@@ -649,16 +658,16 @@ Implement `ISubtitleRenderer` on any MonoBehaviour or plain C# class to plug in 
 ```csharp
 public class MyRenderer : MonoBehaviour, ISubtitleRenderer
 {
-    // bold = true when measuring the character-name prefix
-    public float MeasureLineWidth(string text, bool bold = false) { /* return pixel width */ }
-    public float GetContainerWidth()                              { /* return available width */ }
+    // useCharacterNameFont = true when measuring the character-name prefix
+    public float MeasureLineWidth(string text, bool useCharacterNameFont = false) { /* return pixel width */ }
+    public float GetContainerWidth()                                              { /* return available width */ }
     // characterContext is non-null when a name prefix should appear on the first line
     public void  Render(string[] lines, CharacterContext? characterContext = null) { /* display */ }
     public void  Clear()                                          { /* remove display */ }
 }
 ```
 
-`CharacterContext` is a struct with `Name` (string), `Color` (Color?), `Bold` (bool), and `LineColor` (Color?).
+`CharacterContext` is a struct with `Name` (string), `Color` (Color?), and `LineColor` (Color?).
 
 #### Low-level layout API
 

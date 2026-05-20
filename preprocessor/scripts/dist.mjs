@@ -22,7 +22,7 @@ run(
   `dotnet publish PreprocessorTool -c Release -r osx-arm64` +
   ` --self-contained true -p:PublishSingleFile=true` +
   ` -p:Version=${version} -p:AssemblyVersion=${version}.0` +
-  ` -o dist/osx-arm64`
+  ` -o ../build/preprocessor/osx-arm64`
 );
 
 // Apple codesign — force-replace dotnet's ad-hoc signature with Developer ID
@@ -30,7 +30,7 @@ const codesignId = process.env.APPLE_CODESIGN_ID;
 if (!codesignId) {
   console.warn('\nWARN: APPLE_CODESIGN_ID is not set — skipping macOS code signing.');
 } else {
-  const binary = 'dist/osx-arm64/game-subtitles-preprocess';
+  const binary = '../build/preprocessor/osx-arm64/game-subtitles-preprocess';
   const entitlements = 'entitlements.plist';
   run(
     `codesign --force --sign ${JSON.stringify(codesignId)}` +
@@ -46,14 +46,14 @@ run(
   `dotnet publish PreprocessorTool -c Release -r win-x64` +
   ` --self-contained true -p:PublishSingleFile=true` +
   ` -p:Version=${version} -p:AssemblyVersion=${version}.0` +
-  ` -o dist/win-x64`
+  ` -o ../build/preprocessor/win-x64`
 );
 
 // Library DLL (framework-dependent, agnostic)
 run(
   `dotnet build PreprocessorLib -c Release` +
   ` -p:Version=${version} -p:AssemblyVersion=${version}.0` +
-  ` -o dist/lib`
+  ` -o ../build/preprocessor/lib`
 );
 
 console.log(`\nPreprocessor dist complete.`);

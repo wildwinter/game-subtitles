@@ -26,7 +26,7 @@ void USubtitleWidget::NativeConstruct()
 
 // ── ISubtitleRenderer implementation ──────────────────────────────────────────
 
-float USubtitleWidget::MeasureLineWidth_Implementation(const FString& Text, bool bBold)
+float USubtitleWidget::MeasureLineWidth_Implementation(const FString& Text, bool bUseCharacterNameFont)
 {
     if (!FSlateApplication::IsInitialized() || !FSlateApplication::Get().GetRenderer())
     {
@@ -49,7 +49,8 @@ float USubtitleWidget::MeasureLineWidth_Implementation(const FString& Text, bool
         Scale = 1.f;
     }
 
-    const FSlateFontInfo& MeasureFont = (bBold && BoldFontInfo.HasValidFont()) ? BoldFontInfo : FontInfo;
+    const FSlateFontInfo& MeasureFont = (bUseCharacterNameFont && CharacterNameFontInfo.HasValidFont())
+                                          ? CharacterNameFontInfo : SubtitleFontInfo;
     const FVector2D Size = FontMeasure->Measure(FText::FromString(Text), MeasureFont, Scale);
     return Size.X / Scale;
 }
@@ -93,8 +94,8 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
                 continue;
             }
 
-            const FSlateFontInfo& NameFont   = (CharacterContext.bBold && BoldFontInfo.HasValidFont())
-                                                 ? BoldFontInfo : FontInfo;
+            const FSlateFontInfo& NameFont   = CharacterNameFontInfo.HasValidFont()
+                                                 ? CharacterNameFontInfo : SubtitleFontInfo;
             const FSlateColor     NameColor  = CharacterContext.bHasColor
                                                  ? FSlateColor(CharacterContext.Color)
                                                  : FSlateColor(TextColor);
@@ -130,7 +131,7 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
             if (LineBlock)
             {
                 LineBlock->SetText(FText::FromString(Lines[i]));
-                LineBlock->SetFont(FontInfo);
+                LineBlock->SetFont(SubtitleFontInfo);
                 const FSlateColor BodyColor = CharacterContext.bHasLineColor
                     ? FSlateColor(CharacterContext.LineColor) : FSlateColor(TextColor);
                 LineBlock->SetColorAndOpacity(BodyColor);
@@ -172,7 +173,7 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
             }
 
             TextBlock->SetText(FText::FromString(Lines[i]));
-            TextBlock->SetFont(FontInfo);
+            TextBlock->SetFont(SubtitleFontInfo);
             const FSlateColor BodyColor = CharacterContext.bHasLineColor
                 ? FSlateColor(CharacterContext.LineColor) : FSlateColor(TextColor);
             TextBlock->SetColorAndOpacity(BodyColor);

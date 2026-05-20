@@ -3,12 +3,12 @@
   "private": true,
   "description": "Runtime subtitle player for games — JS, browser-compatible",
   "type": "module",
-  "main": "dist/game-subtitles-player.esm.js",
+  "main": "../../build/player-js/game-subtitles-player.esm.js",
   "scripts": {
     "build":      "node build.mjs",
     "test":       "vitest run",
     "test:watch": "vitest",
-    "demo":       "node build.mjs && node demo/serve.mjs"
+    "demo":       "node build.mjs && node -e \"console.log('\\nDemo built. Open players/player-js/demo/index.html in your browser (no server needed).\\n')\""
   },
   "devDependencies": {
     "esbuild": "^0.24.0",

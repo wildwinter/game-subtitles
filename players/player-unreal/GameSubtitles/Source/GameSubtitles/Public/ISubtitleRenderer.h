@@ -29,10 +29,6 @@ struct GAMESUBTITLES_API FSubtitleCharacterContext
     UPROPERTY(BlueprintReadWrite, Category = "Subtitles")
     bool bHasColor = false;
 
-    /** Whether the name prefix should be rendered in bold. */
-    UPROPERTY(BlueprintReadWrite, Category = "Subtitles")
-    bool bBold = true;
-
     /** Colour for the subtitle body text on all lines. Only used when bHasLineColor is true. */
     UPROPERTY(BlueprintReadWrite, Category = "Subtitles")
     FLinearColor LineColor = FLinearColor::White;
@@ -45,8 +41,8 @@ struct GAMESUBTITLES_API FSubtitleCharacterContext
 /**
  * Interface that a subtitle renderer must implement.
  *
- *   MeasureLineWidth(text, bBold) -> float
- *   GetContainerWidth()           -> float
+ *   MeasureLineWidth(text, bUseCharacterNameFont) -> float
+ *   GetContainerWidth()                           -> float
  *   Render(lines, charContext)    -> void
  *   Clear()                       -> void
  *
@@ -65,12 +61,13 @@ class GAMESUBTITLES_API ISubtitleRenderer
 
 public:
     /**
-     * Returns the width of Text rendered in the renderer's current font.
-     * Pass bBold = true to measure in bold weight (e.g. for a character-name prefix).
+     * Returns the width of Text rendered in the renderer's font.
+     * Pass bUseCharacterNameFont = true to measure with the character-name font
+     * (e.g. for a character-name prefix); false to measure with the subtitle font.
      * Called frequently during layout — keep implementations fast.
      */
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Subtitles|Renderer")
-    float MeasureLineWidth(const FString& Text, bool bBold);
+    float MeasureLineWidth(const FString& Text, bool bUseCharacterNameFont);
 
     /**
      * Returns the maximum line width available to the renderer (pixel / Slate unit width

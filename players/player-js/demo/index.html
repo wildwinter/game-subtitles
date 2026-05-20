@@ -93,6 +93,12 @@
       font: inherit;
     }
 
+    /* Style the character-name prefix. The DomRenderer applies this class to the
+       name span and measures with it, so the reserved layout space stays accurate. */
+    #dom-sub .gs-character-name {
+      font-weight: bold;
+    }
+
     /* ── Canvas renderer ──────────────────────────────────────────────────── */
     canvas {
       display: block;
@@ -335,14 +341,16 @@
   <div id="status">Loading subtitle data…</div>
 
   <p class="note">
-    Subtitle content is loaded from <code>demo/subtitles*.json</code> — the format
-    produced by the C# preprocessor tool. The <code>subtitle</code> field contains
+    Subtitle content lives in <code>demo/subtitles-data.js</code> — the same array-of-objects
+    format the C# preprocessor tool emits, embedded as a script so this page runs straight
+    from disk with no server. The <code>subtitle</code> field contains
     U+00AD soft hyphens inserted at valid break&shy;points using the correct TeX
     hyphenation rules for the selected language; the renderers consume this directly
     and never expose raw soft hyphens in the output.
   </p>
 
-  <script src="/dist/game-subtitles-player.js"></script>
+  <script src="subtitles-data.js"></script>
+  <script src="../../../build/player-js/game-subtitles-player.js"></script>
   <script>
     /* global GameSubtitles */
     'use strict';
@@ -359,11 +367,9 @@
     const CW = canvas.width;   // 540
     const CH = canvas.height;  // 304
     let currentFontSize = 16;
-    let SUB_FONT = `${currentFontSize}px Georgia, "Times New Roman", serif`;
-
-    function makeBoldFont(font) {
-      return /^\s*bold\b/i.test(font) ? font : `bold ${font}`;
-    }
+    let SUB_FONT  = `${currentFontSize}px Georgia, "Times New Roman", serif`;
+    // The canvas renderer can't read CSS, so the character-name font is an explicit string.
+    let CHAR_FONT = `bold ${currentFontSize}px Georgia, "Times New Roman", serif`;
 
     function drawCanvasScene(lines, charCtx = null) {
       // Bar height: 8px top pad + maxLines × lineH + gaps + 12px bottom pad,
@@ -428,7 +434,7 @@
           const y = startY + i * lineH;
           if (i === 0 && charCtx) {
             const prefix     = `${charCtx.name}: `;
-            const prefixFont = charCtx.bold ? makeBoldFont(SUB_FONT) : SUB_FONT;
+            const prefixFont = CHAR_FONT;
             // Measure both parts to centre the combined run
             ctx.font = prefixFont;
             const prefixW = ctx.measureText(prefix).width;
@@ -438,7 +444,7 @@
             // Draw prefix
             ctx.textAlign = 'left';
             ctx.font      = prefixFont;
-            ctx.fillStyle = charCtx.colour || '#ffffff';
+            ctx.fillStyle = charCtx.color || '#ffffff';
             ctx.fillText(prefix, startX, y);
             // Draw rest of line
             ctx.font      = SUB_FONT;
@@ -456,8 +462,8 @@
     }
 
     const canvasRenderer = {
-      measureLineWidth(text, bold = false) {
-        ctx.font = bold ? makeBoldFont(SUB_FONT) : SUB_FONT;
+      measureLineWidth(text, useCharacterNameFont = false) {
+        ctx.font = useCharacterNameFont ? CHAR_FONT : SUB_FONT;
         return ctx.measureText(text).width;
       },
       getContainerWidth() { return CW; },
@@ -480,7 +486,7 @@
     // ── Persistent players (created once, reused across subtitles) ────────────
     let renderCount = 0;
     const trackingRenderer = {
-      measureLineWidth: (t, bold) => domRenderer.measureLineWidth(t, bold),
+      measureLineWidth: (t, useCharacterNameFont) => domRenderer.measureLineWidth(t, useCharacterNameFont),
       getContainerWidth: () => domRenderer.getContainerWidth(),
       render(lines, charCtx) { pageIdx = renderCount++; domRenderer.render(lines, charCtx); },
       clear()        { renderCount = 0; pageIdx = 0; domRenderer.clear(); },
@@ -516,9 +522,17 @@
       btnStart.disabled = true;
       reset();
 
-      fetch(`/demo/${filename}`)
-        .then(r => r.json())
-        .then(data => {
+      // Read synchronously from the script-loaded global (subtitles-data.js) so the
+      // demo works when opened directly from disk (file://): browsers block fetch()
+      // of local files, but a classic <script> loads fine, so no server is needed.
+      const data = (window.SUBTITLE_DATA && window.SUBTITLE_DATA[filename]) || null;
+      if (!data) {
+        scriptSel.disabled = true;
+        btnStart.disabled  = true;
+        statusEl.textContent = `No data for ${filename}. Did subtitles-data.js load?`;
+        return;
+      }
+      {
           // Map preprocessor JSON format → internal script objects.
           // Duration is estimated from character count (~14 chars/s, min 3s, max 18s).
           SCRIPTS = data
@@ -550,10 +564,7 @@
           btnStart.disabled    = false;
           statusEl.textContent = 'Select a subtitle entry and press Start';
           drawCanvasScene([]);
-        })
-        .catch(err => {
-          statusEl.textContent = `Failed to load ${filename}: ${err.message}`;
-        });
+      }
     }
 
     loadSubtitles('subtitles.json');
@@ -577,7 +588,8 @@
     }
 
     function applyFont() {
-      SUB_FONT = `${currentFontSize}px Georgia, "Times New Roman", serif`;
+      SUB_FONT  = `${currentFontSize}px Georgia, "Times New Roman", serif`;
+      CHAR_FONT = `bold ${currentFontSize}px Georgia, "Times New Roman", serif`;
       domEl.style.font = SUB_FONT;
       domRenderer.invalidateFont();
     }
@@ -635,7 +647,7 @@
 
       const charName   = (chkCharName.checked && script.speaker) ? script.speaker : null;
       const charColour = charName ? charNameColour : null;
-      const prefixWidth = charName ? domRenderer.measureLineWidth(`${charName}: `, /*bold=*/true) : 0;
+      const prefixWidth = charName ? domRenderer.measureLineWidth(`${charName}: `, /*useCharacterNameFont=*/true) : 0;
 
       // Re-compute total pages using the same indent the player will use.
       totalPages = wrapAndPaginate(
@@ -646,8 +658,8 @@
         prefixWidth,
       ).length;
 
-      domPlayer.start({ text: script.text, duration: script.duration, characterName: charName, characterNameColour: charColour, onComplete: () => { domPlayer.stop(); } });
-      canvasPlayer.start({ text: script.text, duration: script.duration, characterName: charName, characterNameColour: charColour, onComplete: () => { canvasPlayer.stop(); } });
+      domPlayer.start({ text: script.text, duration: script.duration, characterName: charName, characterNameColor: charColour, onComplete: () => { domPlayer.stop(); } });
+      canvasPlayer.start({ text: script.text, duration: script.duration, characterName: charName, characterNameColor: charColour, onComplete: () => { canvasPlayer.stop(); } });
 
       setButtons(true);
       btnReset.disabled = false;

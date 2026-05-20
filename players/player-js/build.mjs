@@ -8,7 +8,7 @@ await build({
   entryPoints: ['src/index.js'],
   bundle: true,
   format: 'esm',
-  outfile: 'dist/game-subtitles-player.esm.js',
+  outfile: '../../build/player-js/game-subtitles-player.esm.js',
   banner,
 });
 
@@ -17,7 +17,7 @@ await build({
   bundle: true,
   format: 'iife',
   globalName: 'GameSubtitles',
-  outfile: 'dist/game-subtitles-player.js',
+  outfile: '../../build/player-js/game-subtitles-player.js',
   banner,
 });
 

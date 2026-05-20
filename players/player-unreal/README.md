@@ -83,9 +83,10 @@ class UMyRenderer : public UObject, public ISubtitleRenderer
 {
     GENERATED_BODY()
 public:
-    virtual float MeasureLineWidth_Implementation(const FString& Text) override;
+    virtual float MeasureLineWidth_Implementation(const FString& Text, bool bUseCharacterNameFont) override;
     virtual float GetContainerWidth_Implementation() override;
-    virtual void  Render_Implementation(const TArray<FString>& Lines) override;
+    virtual void  Render_Implementation(const TArray<FString>& Lines,
+                                        const FSubtitleCharacterContext& CharacterContext) override;
     virtual void  Clear_Implementation() override;
 };
 ```
@@ -96,7 +97,7 @@ Ready-made UMG renderer. Measures text via Slate's font measure service and rend
 
 ```cpp
 USubtitleWidget* Widget = CreateWidget<USubtitleWidget>(PC, USubtitleWidget::StaticClass());
-Widget->FontInfo = FSlateFontInfo(MyFontAsset, 16);
+Widget->SubtitleFontInfo = FSlateFontInfo(MyFontAsset, 16);
 Widget->TextColor = FLinearColor::White;
 Widget->ContainerWidthOverride = 540.f; // set before Start() if widget isn't on screen yet
 Widget->AddToViewport();

@@ -22,7 +22,7 @@ namespace GameSubtitles
         /// <param name="containerWidth">Maximum line width in the same units as <paramref name="measureWidth"/>.</param>
         /// <param name="maxLines">Lines per page (&gt;= 1).</param>
         /// <param name="firstLineIndent">
-        /// Pixels already consumed on line 0 of every page (e.g. by a bold character-name prefix).
+        /// Pixels already consumed on line 0 of every page (e.g. by a character-name prefix).
         /// Only that slot is narrowed; subsequent lines use the full <paramref name="containerWidth"/>.
         /// </param>
         /// <returns>List of pages; each page is a list of line strings.</returns>

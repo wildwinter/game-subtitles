@@ -44,9 +44,9 @@ console.log('\n=== Assembling distribution zips ===');
 const archiver = require('archiver');
 const { createWriteStream } = await import('node:fs');
 
-const jsFile        = resolve(rootDir, 'players/player-js/dist/game-subtitles-player.js');
-const unrealPlugin  = resolve(rootDir, 'players/player-unreal/dist/GameSubtitles');
-const unityPackage  = resolve(rootDir, 'players/player-unity/dist/GameSubtitles');
+const jsFile        = resolve(rootDir, 'build/player-js/game-subtitles-player.js');
+const unrealPlugin  = resolve(rootDir, 'build/player-unreal/GameSubtitles');
+const unityPackage  = resolve(rootDir, 'build/player-unity/GameSubtitles');
 const readme        = resolve(rootDir, 'README.md');
 
 async function makeZip(zipName, addFn) {
@@ -67,15 +67,15 @@ async function makeZip(zipName, addFn) {
 
 await makeZip(`game-subtitles-js-v${version}.zip`, archive => {
   archive.file(jsFile,            { name: 'game-subtitles-player.js' });
-  archive.file(resolve(rootDir, 'preprocessor/dist/win-x64/game-subtitles-preprocess.exe'),
+  archive.file(resolve(rootDir, 'build/preprocessor/win-x64/game-subtitles-preprocess.exe'),
     { name: 'game-subtitles-preprocess.exe' });
-  archive.file(resolve(rootDir, 'preprocessor/dist/osx-arm64/game-subtitles-preprocess'),
+  archive.file(resolve(rootDir, 'build/preprocessor/osx-arm64/game-subtitles-preprocess'),
     { name: 'game-subtitles-preprocess' });
   archive.file(readme,            { name: 'README.md' });
 });
 
 await makeZip(`game-subtitles-lib-v${version}.zip`, archive => {
-  archive.file(resolve(rootDir, 'preprocessor/dist/lib/PreprocessorLib.dll'),
+  archive.file(resolve(rootDir, 'build/preprocessor/lib/PreprocessorLib.dll'),
     { name: 'PreprocessorLib.dll' });
   archive.file(jsFile,            { name: 'player-js/game-subtitles-player.js' });
   archive.directory(unrealPlugin, 'player-unreal/GameSubtitles');
@@ -85,18 +85,18 @@ await makeZip(`game-subtitles-lib-v${version}.zip`, archive => {
 
 await makeZip(`game-subtitles-unreal-v${version}.zip`, archive => {
   archive.directory(unrealPlugin, 'GameSubtitles');
-  archive.file(resolve(rootDir, 'preprocessor/dist/win-x64/game-subtitles-preprocess.exe'),
+  archive.file(resolve(rootDir, 'build/preprocessor/win-x64/game-subtitles-preprocess.exe'),
     { name: 'GameSubtitles/ThirdParty/game-subtitles-preprocess.exe' });
-  archive.file(resolve(rootDir, 'preprocessor/dist/osx-arm64/game-subtitles-preprocess'),
+  archive.file(resolve(rootDir, 'build/preprocessor/osx-arm64/game-subtitles-preprocess'),
     { name: 'GameSubtitles/ThirdParty/game-subtitles-preprocess' });
   archive.file(readme,            { name: 'README.md' });
 });
 
 await makeZip(`game-subtitles-unity-v${version}.zip`, archive => {
   archive.directory(unityPackage, 'GameSubtitles');
-  archive.file(resolve(rootDir, 'preprocessor/dist/win-x64/game-subtitles-preprocess.exe'),
+  archive.file(resolve(rootDir, 'build/preprocessor/win-x64/game-subtitles-preprocess.exe'),
     { name: 'game-subtitles-preprocess.exe' });
-  archive.file(resolve(rootDir, 'preprocessor/dist/osx-arm64/game-subtitles-preprocess'),
+  archive.file(resolve(rootDir, 'build/preprocessor/osx-arm64/game-subtitles-preprocess'),
     { name: 'game-subtitles-preprocess' });
   archive.file(readme,            { name: 'README.md' });
 });

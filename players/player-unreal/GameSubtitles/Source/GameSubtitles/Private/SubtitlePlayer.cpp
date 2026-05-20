@@ -40,7 +40,6 @@ void USubtitlePlayer::Start(const FString& Text, float Duration,
     {
         CurrentCharacterContext.bValid     = true;
         CurrentCharacterContext.Name       = CharacterName;
-        CurrentCharacterContext.bBold      = bBoldCharacterName;
         CurrentCharacterContext.bHasColor  = bHasCharacterNameColor;
         CurrentCharacterContext.Color      = CharacterNameColor;
     }
@@ -57,17 +56,18 @@ void USubtitlePlayer::Start(const FString& Text, float Duration,
     // Build a MeasureWidth callable that dispatches through the renderer interface
     TFunction<float(const FString&)> MeasureWidth = [RendererObj](const FString& T) -> float
     {
-        return ISubtitleRenderer::Execute_MeasureLineWidth(RendererObj, T, /*bBold=*/false);
+        return ISubtitleRenderer::Execute_MeasureLineWidth(RendererObj, T, /*bUseCharacterNameFont=*/false);
     };
 
     const float ContainerWidth = ISubtitleRenderer::Execute_GetContainerWidth(RendererObj);
 
-    // Reserve space on line 0 of each page for the bold character-name prefix
+    // Reserve space on line 0 of each page for the character-name prefix, measured
+    // in the character-name font so the body text always fits alongside it.
     float FirstLineIndent = 0.f;
     if (CurrentCharacterContext.bValid)
     {
         const float RawIndent = ISubtitleRenderer::Execute_MeasureLineWidth(
-            RendererObj, CharacterName + TEXT(": "), bBoldCharacterName);
+            RendererObj, CharacterName + TEXT(": "), /*bUseCharacterNameFont=*/true);
         FirstLineIndent = FMath::CeilToFloat(RawIndent);
     }
 

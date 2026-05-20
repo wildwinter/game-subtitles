@@ -1,0 +1,4 @@
+﻿<Solution>
+  <Project Path="GameSubtitles.csproj" />
+  <Project Path="GameSubtitlesDemo.csproj" />
+</Solution>

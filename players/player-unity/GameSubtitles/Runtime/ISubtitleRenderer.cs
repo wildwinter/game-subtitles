@@ -16,9 +16,6 @@ namespace GameSubtitles
         /// </summary>
         public Color? Color;
 
-        /// <summary>Whether to render the name in bold.</summary>
-        public bool Bold;
-
         /// <summary>
         /// Colour for the subtitle body text on all lines.
         /// <c>null</c> means the renderer's default text colour is used.
@@ -29,8 +26,8 @@ namespace GameSubtitles
     /// <summary>
     /// Interface that a subtitle renderer must implement.
     ///
-    ///   MeasureLineWidth(text, bold) -> float
-    ///   GetContainerWidth()          -> float
+    ///   MeasureLineWidth(text, useCharacterNameFont) -> float
+    ///   GetContainerWidth()                          -> float
     ///   Render(lines, charCtx)       -> void
     ///   Clear()                      -> void
     ///
@@ -40,12 +37,14 @@ namespace GameSubtitles
     public interface ISubtitleRenderer
     {
         /// <summary>
-        /// Returns the rendered width of <paramref name="text"/> in the renderer's current font.
+        /// Returns the rendered width of <paramref name="text"/> in the renderer's font.
         /// Called frequently during layout — keep implementations fast.
         /// </summary>
         /// <param name="text">Text to measure.</param>
-        /// <param name="bold">When <c>true</c>, measure in bold weight.</param>
-        float MeasureLineWidth(string text, bool bold = false);
+        /// <param name="useCharacterNameFont">
+        /// When <c>true</c>, measure with the character-name font; otherwise the subtitle font.
+        /// </param>
+        float MeasureLineWidth(string text, bool useCharacterNameFont = false);
 
         /// <summary>
         /// Returns the maximum line width available to the renderer (pixels at canvas scale).

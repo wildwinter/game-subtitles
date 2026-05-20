@@ -267,9 +267,9 @@ void USubtitleDemoWidget::BuildUI()
 
         // Subtitle widget (implements ISubtitleRenderer)
         SubWidget = WidgetTree->ConstructWidget<USubtitleWidget>(USubtitleWidget::StaticClass());
-        SubWidget->FontInfo      = SubtitleFont();
-        SubWidget->BoldFontInfo  = SubtitleBoldFont();
-        SubWidget->TextColor     = Palette::White;
+        SubWidget->SubtitleFontInfo      = SubtitleFont();
+        SubWidget->CharacterNameFontInfo = CharacterNameFont();
+        SubWidget->TextColor             = Palette::White;
         {
             UVerticalBoxSlot* Slot = Footer->AddChildToVerticalBox(SubWidget);
             Slot->SetHorizontalAlignment(HAlign_Fill);
@@ -664,8 +664,8 @@ void USubtitleDemoWidget::ApplyFont()
 {
     if (SubWidget)
     {
-        SubWidget->FontInfo     = SubtitleFont();
-        SubWidget->BoldFontInfo = SubtitleBoldFont();
+        SubWidget->SubtitleFontInfo      = SubtitleFont();
+        SubWidget->CharacterNameFontInfo = CharacterNameFont();
     }
 }
 
@@ -921,7 +921,7 @@ FSlateFontInfo USubtitleDemoWidget::SubtitleFont() const
     return Info;
 }
 
-FSlateFontInfo USubtitleDemoWidget::SubtitleBoldFont() const
+FSlateFontInfo USubtitleDemoWidget::CharacterNameFont() const
 {
     return FCoreStyle::GetDefaultFontStyle("Bold", CurrentFontSize);
 }

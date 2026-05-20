@@ -28,7 +28,8 @@ class UTextBlock;
  * Player->Initialize(Widget, 2);
  *
  * -- Font --
- * Set FontInfo before the first Start(), or call InvalidateFont() after changing it.
+ * Set SubtitleFontInfo before the first Start(). Optionally set CharacterNameFontInfo
+ * to style the character-name prefix differently from the body text.
  * If ContainerWidthOverride > 0 it is used instead of the widget geometry (useful
  * before the widget is laid out on screen for the first time).
  */
@@ -38,16 +39,17 @@ class GAMESUBTITLES_API USubtitleWidget : public UUserWidget, public ISubtitleRe
     GENERATED_BODY()
 
 public:
-    /** Font used for measuring and rendering subtitle lines. */
+    /** Font used for measuring and rendering subtitle body lines. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles")
-    FSlateFontInfo FontInfo;
+    FSlateFontInfo SubtitleFontInfo;
 
     /**
-     * Bold font used for the character-name prefix when a subtitle has a character name.
-     * If not set (HasValidFont() == false), FontInfo is used as a fallback (not actually bold).
+     * Font used for the character-name prefix when a subtitle has a character name.
+     * Carries its own typeface and size. If not set (HasValidFont() == false),
+     * SubtitleFontInfo is used as a fallback.
      */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles")
-    FSlateFontInfo BoldFontInfo;
+    FSlateFontInfo CharacterNameFontInfo;
 
     /** Text colour for rendered subtitle lines. */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles")
@@ -62,7 +64,7 @@ public:
 
     // ── ISubtitleRenderer ──────────────────────────────────────────────────────
 
-    virtual float MeasureLineWidth_Implementation(const FString& Text, bool bBold) override;
+    virtual float MeasureLineWidth_Implementation(const FString& Text, bool bUseCharacterNameFont) override;
     virtual float GetContainerWidth_Implementation() override;
     virtual void  Render_Implementation(const TArray<FString>& Lines, const FSubtitleCharacterContext& CharacterContext) override;
     virtual void  Clear_Implementation() override;

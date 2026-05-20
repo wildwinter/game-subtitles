@@ -4,30 +4,37 @@
  * @example
  * const r = new CanvasRenderer(canvas, '16px Arial');
  * r.render(['Hello,', 'world!']);
+ *
+ * @example
+ * // Give the character name its own font:
+ * const r = new CanvasRenderer(canvas, '16px Arial', 22, 'bold 18px Arial');
  */
 export class CanvasRenderer {
   /**
    * @param {HTMLCanvasElement} canvas
-   * @param {string} font  CSS font string, e.g. `"16px Arial"`.
+   * @param {string} font  CSS font string for the subtitle body, e.g. `"16px Arial"`.
    * @param {number} [lineHeight]  Pixel distance between baselines.
    *   Defaults to 1.2× the numeric font size parsed from `font`.
+   * @param {string} [characterNameFont]  CSS font string for the character-name prefix.
+   *   Defaults to `font` (canvas cannot read CSS classes, so this must be explicit).
    */
-  constructor(canvas, font, lineHeight) {
+  constructor(canvas, font, lineHeight, characterNameFont) {
     this._canvas = canvas;
     this._ctx = canvas.getContext('2d');
     this._font = font;
+    this._characterNameFont = characterNameFont ?? font;
     this._lineHeight = lineHeight ?? this._parseLineHeight(font);
   }
 
   /**
    * @param {string}  text
-   * @param {boolean} [bold=false] Measure in bold weight.
-   * @returns {number} Pixel width of `text` in the current font.
+   * @param {boolean} [useCharacterNameFont=false] Measure with the character-name font.
+   * @returns {number} Pixel width of `text` in the relevant font.
    */
-  measureLineWidth(text, bold = false) {
-    this._ctx.font = bold ? this._makeBoldFont(this._font) : this._font;
+  measureLineWidth(text, useCharacterNameFont = false) {
+    this._ctx.font = useCharacterNameFont ? this._characterNameFont : this._font;
     const width = this._ctx.measureText(text).width;
-    if (bold) this._ctx.font = this._font; // restore
+    if (useCharacterNameFont) this._ctx.font = this._font; // restore
     return width;
   }
 
@@ -39,10 +46,10 @@ export class CanvasRenderer {
   /**
    * Clears the canvas and draws each line of text.
    * When `characterContext` is provided, the first line is prefixed with
-   * "Name: " drawn in the specified color and optionally bold weight.
+   * "Name: " drawn in the character-name font and the specified color.
    *
    * @param {string[]} lines
-   * @param {{ name: string|null, color: string|null, bold: boolean, lineColor: string|null }|null} [characterContext]
+   * @param {{ name: string|null, color: string|null, lineColor: string|null }|null} [characterContext]
    */
   render(lines, characterContext = null) {
     this.clear();
@@ -54,12 +61,12 @@ export class CanvasRenderer {
       const y = (i + 1) * lh;
       if (i === 0 && characterContext?.name) {
         const prefix = `${characterContext.name}: `;
-        // Draw the character name prefix (optionally bold, optionally colored)
-        if (characterContext.bold) this._ctx.font = this._makeBoldFont(this._font);
+        // Draw the character name prefix in the character-name font (optionally colored)
+        this._ctx.font     = this._characterNameFont;
         this._ctx.fillStyle = characterContext.color ?? defaultFill;
         this._ctx.fillText(prefix, 0, y);
         const prefixWidth = this._ctx.measureText(prefix).width;
-        // Draw the subtitle body text in the line color
+        // Draw the subtitle body text in the subtitle font and line color
         this._ctx.font      = this._font;
         this._ctx.fillStyle = lineFill;
         this._ctx.fillText(line, prefixWidth, y);
@@ -69,11 +76,6 @@ export class CanvasRenderer {
       }
     });
     this._ctx.fillStyle = defaultFill; // restore
-  }
-
-  /** @param {string} font  @returns {string} */
-  _makeBoldFont(font) {
-    return /^\s*bold\b/i.test(font) ? font : `bold ${font}`;
   }
 
   /** Clears the entire canvas. */

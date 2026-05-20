@@ -60,8 +60,8 @@ node_modules/
 npm-debug.log*
 
 # Build & distribution outputs
+build/
 dist/
-preprocessor/dist/
 render-helpers/render-helper-js/dist/
 
 # macOS
