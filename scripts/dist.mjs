@@ -89,7 +89,7 @@ await makeZip(`game-subtitles-unreal-v${version}.zip`, archive => {
     { name: 'GameSubtitles/ThirdParty/game-subtitles-preprocess.exe' });
   archive.file(resolve(rootDir, 'build/preprocessor/osx-arm64/game-subtitles-preprocess'),
     { name: 'GameSubtitles/ThirdParty/game-subtitles-preprocess' });
-  archive.file(readme,            { name: 'README.md' });
+  archive.file(readme,            { name: 'GameSubtitles/README.md' });
 });
 
 await makeZip(`game-subtitles-unity-v${version}.zip`, archive => {
@@ -98,7 +98,7 @@ await makeZip(`game-subtitles-unity-v${version}.zip`, archive => {
     { name: 'game-subtitles-preprocess.exe' });
   archive.file(resolve(rootDir, 'build/preprocessor/osx-arm64/game-subtitles-preprocess'),
     { name: 'game-subtitles-preprocess' });
-  archive.file(readme,            { name: 'README.md' });
+  archive.file(readme,            { name: 'GameSubtitles/README.md' });
 });
 
 console.log('\nDist complete.');
