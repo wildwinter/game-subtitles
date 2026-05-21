@@ -11,7 +11,7 @@
 #include "Rendering/SlateRenderer.h"
 #include "Fonts/SlateFontInfo.h"
 
-// ── UUserWidget overrides ──────────────────────────────────────────────────────
+// -- UUserWidget overrides --
 
 void USubtitleWidget::NativeOnInitialized()
 {
@@ -24,7 +24,7 @@ void USubtitleWidget::NativeConstruct()
     Super::NativeConstruct();
 }
 
-// ── ISubtitleRenderer implementation ──────────────────────────────────────────
+// -- ISubtitleRenderer implementation --
 
 float USubtitleWidget::MeasureLineWidth_Implementation(const FString& Text, bool bUseCharacterNameFont)
 {
@@ -108,7 +108,6 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
                     SpacerSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
             }
 
-            // Name prefix text block
             UTextBlock* NameBlock = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
             if (NameBlock)
             {
@@ -126,7 +125,6 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
                 }
             }
 
-            // Line body text block
             UTextBlock* LineBlock = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
             if (LineBlock)
             {
@@ -154,9 +152,7 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
                     SpacerSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
             }
 
-            // HBox fills the full TextContainer width; spacers handle centering without
-            // depending on the HBox's own measured width (which avoids a one-frame position
-            // jump when Slate hasn't yet measured the new STextBlock children).
+            // Fill spacers center the content; HBox alignment would jump one frame until Slate measures the new children.
             UVerticalBoxSlot* VSlot = TextContainer->AddChildToVerticalBox(HBox);
             if (VSlot)
             {
@@ -203,7 +199,7 @@ void USubtitleWidget::Clear_Implementation()
     }
 }
 
-// ── Private ────────────────────────────────────────────────────────────────────
+// -- Private --
 
 void USubtitleWidget::EnsureTextContainer()
 {
