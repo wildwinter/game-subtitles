@@ -731,7 +731,11 @@ TeX hyphenation algorithm implemented by [NHyphenator](https://github.com/alkozk
 
 ### Hyphenation patterns
 
-TeX hyphenation pattern files are from the [tex-hyphen](https://github.com/hyphenation/tex-hyphen) project and are embedded unmodified. Most are MIT-licensed; some (Russian, Dutch, Swedish, Finnish, Czech, Slovak, Hungarian, Ukrainian, Romanian, Bulgarian) are under LPPL 1.2 or 1.3. The LaTeX Project Public License permits unmodified redistribution of these files without any copyleft effect on surrounding code. Copyright notices in the pattern files are preserved as required.
+TeX hyphenation pattern files are from the [tex-hyphen](https://github.com/hyphenation/tex-hyphen) project. The `.txt` files embedded in `preprocessor/PreprocessorLib/Dictionaries/` contain the raw pattern data extracted from the original `.tex` sources. 
+
+Licences vary by language — most are MIT, BSD-3-Clause, or similarly permissive; Russian and Swedish are under LPPL 1.2; Italian, Danish, Croatian, and Turkish are under LPPL 1.0+ (Italian and Danish also offer MIT as an alternative). Czech is GPL 2.0+; Hungarian is MPL 1.1 / GPL 2.0 / LGPL 2.1. Copyright notices and full licence details for every file are in [`preprocessor/PreprocessorLib/Dictionaries/LICENSES.txt`](preprocessor/PreprocessorLib/Dictionaries/LICENSES.txt).
+
+Note that these are only referenced by the preprocessor executables, which are not shipped as part of a game.
 
 ## License
 

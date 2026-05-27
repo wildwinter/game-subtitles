@@ -48,6 +48,7 @@ const jsFile        = resolve(rootDir, 'build/player-js/game-subtitles-player.js
 const unrealPlugin  = resolve(rootDir, 'build/player-unreal/GameSubtitles');
 const unityPackage  = resolve(rootDir, 'build/player-unity/GameSubtitles');
 const readme        = resolve(rootDir, 'README.md');
+const patternLicenses = resolve(rootDir, 'preprocessor/PreprocessorLib/Dictionaries/LICENSES.txt');
 
 async function makeZip(zipName, addFn) {
   const output = resolve(distDir, zipName);
@@ -71,6 +72,7 @@ await makeZip(`game-subtitles-js-v${version}.zip`, archive => {
     { name: 'game-subtitles-preprocess.exe' });
   archive.file(resolve(rootDir, 'build/preprocessor/osx-arm64/game-subtitles-preprocess'),
     { name: 'game-subtitles-preprocess' });
+  archive.file(patternLicenses,   { name: 'LICENSES.txt' });
   archive.file(readme,            { name: 'README.md' });
 });
 
@@ -80,6 +82,7 @@ await makeZip(`game-subtitles-lib-v${version}.zip`, archive => {
   archive.file(jsFile,            { name: 'player-js/game-subtitles-player.js' });
   archive.directory(unrealPlugin, 'player-unreal/GameSubtitles');
   archive.directory(unityPackage, 'player-unity/GameSubtitles');
+  archive.file(patternLicenses,   { name: 'LICENSES.txt' });
   archive.file(readme,            { name: 'README.md' });
 });
 
@@ -89,6 +92,7 @@ await makeZip(`game-subtitles-unreal-v${version}.zip`, archive => {
     { name: 'GameSubtitles/ThirdParty/game-subtitles-preprocess.exe' });
   archive.file(resolve(rootDir, 'build/preprocessor/osx-arm64/game-subtitles-preprocess'),
     { name: 'GameSubtitles/ThirdParty/game-subtitles-preprocess' });
+  archive.file(patternLicenses,   { name: 'GameSubtitles/ThirdParty/LICENSES.txt' });
   archive.file(readme,            { name: 'GameSubtitles/README.md' });
 });
 
@@ -98,6 +102,7 @@ await makeZip(`game-subtitles-unity-v${version}.zip`, archive => {
     { name: 'game-subtitles-preprocess.exe' });
   archive.file(resolve(rootDir, 'build/preprocessor/osx-arm64/game-subtitles-preprocess'),
     { name: 'game-subtitles-preprocess' });
+  archive.file(patternLicenses,   { name: 'LICENSES.txt' });
   archive.file(readme,            { name: 'GameSubtitles/README.md' });
 });
 
