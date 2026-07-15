@@ -2,8 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "SubtitlePlayer.h"
-#include "SubtitleWidget.h"
+#include "GameSubtitlePlayer.h"
+#include "GameSubtitleWidget.h"
 #include "SubtitleDemoWidget.generated.h"
 
 class UVerticalBox;
@@ -65,11 +65,11 @@ protected:
     TArray<FSubtitleEntry> Scripts;
 
     UPROPERTY()
-    USubtitlePlayer* Player = nullptr;
+    UGameSubtitlePlayer* Player = nullptr;
 
-    /** The SubtitleWidget that acts as the renderer. */
+    /** The GameSubtitleWidget that acts as the renderer. */
     UPROPERTY()
-    USubtitleWidget* SubWidget = nullptr;
+    UGameSubtitleWidget* SubWidget = nullptr;
 
     bool  bIsRunning      = false;
     float ElapsedMs       = 0.f;

@@ -2,10 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "ISubtitleRenderer.h"
-#include "SubtitlePlayer.generated.h"
+#include "IGameSubtitleRenderer.h"
+#include "GameSubtitlePlayer.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSubtitleComplete);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGameSubtitleComplete);
 
 /**
  * Manages paginated subtitle display driven by caller-supplied ticks.
@@ -14,43 +14,43 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSubtitleComplete);
  * of subtitles by calling Start() each time.
  *
  * Usage (C++):
- *   USubtitlePlayer* Player = NewObject<USubtitlePlayer>(this);
+ *   UGameSubtitlePlayer* Player = NewObject<UGameSubtitlePlayer>(this);
  *   Player->Initialize(MyRenderer, 2);
  *   Player->Start(TEXT("Hello world"), 5.0f);
  *   // In your game loop / NativeTick:
  *   Player->Tick(DeltaTime);
  *
  * Usage (Blueprint):
- *   Construct Object of Class -> SubtitlePlayer
+ *   Construct Object of Class -> GameSubtitlePlayer
  *   Initialize (renderer, maxLines)
  *   Start (text, duration)
  *   Bind OnComplete event
  *   Call Tick every frame (or from an Actor's EventTick)
  */
 UCLASS(BlueprintType, Blueprintable)
-class GAMESUBTITLES_API USubtitlePlayer : public UObject
+class GAMESUBTITLES_API UGameSubtitlePlayer : public UObject
 {
     GENERATED_BODY()
 
 public:
-    USubtitlePlayer();
+    UGameSubtitlePlayer();
 
     /**
      * Fired when all pages have been displayed and the animation has finished.
      * The last page remains visible until Stop() is called.
      */
     UPROPERTY(BlueprintAssignable, Category = "Subtitles")
-    FOnSubtitleComplete OnComplete;
+    FOnGameSubtitleComplete OnComplete;
 
     /**
      * Bind the renderer and set the initial lines-per-page value.
      * Call this once before the first Start().
      *
-     * @param InRenderer  Any UObject that implements ISubtitleRenderer.
+     * @param InRenderer  Any UObject that implements IGameSubtitleRenderer.
      * @param InMaxLines  Lines per page (>= 1). Defaults to 2.
      */
     UFUNCTION(BlueprintCallable, Category = "Subtitles")
-    void Initialize(TScriptInterface<ISubtitleRenderer> InRenderer, int32 InMaxLines = 2);
+    void Initialize(TScriptInterface<IGameSubtitleRenderer> InRenderer, int32 InMaxLines = 2);
 
     /**
      * Loads a subtitle, lays out text, and renders page 0 immediately.
@@ -104,15 +104,15 @@ public:
     int32 MaxLines;
 
 private:
-    TScriptInterface<ISubtitleRenderer> Renderer;
+    TScriptInterface<IGameSubtitleRenderer> Renderer;
 
-    TArray<TArray<FString>>    Pages;
-    TArray<float>              Timings;
-    int32                      PageIndex;
-    float                      Elapsed;
-    bool                       bRunning;
-    bool                       bDone;
-    FSubtitleCharacterContext  CurrentCharacterContext;
+    TArray<TArray<FString>>        Pages;
+    TArray<float>                  Timings;
+    int32                          PageIndex;
+    float                          Elapsed;
+    bool                           bRunning;
+    bool                           bDone;
+    FGameSubtitleCharacterContext  CurrentCharacterContext;
 
     void RenderCurrent();
 };

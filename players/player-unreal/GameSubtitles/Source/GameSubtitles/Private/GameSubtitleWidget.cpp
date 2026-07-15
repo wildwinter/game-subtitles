@@ -1,4 +1,4 @@
-#include "SubtitleWidget.h"
+#include "GameSubtitleWidget.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
 #include "Components/HorizontalBox.h"
@@ -11,22 +11,22 @@
 #include "Rendering/SlateRenderer.h"
 #include "Fonts/SlateFontInfo.h"
 
-// -- UUserWidget overrides --
+// ── UUserWidget overrides ──────────────────────────────────────────────────────
 
-void USubtitleWidget::NativeOnInitialized()
+void UGameSubtitleWidget::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
     EnsureTextContainer();
 }
 
-void USubtitleWidget::NativeConstruct()
+void UGameSubtitleWidget::NativeConstruct()
 {
     Super::NativeConstruct();
 }
 
-// -- ISubtitleRenderer implementation --
+// ── IGameSubtitleRenderer implementation ──────────────────────────────────────
 
-float USubtitleWidget::MeasureLineWidth_Implementation(const FString& Text, bool bUseCharacterNameFont)
+float UGameSubtitleWidget::MeasureLineWidth_Implementation(const FString& Text, bool bUseCharacterNameFont)
 {
     if (!FSlateApplication::IsInitialized() || !FSlateApplication::Get().GetRenderer())
     {
@@ -55,7 +55,7 @@ float USubtitleWidget::MeasureLineWidth_Implementation(const FString& Text, bool
     return Size.X / Scale;
 }
 
-float USubtitleWidget::GetContainerWidth_Implementation()
+float UGameSubtitleWidget::GetContainerWidth_Implementation()
 {
     if (ContainerWidthOverride > 0.f)
     {
@@ -67,7 +67,7 @@ float USubtitleWidget::GetContainerWidth_Implementation()
     return W > 0.f ? W : 540.f; // fall back to a sensible default before first layout pass
 }
 
-void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const FSubtitleCharacterContext& CharacterContext)
+void UGameSubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const FGameSubtitleCharacterContext& CharacterContext)
 {
     EnsureTextContainer();
     if (!TextContainer)
@@ -108,6 +108,7 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
                     SpacerSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
             }
 
+            // Name prefix text block
             UTextBlock* NameBlock = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
             if (NameBlock)
             {
@@ -125,6 +126,7 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
                 }
             }
 
+            // Line body text block
             UTextBlock* LineBlock = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
             if (LineBlock)
             {
@@ -152,7 +154,9 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
                     SpacerSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
             }
 
-            // Fill spacers center the content; HBox alignment would jump one frame until Slate measures the new children.
+            // HBox fills the full TextContainer width; spacers handle centering without
+            // depending on the HBox's own measured width (which avoids a one-frame position
+            // jump when Slate hasn't yet measured the new STextBlock children).
             UVerticalBoxSlot* VSlot = TextContainer->AddChildToVerticalBox(HBox);
             if (VSlot)
             {
@@ -191,7 +195,7 @@ void USubtitleWidget::Render_Implementation(const TArray<FString>& Lines, const 
     SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 }
 
-void USubtitleWidget::Clear_Implementation()
+void UGameSubtitleWidget::Clear_Implementation()
 {
     if (TextContainer)
     {
@@ -199,9 +203,9 @@ void USubtitleWidget::Clear_Implementation()
     }
 }
 
-// -- Private --
+// ── Private ────────────────────────────────────────────────────────────────────
 
-void USubtitleWidget::EnsureTextContainer()
+void UGameSubtitleWidget::EnsureTextContainer()
 {
     // TextContainer may already be set by BindWidgetOptional (Blueprint subclass) or a
     // previous call to this function. Only create programmatically when absent.

@@ -375,12 +375,12 @@ Then:
 
 #### Real-world usage
 
-**1. Add a `USubtitleWidget` to your HUD layout.**
+**1. Add a `UGameSubtitleWidget` to your HUD layout.**
 
-In your Widget Blueprint, subclass `USubtitleWidget` and place a `UVerticalBox` named `TextContainer` wherever you want the subtitle lines to appear. Or use it programmatically:
+In your Widget Blueprint, subclass `UGameSubtitleWidget` and place a `UVerticalBox` named `TextContainer` wherever you want the subtitle lines to appear. Or use it programmatically:
 
 ```cpp
-USubtitleWidget* SubWidget = CreateWidget<USubtitleWidget>(PlayerController, USubtitleWidget::StaticClass());
+UGameSubtitleWidget* SubWidget = CreateWidget<UGameSubtitleWidget>(PlayerController, UGameSubtitleWidget::StaticClass());
 SubWidget->SubtitleFontInfo = FSlateFontInfo(MyFontAsset, 16);
 SubWidget->ContainerWidthOverride = 540.f; // set if calling Start() before the widget is on screen
 SubWidget->AddToViewport();
@@ -389,7 +389,7 @@ SubWidget->AddToViewport();
 **2. Create a player and point it at the widget.**
 
 ```cpp
-USubtitlePlayer* Player = NewObject<USubtitlePlayer>(this);
+UGameSubtitlePlayer* Player = NewObject<UGameSubtitlePlayer>(this);
 Player->Initialize(SubWidget, /*MaxLines=*/2);
 
 Player->OnComplete.AddDynamic(this, &AMyHUD::HandleSubtitleDone);
@@ -425,12 +425,12 @@ void AMyHUD::Tick(float DeltaSeconds)
 }
 ```
 
-#### `USubtitlePlayer` API
+#### `UGameSubtitlePlayer` API
 
 ```cpp
 // Create and configure
-USubtitlePlayer* Player = NewObject<USubtitlePlayer>(this);
-Player->Initialize(RendererObject, MaxLines);  // RendererObject implements ISubtitleRenderer
+UGameSubtitlePlayer* Player = NewObject<UGameSubtitlePlayer>(this);
+Player->Initialize(RendererObject, MaxLines);  // RendererObject implements IGameSubtitleRenderer
 
 // Start playing (stops any currently playing subtitle first)
 // All parameters after Duration are optional
@@ -464,7 +464,7 @@ When `CharacterName` is non-empty, `"Name: "` is prepended to the first line of 
 
 All methods are also Blueprint-callable. The player is a plain `UObject` — not a component — so you own its lifetime and call `Tick` yourself. This matches the JS player's design exactly.
 
-#### `USubtitleWidget`
+#### `UGameSubtitleWidget`
 
 ```cpp
 SubWidget->SubtitleFontInfo      = FSlateFontInfo(FontAsset, 16);
@@ -473,15 +473,15 @@ SubWidget->TextColor             = FLinearColor::White;
 SubWidget->ContainerWidthOverride = 540.f; // bypass geometry lookup before first layout pass
 ```
 
-Text is measured using Slate's font measure service with the same `SubtitleFontInfo`, so measurements always match what is rendered. `CharacterNameFontInfo` carries its own typeface and size and is used only for the character-name prefix; if it is not set the widget falls back to `SubtitleFontInfo`. To use a Blueprint-designed layout, subclass `USubtitleWidget` in a Widget Blueprint and add a `UVerticalBox` named **`TextContainer`**.
+Text is measured using Slate's font measure service with the same `SubtitleFontInfo`, so measurements always match what is rendered. `CharacterNameFontInfo` carries its own typeface and size and is used only for the character-name prefix; if it is not set the widget falls back to `SubtitleFontInfo`. To use a Blueprint-designed layout, subclass `UGameSubtitleWidget` in a Widget Blueprint and add a `UVerticalBox` named **`TextContainer`**.
 
 #### Custom renderer
 
-Implement `ISubtitleRenderer` on any `UObject` to plug in a fully custom renderer:
+Implement `IGameSubtitleRenderer` on any `UObject` to plug in a fully custom renderer:
 
 ```cpp
 UCLASS()
-class UMyRenderer : public UObject, public ISubtitleRenderer
+class UMyRenderer : public UObject, public IGameSubtitleRenderer
 {
     GENERATED_BODY()
 public:
@@ -490,26 +490,26 @@ public:
     virtual float GetContainerWidth_Implementation() override;
     // CharacterContext.bValid = true when a name prefix should be drawn on the first line
     virtual void  Render_Implementation(const TArray<FString>& Lines,
-                                        const FSubtitleCharacterContext& CharacterContext) override;
+                                        const FGameSubtitleCharacterContext& CharacterContext) override;
     virtual void  Clear_Implementation() override;
 };
 ```
 
-`FSubtitleCharacterContext` is defined in `ISubtitleRenderer.h` and carries `Name`, `Color`, `bHasColor`, `LineColor`, and `bHasLineColor`. Blueprint implementations are equally supported — bind the interface events in any Blueprint class.
+`FGameSubtitleCharacterContext` is defined in `IGameSubtitleRenderer.h` and carries `Name`, `Color`, `bHasColor`, `LineColor`, and `bHasLineColor`. Blueprint implementations are equally supported — bind the interface events in any Blueprint class.
 
 #### Low-level layout API
 
 The same layout functions used internally are exposed as static C++ helpers:
 
 ```cpp
-#include "TextLayout.h"
+#include "GameSubtitleTextLayout.h"
 
 // Wrap + paginate (MeasureWidth is any callable returning float)
-TArray<TArray<FString>> Pages = FSubtitleTextLayout::WrapAndPaginate(
+TArray<TArray<FString>> Pages = FGameSubtitleTextLayout::WrapAndPaginate(
     Text, MeasureWidth, ContainerWidth, MaxLines);
 
 // Allocate display time proportionally to character count
-TArray<float> Timings = FSubtitleTextLayout::AllocateTimings(Pages, TotalDurationSeconds);
+TArray<float> Timings = FGameSubtitleTextLayout::AllocateTimings(Pages, TotalDurationSeconds);
 ```
 
 #### Demo project

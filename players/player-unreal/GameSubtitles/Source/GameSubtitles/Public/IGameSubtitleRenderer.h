@@ -2,14 +2,14 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "ISubtitleRenderer.generated.h"
+#include "IGameSubtitleRenderer.generated.h"
 
 /**
- * Optional character-name styling passed to ISubtitleRenderer::Render for the first
+ * Optional character-name styling passed to IGameSubtitleRenderer::Render for the first
  * line of every page.  Set bValid = false (the default) to render without a prefix.
  */
 USTRUCT(BlueprintType)
-struct GAMESUBTITLES_API FSubtitleCharacterContext
+struct GAMESUBTITLES_API FGameSubtitleCharacterContext
 {
     GENERATED_BODY()
 
@@ -47,15 +47,15 @@ struct GAMESUBTITLES_API FSubtitleCharacterContext
  *   Clear()                       -> void
  *
  * Implement this interface on any UObject (e.g. a UUserWidget subclass) to plug it
- * into USubtitlePlayer. Both C++ and Blueprint implementations are supported.
+ * into UGameSubtitlePlayer. Both C++ and Blueprint implementations are supported.
  */
 UINTERFACE(MinimalAPI, BlueprintType)
-class USubtitleRenderer : public UInterface
+class UGameSubtitleRenderer : public UInterface
 {
     GENERATED_BODY()
 };
 
-class GAMESUBTITLES_API ISubtitleRenderer
+class GAMESUBTITLES_API IGameSubtitleRenderer
 {
     GENERATED_BODY()
 
@@ -83,7 +83,7 @@ public:
      * per the context) to the first line.
      */
     UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Subtitles|Renderer")
-    void Render(const TArray<FString>& Lines, const FSubtitleCharacterContext& CharacterContext);
+    void Render(const TArray<FString>& Lines, const FGameSubtitleCharacterContext& CharacterContext);
 
     /**
      * Remove all displayed content (called between pages and on stop/reset).

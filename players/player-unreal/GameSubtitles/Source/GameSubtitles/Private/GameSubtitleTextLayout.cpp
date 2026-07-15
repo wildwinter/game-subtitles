@@ -1,13 +1,13 @@
-#include "TextLayout.h"
+#include "GameSubtitleTextLayout.h"
 
-// -- Constants --
+// ── Constants ──────────────────────────────────────────────────────────────────
 
 static const FString SoftHyphen(TEXT("\u00AD")); // U+00AD SOFT HYPHEN
 static const FString Ellipsis(TEXT("\u2026"));   // U+2026 HORIZONTAL ELLIPSIS
 
-// -- Private helpers --
+// ── Private helpers ────────────────────────────────────────────────────────────
 
-TArray<FString> FSubtitleTextLayout::ForceBreak(
+TArray<FString> FGameSubtitleTextLayout::ForceBreak(
     const FString& Word,
     TFunction<float(const FString&)> MeasureWidth,
     float MaxWidth)
@@ -40,7 +40,7 @@ TArray<FString> FSubtitleTextLayout::ForceBreak(
     return Lines.Num() > 0 ? Lines : TArray<FString>{ Word };
 }
 
-int32 FSubtitleTextLayout::FindSyllableBreak(
+int32 FGameSubtitleTextLayout::FindSyllableBreak(
     const TArray<FString>& Syllables,
     const FString& LineText,
     const FString& Sep,
@@ -68,9 +68,9 @@ int32 FSubtitleTextLayout::FindSyllableBreak(
     return Last;
 }
 
-// -- Public API --
+// ── Public API ─────────────────────────────────────────────────────────────────
 
-TArray<TArray<FString>> FSubtitleTextLayout::WrapAndPaginate(
+TArray<TArray<FString>> FGameSubtitleTextLayout::WrapAndPaginate(
     const FString& Text,
     TFunction<float(const FString&)> MeasureWidth,
     float ContainerWidth,
@@ -88,7 +88,7 @@ TArray<TArray<FString>> FSubtitleTextLayout::WrapAndPaginate(
         return { TArray<FString>() };
     }
 
-    // Mutable copy - the algorithm replaces words with soft-hyphen remainders in-place
+    // Mutable copy — the algorithm replaces words with soft-hyphen remainders in-place
     TArray<FString> Words = RawWords;
 
     TArray<TArray<FString>> Pages;
@@ -131,7 +131,7 @@ TArray<TArray<FString>> FSubtitleTextLayout::WrapAndPaginate(
         const bool    bHasSyllables = Syllables.Num() > 1;
         const FString Sep          = LineText.IsEmpty() ? TEXT("") : TEXT(" ");
 
-        // Full word fits within the effective width
+        // 1. Full word fits within the effective width
         if (MeasureWidth(LineText + Sep + Clean) <= EffectiveWidth)
         {
             LineText += Sep + Clean;
@@ -139,12 +139,13 @@ TArray<TArray<FString>> FSubtitleTextLayout::WrapAndPaginate(
             continue;
         }
 
-        // Syllable-prefix hyphenation - only on non-last slots with content
+        // 2. Syllable-prefix hyphenation — only on non-last slots with content
         if (!bIsLastSlot && bHasSyllables && !LineText.IsEmpty())
         {
             const int32 BreakAt = FindSyllableBreak(Syllables, LineText, Sep, MeasureWidth, EffectiveWidth);
             if (BreakAt >= 0)
             {
+                // Build prefix fragment
                 TArray<FString> Prefix(Syllables.GetData(), BreakAt + 1);
                 TArray<FString> Remainder;
                 for (int32 i = BreakAt + 1; i < Syllables.Num(); ++i)
@@ -159,15 +160,15 @@ TArray<TArray<FString>> FSubtitleTextLayout::WrapAndPaginate(
             }
         }
 
-        // Flush the current line (if non-empty) and retry the word
+        // 3. Flush the current line (if non-empty) and retry the word
         if (!LineText.IsEmpty())
         {
             AdvanceLine();
             continue;
         }
 
-        // Line is empty on a last slot with prior lines: close the page so the word
-        //     retries at slot 0 of a fresh page where syllable-breaking is allowed
+        // 4. Line is empty on a last slot with prior lines: close the page so the word
+        //    retries at slot 0 of a fresh page where syllable-breaking is allowed
         if (bIsLastSlot && PageLines.Num() > 0)
         {
             Pages.Add(PageLines);
@@ -176,7 +177,7 @@ TArray<TArray<FString>> FSubtitleTextLayout::WrapAndPaginate(
             continue;
         }
 
-        // Line is empty, non-last slot: try syllable breaking from the start of the line
+        // 5. Line is empty, non-last slot: try syllable breaking from the start of the line
         if (!bIsLastSlot && bHasSyllables)
         {
             const int32 BreakAt = FindSyllableBreak(Syllables, TEXT(""), TEXT(""), MeasureWidth, EffectiveWidth);
@@ -196,8 +197,8 @@ TArray<TArray<FString>> FSubtitleTextLayout::WrapAndPaginate(
             }
         }
 
-        // Character-level break as a last resort
-        //     Use EffectiveWidth on last slots so the subsequently appended ellipsis always fits
+        // 6. Character-level break as a last resort
+        //    Use EffectiveWidth on last slots so the subsequently appended ellipsis always fits
         const TArray<FString> Broken = ForceBreak(
             Clean,
             MeasureWidth,
@@ -272,7 +273,7 @@ TArray<TArray<FString>> FSubtitleTextLayout::WrapAndPaginate(
     return Pages;
 }
 
-TArray<float> FSubtitleTextLayout::AllocateTimings(
+TArray<float> FGameSubtitleTextLayout::AllocateTimings(
     const TArray<TArray<FString>>& Pages,
     float TotalDuration)
 {

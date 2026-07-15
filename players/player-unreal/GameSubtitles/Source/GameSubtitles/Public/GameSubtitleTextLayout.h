@@ -11,7 +11,7 @@
  * Soft hyphens (U+00AD) mark valid syllable break-points inside words, as inserted by
  * the C# preprocessor. They are never exposed in the rendered output.
  */
-class GAMESUBTITLES_API FSubtitleTextLayout
+class GAMESUBTITLES_API FGameSubtitleTextLayout
 {
 public:
     /**

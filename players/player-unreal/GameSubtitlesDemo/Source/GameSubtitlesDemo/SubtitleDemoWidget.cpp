@@ -71,7 +71,7 @@ void USubtitleDemoWidget::NativeConstruct()
     Super::NativeConstruct();
 
     // Create the player
-    Player = NewObject<USubtitlePlayer>(this);
+    Player = NewObject<UGameSubtitlePlayer>(this);
     Player->Initialize(SubWidget, CurrentMaxLines);
     Player->OnComplete.AddDynamic(this, &USubtitleDemoWidget::OnSubtitleComplete);
 
@@ -265,8 +265,8 @@ void USubtitleDemoWidget::BuildUI()
             Slot->SetHorizontalAlignment(HAlign_Fill);
         }
 
-        // Subtitle widget (implements ISubtitleRenderer)
-        SubWidget = WidgetTree->ConstructWidget<USubtitleWidget>(USubtitleWidget::StaticClass());
+        // Subtitle widget (implements IGameSubtitleRenderer)
+        SubWidget = WidgetTree->ConstructWidget<UGameSubtitleWidget>(UGameSubtitleWidget::StaticClass());
         SubWidget->SubtitleFontInfo      = SubtitleFont();
         SubWidget->CharacterNameFontInfo = CharacterNameFont();
         SubWidget->TextColor             = Palette::White;

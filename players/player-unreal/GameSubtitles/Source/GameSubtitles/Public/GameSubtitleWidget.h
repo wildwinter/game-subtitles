@@ -2,28 +2,28 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "ISubtitleRenderer.h"
+#include "IGameSubtitleRenderer.h"
 #include "Fonts/SlateFontInfo.h"
-#include "SubtitleWidget.generated.h"
+#include "GameSubtitleWidget.generated.h"
 
 class UVerticalBox;
 class UTextBlock;
 
 /**
- * A UUserWidget that implements ISubtitleRenderer.
+ * A UUserWidget that implements IGameSubtitleRenderer.
  *
  * Measures text with the Slate font measure service (same font used for rendering),
  * renders each line as a UTextBlock in a centred UVerticalBox, and reports the
  * widget's local width as the container width.
  *
  * -- Blueprint usage --
- * Create a Widget Blueprint subclass of SubtitleWidget. In the designer, add a
+ * Create a Widget Blueprint subclass of GameSubtitleWidget. In the designer, add a
  * UVerticalBox named "TextContainer" anywhere in the hierarchy; the widget will
  * populate it with line text blocks. If no TextContainer is present in the designer,
  * one is created automatically filling the widget's root.
  *
  * -- C++ / programmatic usage --
- * USubtitleWidget* Widget = CreateWidget<USubtitleWidget>(PlayerController, USubtitleWidget::StaticClass());
+ * UGameSubtitleWidget* Widget = CreateWidget<UGameSubtitleWidget>(PlayerController, UGameSubtitleWidget::StaticClass());
  * // The widget builds its own tree on NativeOnInitialized.
  * Player->Initialize(Widget, 2);
  *
@@ -34,7 +34,7 @@ class UTextBlock;
  * before the widget is laid out on screen for the first time).
  */
 UCLASS(BlueprintType, Blueprintable)
-class GAMESUBTITLES_API USubtitleWidget : public UUserWidget, public ISubtitleRenderer
+class GAMESUBTITLES_API UGameSubtitleWidget : public UUserWidget, public IGameSubtitleRenderer
 {
     GENERATED_BODY()
 
@@ -62,11 +62,11 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Subtitles")
     float ContainerWidthOverride = 0.f;
 
-    // ── ISubtitleRenderer ──────────────────────────────────────────────────────
+    // ── IGameSubtitleRenderer ──────────────────────────────────────────────────
 
     virtual float MeasureLineWidth_Implementation(const FString& Text, bool bUseCharacterNameFont) override;
     virtual float GetContainerWidth_Implementation() override;
-    virtual void  Render_Implementation(const TArray<FString>& Lines, const FSubtitleCharacterContext& CharacterContext) override;
+    virtual void  Render_Implementation(const TArray<FString>& Lines, const FGameSubtitleCharacterContext& CharacterContext) override;
     virtual void  Clear_Implementation() override;
 
     // ── UUserWidget ────────────────────────────────────────────────────────────

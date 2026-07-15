@@ -13,14 +13,14 @@ player-unreal/
 │   └── Source/GameSubtitles/
 │       ├── GameSubtitles.Build.cs
 │       ├── Public/
-│       │   ├── TextLayout.h          # WrapAndPaginate + AllocateTimings (static)
-│       │   ├── ISubtitleRenderer.h   # UInterface — MeasureLineWidth / GetContainerWidth / Render / Clear
-│       │   ├── SubtitlePlayer.h      # UObject — Initialize / Start / Tick / Stop / Reset
-│       │   └── SubtitleWidget.h      # UUserWidget that implements ISubtitleRenderer
+│       │   ├── GameSubtitleTextLayout.h    # WrapAndPaginate + AllocateTimings (static)
+│       │   ├── IGameSubtitleRenderer.h     # UInterface — MeasureLineWidth / GetContainerWidth / Render / Clear
+│       │   ├── GameSubtitlePlayer.h        # UObject — Initialize / Start / Tick / Stop / Reset
+│       │   └── GameSubtitleWidget.h        # UUserWidget that implements IGameSubtitleRenderer
 │       └── Private/
-│           ├── TextLayout.cpp
-│           ├── SubtitlePlayer.cpp
-│           └── SubtitleWidget.cpp
+│           ├── GameSubtitleTextLayout.cpp
+│           ├── GameSubtitlePlayer.cpp
+│           └── GameSubtitleWidget.cpp
 └── GameSubtitlesDemo/      # Demo Unreal project
     ├── GameSubtitlesDemo.uproject
     ├── Config/DefaultGame.ini
@@ -35,22 +35,22 @@ player-unreal/
 
 ## API — plugin (C++)
 
-### `FSubtitleTextLayout` (static, `TextLayout.h`)
+### `FGameSubtitleTextLayout` (static, `GameSubtitleTextLayout.h`)
 
 ```cpp
 // Wrap + paginate text. MeasureWidth returns pixel/Slate-unit width of a string.
 TArray<TArray<FString>> Pages =
-    FSubtitleTextLayout::WrapAndPaginate(Text, MeasureWidth, ContainerWidth, MaxLines);
+    FGameSubtitleTextLayout::WrapAndPaginate(Text, MeasureWidth, ContainerWidth, MaxLines);
 
 // Allocate display time proportionally to character count per page.
 TArray<float> Timings =
-    FSubtitleTextLayout::AllocateTimings(Pages, TotalDurationSeconds);
+    FGameSubtitleTextLayout::AllocateTimings(Pages, TotalDurationSeconds);
 ```
 
-### `USubtitlePlayer` (UObject, `SubtitlePlayer.h`)
+### `UGameSubtitlePlayer` (UObject, `GameSubtitlePlayer.h`)
 
 ```cpp
-USubtitlePlayer* Player = NewObject<USubtitlePlayer>(this);
+UGameSubtitlePlayer* Player = NewObject<UGameSubtitlePlayer>(this);
 Player->Initialize(MyRenderer, /*MaxLines=*/2);
 
 Player->OnComplete.AddDynamic(this, &AMyActor::HandleSubtitleDone);
@@ -73,30 +73,30 @@ Player->MaxLines = 3; // takes effect on next Start()
 All methods are also Blueprint-callable. `OnComplete` is a `BlueprintAssignable` dynamic multicast delegate. 
 HandleSubtitleDone() will have to call Stop() to clear the text.
 
-### `ISubtitleRenderer` (UInterface, `ISubtitleRenderer.h`)
+### `IGameSubtitleRenderer` (UInterface, `IGameSubtitleRenderer.h`)
 
 Implement on any UObject to create a custom renderer:
 
 ```cpp
 UCLASS()
-class UMyRenderer : public UObject, public ISubtitleRenderer
+class UMyRenderer : public UObject, public IGameSubtitleRenderer
 {
     GENERATED_BODY()
 public:
     virtual float MeasureLineWidth_Implementation(const FString& Text, bool bUseCharacterNameFont) override;
     virtual float GetContainerWidth_Implementation() override;
     virtual void  Render_Implementation(const TArray<FString>& Lines,
-                                        const FSubtitleCharacterContext& CharacterContext) override;
+                                        const FGameSubtitleCharacterContext& CharacterContext) override;
     virtual void  Clear_Implementation() override;
 };
 ```
 
-### `USubtitleWidget` (UUserWidget, `SubtitleWidget.h`)
+### `UGameSubtitleWidget` (UUserWidget, `GameSubtitleWidget.h`)
 
 Ready-made UMG renderer. Measures text via Slate's font measure service and renders each line as a `UTextBlock` inside a `UVerticalBox`.
 
 ```cpp
-USubtitleWidget* Widget = CreateWidget<USubtitleWidget>(PC, USubtitleWidget::StaticClass());
+UGameSubtitleWidget* Widget = CreateWidget<UGameSubtitleWidget>(PC, UGameSubtitleWidget::StaticClass());
 Widget->SubtitleFontInfo = FSlateFontInfo(MyFontAsset, 16);
 Widget->TextColor = FLinearColor::White;
 Widget->ContainerWidthOverride = 540.f; // set before Start() if widget isn't on screen yet
@@ -105,14 +105,14 @@ Widget->AddToViewport();
 Player->Initialize(Widget, 2);
 ```
 
-To customise layout in the Blueprint designer, subclass `USubtitleWidget` and add a `UVerticalBox` named **`TextContainer`** anywhere in the hierarchy; the widget will populate it with line blocks.
+To customise layout in the Blueprint designer, subclass `UGameSubtitleWidget` and add a `UVerticalBox` named **`TextContainer`** anywhere in the hierarchy; the widget will populate it with line blocks.
 
 ---
 
 ## API — plugin (Blueprint)
 
-1. **Construct Object of Class** → `SubtitlePlayer`
-2. **Initialize** (Renderer = your SubtitleWidget or custom renderer, MaxLines = 2)
+1. **Construct Object of Class** → `GameSubtitlePlayer`
+2. **Initialize** (Renderer = your GameSubtitleWidget or custom renderer, MaxLines = 2)
 3. **Bind** the `On Complete` event
 4. **Start** (Text, Duration)
 5. From `Event Tick` → **Tick** (DeltaSeconds)

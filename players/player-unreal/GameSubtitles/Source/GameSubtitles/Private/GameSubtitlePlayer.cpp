@@ -1,7 +1,7 @@
-#include "SubtitlePlayer.h"
-#include "TextLayout.h"
+#include "GameSubtitlePlayer.h"
+#include "GameSubtitleTextLayout.h"
 
-USubtitlePlayer::USubtitlePlayer()
+UGameSubtitlePlayer::UGameSubtitlePlayer()
     : MaxLines(2)
     , PageIndex(0)
     , Elapsed(0.f)
@@ -10,13 +10,13 @@ USubtitlePlayer::USubtitlePlayer()
 {
 }
 
-void USubtitlePlayer::Initialize(TScriptInterface<ISubtitleRenderer> InRenderer, int32 InMaxLines)
+void UGameSubtitlePlayer::Initialize(TScriptInterface<IGameSubtitleRenderer> InRenderer, int32 InMaxLines)
 {
     Renderer = InRenderer;
     MaxLines  = FMath::Max(1, InMaxLines);
 }
 
-void USubtitlePlayer::Start(const FString& Text, float Duration,
+void UGameSubtitlePlayer::Start(const FString& Text, float Duration,
                             const FString& CharacterName,
                             bool bHasCharacterNameColor,
                             FLinearColor CharacterNameColor,
@@ -27,7 +27,7 @@ void USubtitlePlayer::Start(const FString& Text, float Duration,
 
     if (Renderer.GetObject())
     {
-        ISubtitleRenderer::Execute_Clear(Renderer.GetObject());
+        IGameSubtitleRenderer::Execute_Clear(Renderer.GetObject());
     }
 
     Elapsed   = 0.f;
@@ -35,7 +35,7 @@ void USubtitlePlayer::Start(const FString& Text, float Duration,
     bDone     = false;
 
     // Build CurrentCharacterContext
-    CurrentCharacterContext = FSubtitleCharacterContext();
+    CurrentCharacterContext = FGameSubtitleCharacterContext();
     if (!CharacterName.IsEmpty())
     {
         CurrentCharacterContext.bValid     = true;
@@ -56,17 +56,17 @@ void USubtitlePlayer::Start(const FString& Text, float Duration,
     // Build a MeasureWidth callable that dispatches through the renderer interface
     TFunction<float(const FString&)> MeasureWidth = [RendererObj](const FString& T) -> float
     {
-        return ISubtitleRenderer::Execute_MeasureLineWidth(RendererObj, T, /*bUseCharacterNameFont=*/false);
+        return IGameSubtitleRenderer::Execute_MeasureLineWidth(RendererObj, T, /*bUseCharacterNameFont=*/false);
     };
 
-    const float ContainerWidth = ISubtitleRenderer::Execute_GetContainerWidth(RendererObj);
+    const float ContainerWidth = IGameSubtitleRenderer::Execute_GetContainerWidth(RendererObj);
 
     // Reserve space on line 0 of each page for the character-name prefix, measured
     // in the character-name font so the body text always fits alongside it.
     float FirstLineIndent = 0.f;
     if (CurrentCharacterContext.bValid)
     {
-        const float RawIndent = ISubtitleRenderer::Execute_MeasureLineWidth(
+        const float RawIndent = IGameSubtitleRenderer::Execute_MeasureLineWidth(
             RendererObj, CharacterName + TEXT(": "), /*bUseCharacterNameFont=*/true);
         FirstLineIndent = FMath::CeilToFloat(RawIndent);
     }
@@ -79,15 +79,15 @@ void USubtitlePlayer::Start(const FString& Text, float Duration,
 		DurationUsed = FMath::Clamp(FMath::RoundToFloat(CharCount / 14.f), 3.f, 18.f);
 	}
 
-    Pages   = FSubtitleTextLayout::WrapAndPaginate(Text, MeasureWidth, ContainerWidth,
+    Pages   = FGameSubtitleTextLayout::WrapAndPaginate(Text, MeasureWidth, ContainerWidth,
                                                     FMath::Max(1, MaxLines), FirstLineIndent);
-    Timings = FSubtitleTextLayout::AllocateTimings(Pages, DurationUsed);
+    Timings = FGameSubtitleTextLayout::AllocateTimings(Pages, DurationUsed);
 
     bRunning = true;
     RenderCurrent();
 }
 
-void USubtitlePlayer::Tick(float DeltaSeconds)
+void UGameSubtitlePlayer::Tick(float DeltaSeconds)
 {
     if (!bRunning || bDone)
     {
@@ -114,17 +114,17 @@ void USubtitlePlayer::Tick(float DeltaSeconds)
     }
 }
 
-void USubtitlePlayer::Stop()
+void UGameSubtitlePlayer::Stop()
 {
     bRunning = false;
 
     if (Renderer.GetObject())
     {
-        ISubtitleRenderer::Execute_Clear(Renderer.GetObject());
+        IGameSubtitleRenderer::Execute_Clear(Renderer.GetObject());
     }
 }
 
-void USubtitlePlayer::Reset()
+void UGameSubtitlePlayer::Reset()
 {
     bRunning  = false;
     bDone     = false;
@@ -135,11 +135,11 @@ void USubtitlePlayer::Reset()
 
     if (Renderer.GetObject())
     {
-        ISubtitleRenderer::Execute_Clear(Renderer.GetObject());
+        IGameSubtitleRenderer::Execute_Clear(Renderer.GetObject());
     }
 }
 
-void USubtitlePlayer::RenderCurrent()
+void UGameSubtitlePlayer::RenderCurrent()
 {
     if (Renderer.GetObject() && Pages.IsValidIndex(PageIndex))
     {
@@ -151,6 +151,6 @@ void USubtitlePlayer::RenderCurrent()
         {
             PaddedLines.Add(TEXT(" "));
         }
-        ISubtitleRenderer::Execute_Render(Renderer.GetObject(), PaddedLines, CurrentCharacterContext);
+        IGameSubtitleRenderer::Execute_Render(Renderer.GetObject(), PaddedLines, CurrentCharacterContext);
     }
 }
