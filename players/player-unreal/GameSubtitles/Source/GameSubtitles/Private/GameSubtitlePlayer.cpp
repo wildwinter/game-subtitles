@@ -1,6 +1,30 @@
 #include "GameSubtitlePlayer.h"
 #include "GameSubtitleTextLayout.h"
 
+float UGameSubtitlePlayer::EstimateDuration(const FString& Text, float CharsPerSecond,
+                                           float MinSeconds, float MaxSeconds)
+{
+    int32 Count = 0;
+    const int32 Len = Text.Len();
+    for (int32 i = 0; i < Len; ++i)
+    {
+        const TCHAR Ch = Text[i];
+        if (Ch == (TCHAR)0x00AD)
+        {
+            continue;
+        }
+        // Count a UTF-16 surrogate pair once, as a single code point. Never true where TCHAR is UTF-32.
+        if (Ch >= 0xD800 && Ch <= 0xDBFF && i + 1 < Len && Text[i + 1] >= 0xDC00 && Text[i + 1] <= 0xDFFF)
+        {
+            ++i;
+        }
+        ++Count;
+    }
+
+    const float Rate = CharsPerSecond > 0.f ? CharsPerSecond : 14.f;
+    return FMath::Min(FMath::Max(Count / Rate, MinSeconds), MaxSeconds);
+}
+
 UGameSubtitlePlayer::UGameSubtitlePlayer()
     : MaxLines(2)
     , PageIndex(0)
@@ -71,13 +95,7 @@ void UGameSubtitlePlayer::Start(const FString& Text, float Duration,
         FirstLineIndent = FMath::CeilToFloat(RawIndent);
     }
 
-	float DurationUsed = Duration;
-	if (DurationUsed <= 0.f)	// Let's guess from the text length
-	{
-		FString CleanText = Text.Replace(TEXT("\u00AD"), TEXT(""));
-		const int32 CharCount = CleanText.Len();
-		DurationUsed = FMath::Clamp(FMath::RoundToFloat(CharCount / 14.f), 3.f, 18.f);
-	}
+    const float DurationUsed = Duration > 0.f ? Duration : EstimateDuration(Text);
 
     Pages   = FGameSubtitleTextLayout::WrapAndPaginate(Text, MeasureWidth, ContainerWidth,
                                                     FMath::Max(1, MaxLines), FirstLineIndent);

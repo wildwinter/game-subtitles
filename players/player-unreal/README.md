@@ -114,7 +114,7 @@ To customise layout in the Blueprint designer, subclass `UGameSubtitleWidget` an
 1. **Construct Object of Class** → `GameSubtitlePlayer`
 2. **Initialize** (Renderer = your GameSubtitleWidget or custom renderer, MaxLines = 2)
 3. **Bind** the `On Complete` event
-4. **Start** (Text, Duration)
+4. **Start** (Text, Duration). A Duration of 0 or less estimates one from the text; **Estimate Duration** returns the same estimate on its own.
 5. From `Event Tick` → **Tick** (DeltaSeconds)
 6. **Stop** / **Reset** as needed
 

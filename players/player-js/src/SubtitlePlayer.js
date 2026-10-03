@@ -1,6 +1,32 @@
 import { wrapAndPaginate, allocateTimings } from './TextLayout.js';
 
 /**
+ * Estimates how long a subtitle should stay on screen when no duration is known.
+ *
+ * Counts characters (Unicode code points, ignoring U+00AD soft hyphens), divides by
+ * the reading rate, and clamps the result. Counting characters rather than words
+ * means CJK text, which has no spaces, still gets a sensible estimate; pass a lower
+ * `charsPerSecond` for languages that are read more slowly per character.
+ *
+ * The Unity and Unreal players implement the same rule with the same defaults.
+ *
+ * @param {string} text                          Subtitle text, may contain U+00AD soft hyphens.
+ * @param {object} [opts]
+ * @param {number} [opts.charsPerSecond=14]      Reading rate. Values <= 0 fall back to 14.
+ * @param {number} [opts.minSeconds=1.5]         Shortest estimate returned.
+ * @param {number} [opts.maxSeconds=18]          Longest estimate returned.
+ * @returns {number} Estimated display time in seconds.
+ */
+export function estimateDuration(text, { charsPerSecond = 14, minSeconds = 1.5, maxSeconds = 18 } = {}) {
+  let count = 0;
+  for (const ch of text ?? '') {
+    if (ch !== '\u00AD') count++;
+  }
+  const rate = charsPerSecond > 0 ? charsPerSecond : 14;
+  return Math.min(Math.max(count / rate, minSeconds), maxSeconds);
+}
+
+/**
  * Manages paginated subtitle display driven by caller-supplied ticks.
  *
  * The player is created once for a given renderer and line-count, then reused
@@ -11,6 +37,9 @@ import { wrapAndPaginate, allocateTimings } from './TextLayout.js';
  *
  * // In your dialogue system:
  * player.start({ text: 'Hello world', duration: 5, onComplete: next });
+ *
+ * // No audio? Leave out the duration and the player estimates one from the text.
+ * player.start({ text: 'Hello world', onComplete: next });
  *
  * // In your game loop:
  * player.tick(deltaSeconds);
@@ -43,7 +72,8 @@ export class SubtitlePlayer {
    *
    * @param {object}   opts
    * @param {string}   opts.text                  Text, may contain U+00AD soft hyphens.
-   * @param {number}   opts.duration              Total display seconds (> 0).
+   * @param {number}   [opts.duration]            Total display seconds. When missing or <= 0,
+   *                                              `estimateDuration(text)` is used instead.
    * @param {Function} [opts.onComplete]          Called when all pages have been shown.
    * @param {string}   [opts.characterName]       If present, prepended to the first line of
    *                                              every page as "Name: ", styled per the
@@ -75,7 +105,7 @@ export class SubtitlePlayer {
       ? Math.ceil(this._renderer.measureLineWidth(`${characterName}: `, /*useCharacterNameFont=*/true))
       : 0;
     this._pages           = wrapAndPaginate(text, measure, width, this._maxLines, firstLineIndent);
-    this._timings = allocateTimings(this._pages, duration);
+    this._timings         = allocateTimings(this._pages, duration > 0 ? duration : estimateDuration(text));
 
     this._running = true;
     this._renderCurrent();

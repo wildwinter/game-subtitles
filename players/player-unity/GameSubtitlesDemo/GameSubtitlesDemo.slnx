@@ -1,4 +1,5 @@
 ﻿<Solution>
   <Project Path="GameSubtitles.csproj" />
   <Project Path="GameSubtitlesDemo.csproj" />
+  <Project Path="GameSubtitles.Tests.Editor.csproj" />
 </Solution>

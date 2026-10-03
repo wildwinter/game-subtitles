@@ -289,6 +289,13 @@ const player = new SubtitlePlayer({ renderer, maxLines });
 // characterName, characterNameColor, and lineColor are all optional
 player.start({ text, duration, onComplete, characterName, characterNameColor, lineColor });
 
+// No duration (for example, no recorded audio yet): the player estimates one from the text
+player.start({ text, onComplete });
+
+// The same estimate, as a standalone function. All options are optional.
+import { estimateDuration } from './game-subtitles-player.esm.js'; // or GameSubtitles.estimateDuration from the IIFE build
+const seconds = estimateDuration(text, { charsPerSecond: 14, minSeconds: 1.5, maxSeconds: 18 });
+
 // Call once per frame from your game loop
 player.tick(deltaSeconds);
 
@@ -306,6 +313,8 @@ player.maxLines = 3;
 ```
 
 When `characterName` is set, `"Name: "` is prepended to the first line of every page. The name is measured with the character-name font (see below) to reserve the exact space needed, so the remaining body text always fits on the line. `lineColor` applies to all body text lines; `characterNameColor` applies only to the name prefix.
+
+If you leave out the duration, or pass a value of zero or less, `start()` uses `estimateDuration(text, options)` to guess one from the text. The estimate counts characters (Unicode code points, not counting U+00AD soft hyphens), divides by the reading rate, and clamps the result: by default 14 characters per second, at least 1.5 seconds, and at most 18 seconds. Counting characters rather than words means languages written without spaces, such as Chinese and Japanese, still get an estimate; pass a lower `charsPerSecond` for languages that are read more slowly per character. You can call `estimateDuration(text, options)` yourself, for example to schedule the next line before the subtitle starts, and override `charsPerSecond`, `minSeconds`, and `maxSeconds`. The JavaScript, Unreal, and Unity players all use the same rule and defaults, so the same text gets the same estimate everywhere.
 
 #### Styling the character name
 
@@ -433,7 +442,7 @@ UGameSubtitlePlayer* Player = NewObject<UGameSubtitlePlayer>(this);
 Player->Initialize(RendererObject, MaxLines);  // RendererObject implements IGameSubtitleRenderer
 
 // Start playing (stops any currently playing subtitle first)
-// All parameters after Duration are optional
+// All parameters after Text are optional; Duration <= 0 (the default) estimates it from the text
 Player->Start(Text, DurationSeconds,
               CharacterName,         // FString — displayed at the start of each page
               bHasCharacterNameColor,// bool   — false = use default text color for name
@@ -458,9 +467,17 @@ Player->MaxLines = 3;
 
 // Completion event (BlueprintAssignable dynamic multicast delegate)
 Player->OnComplete.AddDynamic(this, &AMyActor::HandleDone);
+
+// Estimate a duration from the text (static, BlueprintPure). Parameters after Text are optional.
+float Seconds = UGameSubtitlePlayer::EstimateDuration(Text,
+                                                      14.f,   // CharsPerSecond
+                                                      1.5f,   // MinSeconds
+                                                      18.f);  // MaxSeconds
 ```
 
 When `CharacterName` is non-empty, `"Name: "` is prepended to the first line of every page. The name is measured using `CharacterNameFontInfo` (if set) to reserve the exact space before wrapping the body text. `LineColor` applies to all body text lines; `CharacterNameColor` applies only to the name prefix.
+
+If you leave out the duration, or pass a value of zero or less, `Start` uses `EstimateDuration` to guess one from the text. The estimate counts characters (Unicode code points, not counting U+00AD soft hyphens), divides by the reading rate, and clamps the result: by default 14 characters per second, at least 1.5 seconds, and at most 18 seconds. Counting characters rather than words means languages written without spaces, such as Chinese and Japanese, still get an estimate; pass a lower `CharsPerSecond` for languages that are read more slowly per character. You can call `EstimateDuration` yourself, for example to schedule the next line before the subtitle starts, and override `CharsPerSecond`, `MinSeconds`, and `MaxSeconds`. The JavaScript, Unreal, and Unity players all use the same rule and defaults, so the same text gets the same estimate everywhere.
 
 All methods are also Blueprint-callable. The player is a plain `UObject` — not a component — so you own its lifetime and call `Tick` yourself. This matches the JS player's design exactly.
 
@@ -610,7 +627,7 @@ var player = new SubtitlePlayer();
 player.Initialize(renderer, maxLines);  // renderer implements ISubtitleRenderer
 
 // Start playing (stops any currently playing subtitle first)
-// All parameters after durationSeconds are optional
+// All parameters after text are optional; a duration <= 0 (the default) estimates it from the text
 player.Start(text, durationSeconds,
              characterName: speaker,           // string or null
              characterNameColor: Color.yellow, // Color? or null — color for name prefix
@@ -633,9 +650,17 @@ player.MaxLines = 3;
 
 // Completion event
 player.OnComplete += HandleDone;
+
+// Estimate a duration from the text (static). Parameters after text are optional.
+float seconds = SubtitlePlayer.EstimateDuration(text,
+                                                charsPerSecond: 14f,
+                                                minSeconds: 1.5f,
+                                                maxSeconds: 18f);
 ```
 
 When `characterName` is non-null, `"Name: "` is prepended to the first line of every page. The name is measured using the character-name font (see below) to reserve the exact space before wrapping the body text. `lineColor` applies to all body text lines; `characterNameColor` applies only to the name prefix.
+
+If you leave out the duration, or pass a value of zero or less, `Start` uses `SubtitlePlayer.EstimateDuration` to guess one from the text. The estimate counts characters (Unicode code points, not counting U+00AD soft hyphens), divides by the reading rate, and clamps the result: by default 14 characters per second, at least 1.5 seconds, and at most 18 seconds. Counting characters rather than words means languages written without spaces, such as Chinese and Japanese, still get an estimate; pass a lower `charsPerSecond` for languages that are read more slowly per character. You can call `SubtitlePlayer.EstimateDuration` yourself, for example to schedule the next line before the subtitle starts, and override `charsPerSecond`, `minSeconds`, and `maxSeconds`. The JavaScript, Unreal, and Unity players all use the same rule and defaults, so the same text gets the same estimate everywhere.
 
 #### `SubtitleWidget`
 
