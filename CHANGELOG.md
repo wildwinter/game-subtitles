@@ -4,6 +4,8 @@ Notable changes to Game Subtitles. Each version is published as a [GitHub Releas
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-03
+
 ### Added
 
 - A duration estimate on every player: `estimateDuration` (JS), `SubtitlePlayer.EstimateDuration` (Unity), and `UGameSubtitlePlayer::EstimateDuration` (Unreal, also callable from Blueprint). It counts characters, not words, so it also works for languages written without spaces, at 14 characters per second, clamped to 1.5 to 18 seconds. The rate, minimum, and maximum can all be overridden.
