@@ -55,7 +55,9 @@ Pre-built releases are available in the [Releases](https://github.com/wildwinter
 | `game-subtitles-unity-v{version}.zip` | Unity UPM package + Windows & macOS preprocessor binaries | **Unity developers** |
 | `game-subtitles-lib-v{version}.zip` | C# `PreprocessorLib.dll` + all players | Custom tooling / calling the preprocessor as a library |
 
-Download the zip for your platform. Each contains everything you need with no additional dependencies.
+Download the zip for your platform. Each contains everything you need with no additional dependencies. [CHANGELOG.md](CHANGELOG.md) lists what changed in each version.
+
+To make a release (maintainers only), write the notes under `## [Unreleased]` in `CHANGELOG.md`, commit them, and run `npm run release -- <version>` on a Mac. Add `--dry-run` to check everything first without changing anything. The script tests, builds, signs and notarises the macOS preprocessor, tags, pushes to `main`, and publishes the GitHub Release. See `scripts/release.mjs` and `scripts/macos.mjs` for the signing setup it expects.
 
 ---
 

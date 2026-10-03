@@ -4,6 +4,7 @@ import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveSignIdentity, signBinary } from '../../scripts/macos.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootPkg = JSON.parse(readFileSync(resolve(__dirname, '../../package.json'), 'utf8'));
@@ -25,20 +26,17 @@ run(
   ` -o ../build/preprocessor/osx-arm64`
 );
 
-// Apple codesign — force-replace dotnet's ad-hoc signature with Developer ID
-const codesignId = process.env.APPLE_CODESIGN_ID;
+// Apple codesign: force-replace dotnet's ad-hoc signature with Developer ID
+const codesignId = resolveSignIdentity();
 if (!codesignId) {
-  console.warn('\nWARN: APPLE_CODESIGN_ID is not set — skipping macOS code signing.');
+  console.warn('\nWARN: no Developer ID Application identity (set APPLE_CODESIGN_ID or add one to the keychain); skipping macOS code signing.');
 } else {
-  const binary = '../build/preprocessor/osx-arm64/game-subtitles-preprocess';
-  const entitlements = 'entitlements.plist';
-  run(
-    `codesign --force --sign ${JSON.stringify(codesignId)}` +
-    ` --entitlements ${entitlements}` +
-    ` --options runtime --timestamp` +
-    ` ${binary}`
+  console.log(`\nSigning macOS binary with "${codesignId}"`);
+  signBinary(
+    resolve(preprocessorDir, '../build/preprocessor/osx-arm64/game-subtitles-preprocess'),
+    codesignId,
+    resolve(preprocessorDir, 'entitlements.plist'),
   );
-  run(`codesign --verify --strict ${binary}`);
 }
 
 // Windows x64
