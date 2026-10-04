@@ -3,6 +3,8 @@
     "rootNamespace": "GameSubtitles.Tests",
     "references": [
         "GameSubtitles",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

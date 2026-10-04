@@ -116,8 +116,10 @@ export class DomRenderer {
     const doc = this._element.ownerDocument;
     const span = doc.createElement('span');
     // Absolutely positioned so it stays out of the container's flow/layout.
+    // white-space:pre, not nowrap: with nowrap a trailing space ends the line and is dropped,
+    // so "Name: " measured the same as "Name:" although the rendered prefix keeps the space.
     span.style.cssText =
-      'position:absolute;visibility:hidden;white-space:nowrap;left:-9999px;top:-9999px';
+      'position:absolute;visibility:hidden;white-space:pre;left:-9999px;top:-9999px';
     if (useCharacterNameFont) span.className = CHARACTER_NAME_CLASS;
     this._element.appendChild(span);
     this[field] = span;

@@ -13,6 +13,8 @@ public class GameSubtitlesTests : ModuleRules
             "Core",
             "CoreUObject",
             "GameSubtitles",
+            "Slate",
+            "SlateCore",
         });
     }
 }

@@ -4,9 +4,15 @@ Notable changes to Game Subtitles. Each version is published as a [GitHub Releas
 
 ## [Unreleased]
 
+### Fixed
+
+- Unity: the space after the character name was missing, so a line showed as "Tam:Oh, go on then.". TextMeshPro leaves trailing spaces out of its measured width, which sized the name to end at the colon. `SubtitleWidget` now draws the gap as layout spacing, and its `MeasureLineWidth` counts trailing spaces, so the room reserved for the name matches what is drawn.
+- JavaScript: `DomRenderer` measured the name prefix without its trailing space, although it draws the space, so it reserved one space too little and a full first line could be clipped at the right edge.
+
 ### Added
 
 - Tests for the Unity and Unreal players' layout, timing, and playback, with the same cases as the JS and Godot players. Before, they only tested the duration estimate.
+- Tests that the space after the character name is both drawn and reserved, in the JS, Unity, and Unreal players. The Godot player already had one.
 - `npm run check:unity` and `npm run check:unreal`, which run those tests from the command line in each engine that is installed, and skip when none is. `npm run release` runs both.
 
 ### Changed

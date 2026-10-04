@@ -39,6 +39,8 @@ namespace GameSubtitles
         /// <summary>
         /// Returns the rendered width of <paramref name="text"/> in the renderer's font.
         /// Called frequently during layout — keep implementations fast.
+        /// Trailing spaces must count: the player measures "Name: " to reserve room for the
+        /// character-name prefix. TextMeshPro's preferred width leaves them out.
         /// </summary>
         /// <param name="text">Text to measure.</param>
         /// <param name="useCharacterNameFont">

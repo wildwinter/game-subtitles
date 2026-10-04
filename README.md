@@ -710,6 +710,8 @@ public class MyRenderer : MonoBehaviour, ISubtitleRenderer
 
 `CharacterContext` is a struct with `Name` (string), `Color` (Color?), and `LineColor` (Color?).
 
+`MeasureLineWidth` must count trailing spaces, because the player measures `"Name: "` to reserve room for the character name. TextMeshPro's `GetPreferredValues()` leaves trailing spaces out, so if you measure with it, add their width back as `SubtitleWidget` does.
+
 #### Low-level layout API
 
 The same layout functions used internally are available as static C# helpers:

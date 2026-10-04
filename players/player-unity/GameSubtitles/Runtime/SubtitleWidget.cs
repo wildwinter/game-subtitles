@@ -71,7 +71,13 @@ namespace GameSubtitles
             else
                 ApplyFont(_probe, SubtitleFontAsset, SubtitleFontSize);
 
-            return _probe.GetPreferredValues(text).x;
+            // TextMeshPro leaves trailing whitespace out of the preferred width, so "Name: " would
+            // measure the same as "Name:". Add trailing spaces back, so the indent the player
+            // reserves for the name prefix includes the gap the name row draws.
+            string trimmed  = text.TrimEnd(' ');
+            int    trailing = text.Length - trimmed.Length;
+            float  width    = _probe.GetPreferredValues(trimmed).x;
+            return trailing > 0 ? width + trailing * ProbeSpaceWidth() : width;
         }
 
         /// <inheritdoc/>
@@ -123,6 +129,20 @@ namespace GameSubtitles
         private float CharacterSizeOrFallback =>
             CharacterNameFontSize > 0f ? CharacterNameFontSize : SubtitleFontSize;
 
+        /// <summary>Width of one space in the character-name font.</summary>
+        private float CharacterNameSpaceWidth()
+        {
+            EnsureProbe();
+            if (_probe == null) return 0f;
+            ApplyFont(_probe, CharacterFontOrFallback, CharacterSizeOrFallback);
+            return ProbeSpaceWidth();
+        }
+
+        // Width of one space in the probe's current font. A lone space measures as zero (see
+        // MeasureLineWidth), so measure it between two letters.
+        private float ProbeSpaceWidth() =>
+            _probe.GetPreferredValues("a a").x - _probe.GetPreferredValues("aa").x;
+
         private static void ApplyFont(TMP_Text t, TMP_FontAsset font, float size)
         {
             if (t == null) return;
@@ -167,8 +187,12 @@ namespace GameSubtitles
             hlg.childControlHeight      = true;
             hlg.childForceExpandWidth   = false;
             hlg.childForceExpandHeight  = false;
+            // The gap after "Name:" is the row's spacing, because TextMeshPro would drop a
+            // trailing space from the name segment's width. It is one space in the
+            // character-name font, matching what MeasureLineWidth("Name: ", true) reserves.
+            hlg.spacing                 = CharacterNameSpaceWidth();
 
-            Vector2 nameSize = AddRowSegment(rowGo.transform, ctx.Name + ": ",
+            Vector2 nameSize = AddRowSegment(rowGo.transform, ctx.Name + ":",
                                              CharacterFontOrFallback, CharacterSizeOrFallback,
                                              ctx.Color ?? TextColor);
             Vector2 bodySize = AddRowSegment(rowGo.transform, text,
