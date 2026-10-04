@@ -2,6 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { SubtitlePlayer } from '../SubtitlePlayer.js';
 import processedSubtitles from './fixtures/processed.json';
 
+// The same cases are in the Unity (SubtitlePlayerTests.cs), Unreal (GameSubtitlePlayerTest.cpp),
+// and Godot (tests/run_tests.gd) players. Keep all four in step.
+
 // A fake renderer whose container is 100px wide and uses monospace 10px chars.
 function makeRenderer() {
   const rendered = [];

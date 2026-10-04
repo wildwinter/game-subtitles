@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Cut a release: check, test, set the version, build, sign and notarise the macOS preprocessor,
+// Cut a release: check, test (including the Unity and Unreal tests, in each engine that is
+// installed), set the version, build, sign and notarise the macOS preprocessor,
 // commit, tag, push to main, and publish the GitHub Release with the five zips.
 //
 //   npm run release -- 0.2.0
@@ -89,6 +90,10 @@ ${notes.replace(/^/gm, '    ')}`);
 run('npm', ['test']);
 // The Godot addon's tests need Godot, which CI installs separately, so they are not in npm test.
 run('npm', ['test', '--prefix', 'players/player-godot']);
+// The Unity and Unreal tests need the engines. Each check skips, and says so, when its engine
+// is not installed.
+run('npm', ['run', 'check:unity']);
+run('npm', ['run', 'check:unreal']);
 
 const buildVersion = dry ? current : version;
 if (!dry) {

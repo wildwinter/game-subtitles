@@ -4,9 +4,11 @@ extends SceneTree
 ##   godot --headless --path players/player-godot --import
 ##   godot --headless --path players/player-godot -s res://tests/run_tests.gd
 ##
-## The layout and player cases mirror the JS player's tests, and the duration table is the
-## one pinned in the JS (estimateDuration.test.js), Unity (EstimateDurationTests.cs), and
-## Unreal (GameSubtitleEstimateDurationTest.cpp) players. Keep all four in step.
+## The layout and player cases are shared with the JS (TextLayout.test.js,
+## SubtitlePlayer.test.js), Unity (TextLayoutTests.cs, SubtitlePlayerTests.cs), and Unreal
+## (GameSubtitleTextLayoutTest.cpp, GameSubtitlePlayerTest.cpp) players, and the duration
+## table with their estimateDuration.test.js, EstimateDurationTests.cs, and
+## GameSubtitleEstimateDurationTest.cpp. Keep all four in step.
 
 const LINE := "Get down, now! They have seen us." # 33 characters
 const SHY := "­"

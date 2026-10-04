@@ -59,7 +59,7 @@ Pre-built releases are available in the [Releases](https://github.com/wildwinter
 
 Download the zip for your platform. Each contains everything you need with no additional dependencies. [CHANGELOG.md](CHANGELOG.md) lists what changed in each version.
 
-To make a release (maintainers only), write the notes under `## [Unreleased]` in `CHANGELOG.md`, commit them, and run `npm run release -- <version>` on a Mac. Add `--dry-run` to check everything first without changing anything. The script tests, builds, signs and notarises the macOS preprocessor, tags, pushes to `main`, and publishes the GitHub Release. See `scripts/release.mjs` and `scripts/macos.mjs` for the signing setup it expects.
+To make a release (maintainers only), write the notes under `## [Unreleased]` in `CHANGELOG.md`, commit them, and run `npm run release -- <version>` on a Mac. Add `--dry-run` to check everything first without changing anything. The script tests, builds, signs and notarises the macOS preprocessor, tags, pushes to `main`, and publishes the GitHub Release. Its tests include the Godot addon's, and the Unity and Unreal tests in each engine that is installed; a check whose engine is missing says so and is skipped. See `scripts/release.mjs` and `scripts/macos.mjs` for the signing setup it expects.
 
 ---
 
@@ -541,7 +541,19 @@ TArray<float> Timings = FGameSubtitleTextLayout::AllocateTimings(Pages, TotalDur
 - Script selector, **▶ Start** / **■ Stop** / **↺ Reset** buttons, 1×/2× speed toggle
 - Lines-per-page ±, font size ±, progress bar, elapsed/total time, status line
 
-Setup: copy the `GameSubtitles` plugin (from the release zip at `GameSubtitles/`, or from source at `players/player-unreal/GameSubtitles/`) into `GameSubtitlesDemo/Plugins/GameSubtitles/`, right-click the `.uproject` → *Generate Visual Studio project files*, open in UE 5.7, and Play in Editor.
+Setup: open `GameSubtitlesDemo.uproject` in Unreal 5.7 or later, let Unreal build the modules when it asks, and Play in Editor. The project loads the plugin straight from `players/player-unreal/GameSubtitles/`, so there is nothing to copy; copying the plugin into the demo's `Plugins/` folder as well would give the project two copies of it. On Windows you can instead right-click the `.uproject`, choose *Generate Visual Studio project files*, and build from Visual Studio.
+
+#### Tests
+
+The plugin's automation tests are in an Editor module, `GameSubtitlesTests`, which is never packaged into a game. They cover the layout, the timing, the player, and the duration estimate, using the same cases as the other players' tests. To run them in the editor, open the demo project and go to **Tools → Session Frontend → Automation**, then run the tests under **GameSubtitles**.
+
+To build and run them from the command line, from the repository root:
+
+```bash
+npm run check:unreal
+```
+
+This builds a copy of the demo project under `build/check-unreal/` and runs the tests once for each Unreal Engine 5 the Epic Games Launcher has installed. Set `UE_ROOT` to an engine folder to use only that engine. If no engine is installed, it says so and skips.
 
 ---
 
@@ -724,11 +736,21 @@ List<float> timings = TextLayout.AllocateTimings(pages, totalDurationSeconds);
 
 Setup:
 
-1. Copy the `GameSubtitles` package (from the release zip at `GameSubtitles/`, or from source at `players/player-unity/GameSubtitles/`) into `GameSubtitlesDemo/Packages/GameSubtitles/`.
-2. Copy the four JSON files from `players/player-unreal/GameSubtitlesDemo/Content/Demo/` into `GameSubtitlesDemo/Assets/Demo/Resources/`.
-3. Open the project in Unity 6.0 or later.
-4. Go to **Window → TextMeshPro → Import TMP Essential Resources** if the prompt does not appear automatically.
-5. Open the `Demo` scene and enter Play mode, or attach `GameSubtitlesDemo` to an empty GameObject in any scene.
+1. Open the project in Unity 6.0 or later. It loads the package straight from `players/player-unity/GameSubtitles/`, and the subtitle data is already in `Assets/Demo/Resources/`, so there is nothing to copy.
+2. Go to **Window → TextMeshPro → Import TMP Essential Resources** if the prompt does not appear automatically.
+3. Open the `Demo` scene and enter Play mode, or attach `GameSubtitlesDemo` to an empty GameObject in any scene.
+
+#### Tests
+
+The package's EditMode tests are in `GameSubtitles/Tests/Editor/`. They cover the layout, the timing, the player, and the duration estimate, using the same cases as the other players' tests. To run them in the editor, open the demo project and go to **Window → General → Test Runner**, then run the **EditMode** tests.
+
+To run them from the command line, from the repository root:
+
+```bash
+npm run check:unity
+```
+
+This runs the tests in batch mode, in a copy of the demo project under `build/check-unity/`, so it does not matter if you have the demo open. It uses the Unity version the demo was made with if it is installed, or otherwise the newest Unity 6 installed through Unity Hub. Set `UNITY_EDITOR` to the Unity binary to choose one. Unity must be licensed. The first run imports the project, which takes a few minutes; later runs are quicker. If no Unity 6 is installed, it says so and skips.
 
 ---
 

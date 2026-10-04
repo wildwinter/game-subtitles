@@ -4,6 +4,16 @@ Notable changes to Game Subtitles. Each version is published as a [GitHub Releas
 
 ## [Unreleased]
 
+### Added
+
+- Tests for the Unity and Unreal players' layout, timing, and playback, with the same cases as the JS and Godot players. Before, they only tested the duration estimate.
+- `npm run check:unity` and `npm run check:unreal`, which run those tests from the command line in each engine that is installed, and skip when none is. `npm run release` runs both.
+
+### Changed
+
+- Unreal: the automation tests are now in their own Editor module, `GameSubtitlesTests`, so they are never packaged into a game.
+- The Unity and Unreal demo setup instructions no longer say to copy the package or plugin into the demo projects, which already load them from the repository.
+
 ## [0.3.0] - 2026-10-04
 
 ### Added

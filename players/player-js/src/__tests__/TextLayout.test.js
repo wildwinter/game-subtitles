@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { wrapAndPaginate, allocateTimings } from '../TextLayout.js';
 
+// The same cases are in the Unity (TextLayoutTests.cs), Unreal (GameSubtitleTextLayoutTest.cpp),
+// and Godot (tests/run_tests.gd) players. Keep all four in step.
+
 // Monospace measure: each character is 10 px wide.
 const mono = text => text.length * 10;
 const W = 100; // 10-char container; '…' = 1 char = 10 px → effectiveWidth = 90 px
