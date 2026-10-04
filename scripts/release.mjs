@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Cut a release: check, test, set the version, build, sign and notarise the macOS preprocessor,
-// commit, tag, push to main, and publish the GitHub Release with the four zips.
+// commit, tag, push to main, and publish the GitHub Release with the five zips.
 //
 //   npm run release -- 0.2.0
 //   npm run release -- 0.2.0 --dry-run    checks, tests, and a signed build of the current
@@ -87,6 +87,8 @@ ${notes.replace(/^/gm, '    ')}`);
 // ── Test and build ────────────────────────────────────────────────────────────
 
 run('npm', ['test']);
+// The Godot addon's tests need Godot, which CI installs separately, so they are not in npm test.
+run('npm', ['test', '--prefix', 'players/player-godot']);
 
 const buildVersion = dry ? current : version;
 if (!dry) {
@@ -98,14 +100,15 @@ if (!dry) {
   writeFileSync(changelogPath, changelog.replace(/^## \[Unreleased\]\s*\n/m, `## [Unreleased]\n\n## [${version}] - ${date}\n\n`));
 }
 
-// The build also copies the version into the Unity package.json and the Unreal .uplugin.
+// The build also copies the version into the Unity package.json, the Unreal .uplugin, and the
+// Godot plugin.cfg.
 run('npm', ['run', 'dist'], { ...process.env, APPLE_CODESIGN_ID: identity });
 
 const binary = resolve(rootDir, 'build/preprocessor/osx-arm64/game-subtitles-preprocess');
 const reported = execFileSync(binary, ['--version'], { encoding: 'utf8' }).trim();
 console.log(`\nrelease: signed preprocessor launches and reports ${reported}`);
 
-const zips = ['js', 'unreal', 'unity', 'lib'].map(kind => resolve(rootDir, 'dist', `game-subtitles-${kind}-v${buildVersion}.zip`));
+const zips = ['js', 'unreal', 'unity', 'godot', 'lib'].map(kind => resolve(rootDir, 'dist', `game-subtitles-${kind}-v${buildVersion}.zip`));
 for (const zip of zips) if (!existsSync(zip)) fail(`missing ${zip}`);
 
 if (dry) {
@@ -124,7 +127,8 @@ console.log(`release: notarised (submission ${submission})`);
 
 run('git', ['add', 'package.json', 'CHANGELOG.md',
   'players/player-unity/GameSubtitles/package.json',
-  'players/player-unreal/GameSubtitles/GameSubtitles.uplugin']);
+  'players/player-unreal/GameSubtitles/GameSubtitles.uplugin',
+  'players/player-godot/addons/game_subtitles/plugin.cfg']);
 run('git', ['commit', '-m', `Release ${version}`]);
 run('git', ['tag', '-a', tag, '-m', `Game Subtitles ${version}`]);
 run('git', ['push', 'origin', 'HEAD:main']);

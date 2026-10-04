@@ -1,0 +1,62 @@
+﻿[
+  {
+    "id": "1p-01",
+    "speaker": "Garde",
+    "subtitle": "Halte. C'est suf­fi­sant."
+  },
+  {
+    "id": "1p-02",
+    "speaker": "Kael",
+    "subtitle": "Im­pos­sible. Les ren­forts au­raient dû ar­ri­ver il y a des heures."
+  },
+  {
+    "id": "1p-03",
+    "speaker": "Lira",
+    "subtitle": "Je n'ai jamais voulu tout cela. Mais nous voilà."
+  },
+  {
+    "id": "1p-04",
+    "speaker": "Système",
+    "subtitle": "Tous les sys­tèmes sont no­mi­naux. Re­grou­pez-vous au point d'ex­trac­tion Bravo dans cinq mi­nutes."
+  },
+  {
+    "id": "2p-01",
+    "speaker": "Dr. Eryndal",
+    "subtitle": "La sé­quence de dé­com­pres­sion pren­dra en­vi­ron qua­torze mi­nutes. Veuillez rester dans votre com­bi­nai­son pres­su­ri­sée en per­ma­nence. Toute brèche dans la coque dé­clen­che­ra un pro­to­cole d'étan­chéi­té au­to­ma­tique et un con­fi­ne­ment im­mé­diat."
+  },
+  {
+    "id": "2p-02",
+    "speaker": "Commandant Vael",
+    "subtitle": "J'ai exa­mi­né votre de­mande at­ten­ti­ve­ment, et la ré­ponse est non. Le risque est beau­coup trop grand. Je n'au­to­ri­se­rai pas une opé­ra­tion de cette en­ver­gure sur la base d'un ren­sei­gne­ment in­com­plet. Re­ve­nez quand vous aurez quelque chose de con­cluant."
+  },
+  {
+    "id": "2p-03",
+    "speaker": "Tutoriel",
+    "subtitle": "Uti­li­sez le stick ana­lo­gique gauche pour vous dé­pla­cer et le droit pour re­gar­der autour de vous. Ap­puyez sur [A] pour sauter, [B] pour sprin­ter et [X] pour in­tera­gir. Votre ob­jec­tif actuel est in­di­qué sur la bous­sole. Ouvrez le menu pause à tout moment pour con­sul­ter votre in­ven­taire."
+  },
+  {
+    "id": "2p-04",
+    "speaker": "Kael",
+    "subtitle": "Je croyais que vous étiez mort. Tout le monde croyait que vous étiez mort — le rap­port était clair, aucun sur­vi­vant. Et pour­tant vous voilà. J'ai passé les trois der­niers jours à es­sayer de com­prendre ce que cela si­gni­fie, et je me re­trouve avec plus de ques­tions que de ré­ponses."
+  },
+  {
+    "id": "3p-01",
+    "speaker": "Narrateur",
+    "subtitle": "La Fon­da­tion avait été bâtie sur un men­songe — pas le genre que l'on peut ra­tio­na­li­ser, mais une trom­pe­rie fon­da­men­tale tissée dans chaque do­cu­ment, chaque cé­ré­mo­nie et chaque leçon qu'ils avaient jamais en­sei­gnée. Gé­né­ra­tion après gé­né­ra­tion avait cons­truit leur monde entier sur quelque chose qui n'avait jamais existé. Et main­te­nant, enfin, la vérité fai­sait sur­face — et avec elle, le poids de tout ce qu'ils avaient perdu."
+  },
+  {
+    "id": "3p-02",
+    "speaker": "Archiviste Deen",
+    "subtitle": "La re­cons­truc­tion des cartes de sur­face con­firme ce que nos cap­teurs in­diquent depuis des mois. Au-delà du sep­tième pa­ral­lèle, des ter­ri­toires au­tre­fois con­si­dé­rés comme in­ha­bi­tés montrent dé­sor­mais des signes évi­dents d'une co­lo­ni­sa­tion an­cienne. Les struc­tures pré­cèdent tout ce que la Con­fé­dé­ra­tion a ca­ta­lo­gué jusqu'à pré­sent de plu­sieurs mil­liers d'années. Nous ne savons pas encore qui les a cons­truites — ni pour­quoi elles ont été aban­don­nées."
+  },
+  {
+    "id": "3p-03",
+    "speaker": "Dr. Solenne",
+    "subtitle": "Nous ob­ser­vons une si­gna­ture bio­lo­gique sans pré­cé­dent dans la lit­té­ra­ture scien­ti­fique. Les im­pli­ca­tions pour notre com­pré­hen­sion de la vie ex­tra­ter­restre sont ex­traor­di­naires — ce seul échan­tillon in­va­lide ef­fec­ti­ve­ment deux siècles de con­sen­sus scien­ti­fique. Tout ce que nous croyions savoir sur les ori­gines de la vie dans ce sec­teur devra être ré­exa­mi­né."
+  },
+  {
+    "id": "3p-04",
+    "speaker": "Narrateur",
+    "subtitle": "Trois ans s'étaient écou­lés depuis l'Ef­fon­dre­ment. Les villes qui avaient sur­vé­cu étaient mé­con­nais­sables — leurs ho­ri­zons re­mo­de­lés par les séismes, leurs rues si­len­cieuses d'une ma­nière que nul lan­gage n'avait encore de mots pour dé­crire. Les sur­vi­vants par­laient de ces pre­mières se­maines à voix basse, s'ils en par­laient. La plu­part avaient sim­ple­ment appris à vivre avec ce vide, comme on ap­prend à vivre avec le deuil."
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "name": "game-subtitles-player-godot",
+  "private": true,
+  "description": "Runtime subtitle player for games — Godot 4 addon",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node test.mjs"
+  }
+}

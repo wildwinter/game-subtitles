@@ -50,7 +50,7 @@ namespace GameSubtitles
         /// CJK text, which has no spaces, still gets a sensible estimate; pass a lower
         /// <paramref name="charsPerSecond"/> for languages that are read more slowly per character.
         ///
-        /// The JS and Unreal players implement the same rule with the same defaults.
+        /// The JS, Unreal, and Godot players implement the same rule with the same defaults.
         /// </summary>
         /// <param name="text">Subtitle text; may contain U+00AD soft hyphens. Null counts as empty.</param>
         /// <param name="charsPerSecond">Reading rate. Values &lt;= 0 fall back to 14.</param>

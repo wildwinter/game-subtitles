@@ -1,8 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { SubtitlePlayer, estimateDuration } from '../SubtitlePlayer.js';
 
-// The same table is pinned in the Unity (EstimateDurationTests.cs) and Unreal
-// (GameSubtitleEstimateDurationTest.cpp) players. Keep all three in step.
+// The same table is pinned in the Unity (EstimateDurationTests.cs), Unreal
+// (GameSubtitleEstimateDurationTest.cpp), and Godot (tests/run_tests.gd) players.
+// Keep all four in step.
 const LINE = 'Get down, now! They have seen us.'; // 33 characters
 const CASES = [
   // [label, text, options, expected seconds]

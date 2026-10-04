@@ -2,8 +2,9 @@ using NUnit.Framework;
 
 namespace GameSubtitles.Tests
 {
-    // The same table is pinned in the JS (estimateDuration.test.js) and Unreal
-    // (GameSubtitleEstimateDurationTest.cpp) players. Keep all three in step.
+    // The same table is pinned in the JS (estimateDuration.test.js), Unreal
+    // (GameSubtitleEstimateDurationTest.cpp), and Godot (tests/run_tests.gd) players.
+    // Keep all four in step.
     public class EstimateDurationTests
     {
         private const string Line = "Get down, now! They have seen us."; // 33 characters

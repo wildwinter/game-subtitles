@@ -1,0 +1,62 @@
+﻿[
+  {
+    "id": "1p-01",
+    "speaker": "Guardia",
+    "subtitle": "Alto. Es su­fi­cien­te."
+  },
+  {
+    "id": "1p-02",
+    "speaker": "Kael",
+    "subtitle": "Im­po­si­ble. Los re­fuer­zos de­be­rían haber lle­ga­do hace horas."
+  },
+  {
+    "id": "1p-03",
+    "speaker": "Lira",
+    "subtitle": "Nunca quise nada de esto. Pero aquí es­ta­mos."
+  },
+  {
+    "id": "1p-04",
+    "speaker": "Sistema",
+    "subtitle": "Todos los sis­te­mas no­mi­na­les. Re­agru­pen­se en el punto de ex­trac­ción Bravo en cinco mi­nu­tos."
+  },
+  {
+    "id": "2p-01",
+    "speaker": "Dr. Eryndal",
+    "subtitle": "La se­cuen­cia de des­com­pre­sión tar­da­rá apro­xi­ma­da­men­te ca­tor­ce mi­nu­tos en com­ple­tar­se. Per­ma­nez­ca en su traje pre­su­ri­za­do en todo mo­men­to. Cual­quier brecha en el casco ac­ti­va­rá un pro­to­co­lo de se­lla­do au­to­má­ti­co y el con­fi­na­mien­to in­me­dia­to."
+  },
+  {
+    "id": "2p-02",
+    "speaker": "Comandante Vael",
+    "subtitle": "He re­vi­sa­do su so­li­ci­tud de­te­ni­da­men­te y la res­pues­ta es no. El riesgo es de­ma­sia­do grande. No au­to­ri­za­ré una ope­ra­ción de esta en­ver­ga­du­ra ba­sán­do­me en in­for­ma­ción de in­te­li­gen­cia in­com­ple­ta. Vuelva cuando tenga algo con­clu­yen­te."
+  },
+  {
+    "id": "2p-03",
+    "speaker": "Tutorial",
+    "subtitle": "Use el stick ana­ló­gi­co iz­quier­do para mo­ver­se y el de­re­cho para mirar a su al­re­de­dor. Pulse [A] para saltar, [B] para correr y [X] para in­ter­ac­tuar. Su ob­je­ti­vo actual está mar­ca­do en la brú­ju­la. Abra el menú de pausa en cual­quier mo­men­to para re­vi­sar su in­ven­ta­rio y los pa­rá­me­tros de la misión."
+  },
+  {
+    "id": "2p-04",
+    "speaker": "Kael",
+    "subtitle": "Creía que es­ta­bas muerto. Todo el mundo creía que es­ta­bas muerto — el in­for­me era claro, sin su­per­vi­vien­tes. Y sin em­bar­go aquí estás. He pasado los úl­ti­mos tres días in­ten­tan­do en­ten­der qué sig­ni­fi­ca eso, y me en­cuen­tro con más pre­gun­tas que res­pues­tas."
+  },
+  {
+    "id": "3p-01",
+    "speaker": "Narrador",
+    "subtitle": "La Fun­da­ción había sido cons­trui­da sobre una men­ti­ra — no el tipo que uno puede ra­cio­na­li­zar, sino un engaño fun­da­men­tal tejido en cada do­cu­men­to, cada ce­re­mo­nia y cada lec­ción que jamás en­se­ña­ron. Ge­ne­ra­ción tras ge­ne­ra­ción había cons­trui­do su mundo entero sobre algo que nunca había exis­ti­do. Y ahora, por fin, la verdad salía a la su­per­fi­cie — y con ella, el peso de todo lo que habían per­di­do."
+  },
+  {
+    "id": "3p-02",
+    "speaker": "Archivista Deen",
+    "subtitle": "La re­cons­truc­ción de los mapas de su­per­fi­cie con­fir­ma lo que nues­tros sen­so­res han in­di­ca­do du­ran­te meses. Más allá del sép­ti­mo pa­ra­le­lo, te­rri­to­rios que antes se con­si­de­ra­ban des­ha­bi­ta­dos mues­tran ahora claros in­di­cios de co­lo­ni­za­ción an­ti­gua. Las es­truc­tu­ras pre­ce­den en varios miles de años a todo lo que la Con­fe­de­ra­ción ha ca­ta­lo­ga­do hasta ahora. Aún no sa­be­mos quién las cons­tru­yó — ni por qué fueron aban­do­na­das."
+  },
+  {
+    "id": "3p-03",
+    "speaker": "Dr. Solenne",
+    "subtitle": "Es­ta­mos ob­ser­van­do una firma bio­ló­gi­ca sin pre­ce­den­tes en la li­te­ra­tu­ra cien­tí­fi­ca. Las im­pli­ca­cio­nes para nues­tra com­pren­sión de la vida ex­tra­te­rres­tre son ex­tra­or­di­na­rias — esta única mues­tra in­va­li­da efec­ti­va­men­te dos siglos de con­sen­so cien­tí­fi­co asu­mi­do. Todo lo que creía­mos saber sobre los orí­ge­nes de la vida en este sector tendrá que ser re­vi­sa­do."
+  },
+  {
+    "id": "3p-04",
+    "speaker": "Narrador",
+    "subtitle": "Habían pasado tres años desde el Co­lap­so. Las ciu­da­des que so­bre­vi­vie­ron eran irre­co­no­ci­bles — sus ho­ri­zon­tes re­mo­de­la­dos por los te­rre­mo­tos, sus calles en si­len­cio de ma­ne­ras para las que ningún idioma tenía pa­la­bras aún. Los su­per­vi­vien­tes ha­bla­ban de esas pri­me­ras se­ma­nas en su­su­rros, si es que ha­bla­ban de ellas. La ma­yo­ría había sim­ple­men­te apren­di­do a vivir junto al vacío como se apren­de a vivir junto al duelo."
+  }
+]

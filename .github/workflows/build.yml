@@ -32,3 +32,32 @@ jobs:
 
       - name: Test
         run: npm test
+
+  # Godot runs headless with no licence, so the addon is tested here for real, as in the
+  # patter and storylets ports workflows. Unity and Unreal are not: their players need the engines.
+  godot:
+    name: Godot addon
+    runs-on: ubuntu-latest
+
+    env:
+      GODOT_VERSION: "4.7-stable"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install headless Godot ${{ env.GODOT_VERSION }}
+        run: |
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          curl -fSL "$url" -o godot.zip
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot
+          chmod +x godot
+
+      # Checks that every script parses, then runs the tests.
+      - name: Test
+        run: GODOT="$PWD/godot" npm test --prefix players/player-godot

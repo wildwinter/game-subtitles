@@ -3,8 +3,8 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-// The same table is pinned in the JS (estimateDuration.test.js) and Unity
-// (EstimateDurationTests.cs) players. Keep all three in step.
+// The same table is pinned in the JS (estimateDuration.test.js), Unity
+// (EstimateDurationTests.cs), and Godot (tests/run_tests.gd) players. Keep all four in step.
 // Non-ASCII text is written as escapes so the result does not depend on source encoding.
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FGameSubtitleEstimateDurationTest,
     "GameSubtitles.EstimateDuration",

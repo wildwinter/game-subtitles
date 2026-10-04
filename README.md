@@ -1,6 +1,6 @@
 # Game Subtitles
 
-**Game Subtitles** is a subtitle system for games built around a shared two-step approach. The first step is a **preprocessor** — a command-line tool and C# library — that annotates your localised subtitle strings with soft hyphen markers before they ship. The second step is a **runtime player** that uses those markers to wrap and paginate subtitle text accurately, no matter what font or container size you are using. Runtime players are provided for **JavaScript** (browser, Node, any JS game engine), **Unreal Engine 5** (C++ plugin with Blueprint support), and **Unity** (UPM package using TextMeshPro).
+**Game Subtitles** is a subtitle system for games built around a shared two-step approach. The first step is a **preprocessor** — a command-line tool and C# library — that annotates your localised subtitle strings with soft hyphen markers before they ship. The second step is a **runtime player** that uses those markers to wrap and paginate subtitle text accurately, no matter what font or container size you are using. Runtime players are provided for **JavaScript** (browser, Node, any JS game engine), **Unreal Engine 5** (C++ plugin with Blueprint support), **Unity** (UPM package using TextMeshPro), and **Godot 4** (GDScript addon).
 
 Together they solve the situation where you have a long line of audio, a long subtitle that won't fit on the screen, and you want to simply say "display this text for this amount of time please".
 
@@ -17,6 +17,7 @@ Together they solve the situation where you have a long line of audio, a long su
   - [JavaScript Player (`players/player-js`)](#javascript-player-playersplayer-js)
   - [Unreal Engine Plugin (`players/player-unreal`)](#unreal-engine-plugin-playersplayer-unreal)
   - [Unity Package (`players/player-unity`)](#unity-package-playersplayer-unity)
+  - [Godot Addon (`players/player-godot`)](#godot-addon-playersplayer-godot)
 - [Security Issues](#security-issues)
 - [Contributors](#contributors)
 - [Acknowledgements](#acknowledgements)
@@ -53,6 +54,7 @@ Pre-built releases are available in the [Releases](https://github.com/wildwinter
 | `game-subtitles-js-v{version}.zip` | JS player + Windows & macOS preprocessor binaries | **JavaScript / web / JS game engine developers** |
 | `game-subtitles-unreal-v{version}.zip` | Unreal plugin + Windows & macOS preprocessor binaries | **Unreal Engine developers** |
 | `game-subtitles-unity-v{version}.zip` | Unity UPM package + Windows & macOS preprocessor binaries | **Unity developers** |
+| `game-subtitles-godot-v{version}.zip` | Godot addon + Windows & macOS preprocessor binaries | **Godot developers** |
 | `game-subtitles-lib-v{version}.zip` | C# `PreprocessorLib.dll` + all players | Custom tooling / calling the preprocessor as a library |
 
 Download the zip for your platform. Each contains everything you need with no additional dependencies. [CHANGELOG.md](CHANGELOG.md) lists what changed in each version.
@@ -69,8 +71,8 @@ Here is a typical end-to-end flow:
 
 1. **Run the preprocessor** on your subtitle strings — either via the CLI as part of your build pipeline, or by calling the C# library directly if you have a custom tool. This annotates every string with U+00AD markers and writes the result to a new file in the same format.
 2. **Ship the annotated strings** with your game, in whichever format you use (CSV, JSON, XLSX, PO).
-3. **At runtime,** load a subtitle string and pass it to the player. It measures each word in your actual font, wraps to lines, paginates, and drives the display for you. Players are available for JavaScript, Unreal Engine 5, and Unity; all three expose the same concepts under equivalent APIs.
-4. **In your game loop,** call `player.tick(delta)` (JS), `Player->Tick(DeltaSeconds)` (Unreal), or `player.Tick(deltaTime)` (Unity) each frame. The player advances pages automatically and fires your completion callback when the last page has been shown.
+3. **At runtime,** load a subtitle string and pass it to the player. It measures each word in your actual font, wraps to lines, paginates, and drives the display for you. Players are available for JavaScript, Unreal Engine 5, Unity, and Godot; all four expose the same concepts under equivalent APIs.
+4. **In your game loop,** call `player.tick(delta)` (JS), `Player->Tick(DeltaSeconds)` (Unreal), `player.Tick(deltaTime)` (Unity), or `player.tick(delta)` (Godot) each frame. The player advances pages automatically and fires your completion callback when the last page has been shown.
 
 ---
 
@@ -316,7 +318,7 @@ player.maxLines = 3;
 
 When `characterName` is set, `"Name: "` is prepended to the first line of every page. The name is measured with the character-name font (see below) to reserve the exact space needed, so the remaining body text always fits on the line. `lineColor` applies to all body text lines; `characterNameColor` applies only to the name prefix.
 
-If you leave out the duration, or pass a value of zero or less, `start()` uses `estimateDuration(text, options)` to guess one from the text. The estimate counts characters (Unicode code points, not counting U+00AD soft hyphens), divides by the reading rate, and clamps the result: by default 14 characters per second, at least 1.5 seconds, and at most 18 seconds. Counting characters rather than words means languages written without spaces, such as Chinese and Japanese, still get an estimate; pass a lower `charsPerSecond` for languages that are read more slowly per character. You can call `estimateDuration(text, options)` yourself, for example to schedule the next line before the subtitle starts, and override `charsPerSecond`, `minSeconds`, and `maxSeconds`. The JavaScript, Unreal, and Unity players all use the same rule and defaults, so the same text gets the same estimate everywhere.
+If you leave out the duration, or pass a value of zero or less, `start()` uses `estimateDuration(text, options)` to guess one from the text. The estimate counts characters (Unicode code points, not counting U+00AD soft hyphens), divides by the reading rate, and clamps the result: by default 14 characters per second, at least 1.5 seconds, and at most 18 seconds. Counting characters rather than words means languages written without spaces, such as Chinese and Japanese, still get an estimate; pass a lower `charsPerSecond` for languages that are read more slowly per character. You can call `estimateDuration(text, options)` yourself, for example to schedule the next line before the subtitle starts, and override `charsPerSecond`, `minSeconds`, and `maxSeconds`. The JavaScript, Unreal, Unity, and Godot players all use the same rule and defaults, so the same text gets the same estimate everywhere.
 
 #### Styling the character name
 
@@ -479,7 +481,7 @@ float Seconds = UGameSubtitlePlayer::EstimateDuration(Text,
 
 When `CharacterName` is non-empty, `"Name: "` is prepended to the first line of every page. The name is measured using `CharacterNameFontInfo` (if set) to reserve the exact space before wrapping the body text. `LineColor` applies to all body text lines; `CharacterNameColor` applies only to the name prefix.
 
-If you leave out the duration, or pass a value of zero or less, `Start` uses `EstimateDuration` to guess one from the text. The estimate counts characters (Unicode code points, not counting U+00AD soft hyphens), divides by the reading rate, and clamps the result: by default 14 characters per second, at least 1.5 seconds, and at most 18 seconds. Counting characters rather than words means languages written without spaces, such as Chinese and Japanese, still get an estimate; pass a lower `CharsPerSecond` for languages that are read more slowly per character. You can call `EstimateDuration` yourself, for example to schedule the next line before the subtitle starts, and override `CharsPerSecond`, `MinSeconds`, and `MaxSeconds`. The JavaScript, Unreal, and Unity players all use the same rule and defaults, so the same text gets the same estimate everywhere.
+If you leave out the duration, or pass a value of zero or less, `Start` uses `EstimateDuration` to guess one from the text. The estimate counts characters (Unicode code points, not counting U+00AD soft hyphens), divides by the reading rate, and clamps the result: by default 14 characters per second, at least 1.5 seconds, and at most 18 seconds. Counting characters rather than words means languages written without spaces, such as Chinese and Japanese, still get an estimate; pass a lower `CharsPerSecond` for languages that are read more slowly per character. You can call `EstimateDuration` yourself, for example to schedule the next line before the subtitle starts, and override `CharsPerSecond`, `MinSeconds`, and `MaxSeconds`. The JavaScript, Unreal, Unity, and Godot players all use the same rule and defaults, so the same text gets the same estimate everywhere.
 
 All methods are also Blueprint-callable. The player is a plain `UObject` — not a component — so you own its lifetime and call `Tick` yourself. This matches the JS player's design exactly.
 
@@ -662,7 +664,7 @@ float seconds = SubtitlePlayer.EstimateDuration(text,
 
 When `characterName` is non-null, `"Name: "` is prepended to the first line of every page. The name is measured using the character-name font (see below) to reserve the exact space before wrapping the body text. `lineColor` applies to all body text lines; `characterNameColor` applies only to the name prefix.
 
-If you leave out the duration, or pass a value of zero or less, `Start` uses `SubtitlePlayer.EstimateDuration` to guess one from the text. The estimate counts characters (Unicode code points, not counting U+00AD soft hyphens), divides by the reading rate, and clamps the result: by default 14 characters per second, at least 1.5 seconds, and at most 18 seconds. Counting characters rather than words means languages written without spaces, such as Chinese and Japanese, still get an estimate; pass a lower `charsPerSecond` for languages that are read more slowly per character. You can call `SubtitlePlayer.EstimateDuration` yourself, for example to schedule the next line before the subtitle starts, and override `charsPerSecond`, `minSeconds`, and `maxSeconds`. The JavaScript, Unreal, and Unity players all use the same rule and defaults, so the same text gets the same estimate everywhere.
+If you leave out the duration, or pass a value of zero or less, `Start` uses `SubtitlePlayer.EstimateDuration` to guess one from the text. The estimate counts characters (Unicode code points, not counting U+00AD soft hyphens), divides by the reading rate, and clamps the result: by default 14 characters per second, at least 1.5 seconds, and at most 18 seconds. Counting characters rather than words means languages written without spaces, such as Chinese and Japanese, still get an estimate; pass a lower `charsPerSecond` for languages that are read more slowly per character. You can call `SubtitlePlayer.EstimateDuration` yourself, for example to schedule the next line before the subtitle starts, and override `charsPerSecond`, `minSeconds`, and `maxSeconds`. The JavaScript, Unreal, Unity, and Godot players all use the same rule and defaults, so the same text gets the same estimate everywhere.
 
 #### `SubtitleWidget`
 
@@ -727,6 +729,187 @@ Setup:
 3. Open the project in Unity 6.0 or later.
 4. Go to **Window → TextMeshPro → Import TMP Essential Resources** if the prompt does not appear automatically.
 5. Open the `Demo` scene and enter Play mode, or attach `GameSubtitlesDemo` to an empty GameObject in any scene.
+
+---
+
+### Godot Addon (`players/player-godot`)
+
+The Godot addon provides the same player logic in GDScript, using Godot's own font measurement and `Label` nodes for rendering. It is built and tested with **Godot 4.7**. It uses only core GDScript, so earlier Godot 4 versions may work, but they are not tested.
+
+#### Setup
+
+**From the release zip (`game-subtitles-godot-v{version}.zip`):** copy `addons/game_subtitles/` into your project's `addons/` folder (create it if it does not exist). The zip also contains the preprocessor binaries (`game-subtitles-preprocess` / `game-subtitles-preprocess.exe`); place these wherever is convenient on your machine (for example, somewhere on your `PATH`).
+
+**From source:** copy `players/player-godot/addons/game_subtitles/` into your project's `addons/` folder instead.
+
+Then enable **Game Subtitles** under **Project → Project Settings → Plugins**. Every class is registered with `class_name`, so your scripts can use `GameSubtitlePlayer`, `GameSubtitleWidget`, and the rest as soon as the folder is in your project, but Godot only lists `GameSubtitleWidget` in the **Add Child Node** dialog while the plugin is enabled.
+
+All the class names start with `GameSubtitle`, to keep them clear of your own classes and Godot's.
+
+#### Real-world usage
+
+**1. Add a `GameSubtitleWidget` to your UI.**
+
+Add a `GameSubtitleWidget` node wherever you want subtitles to appear, for example inside a `PanelContainer` along the bottom of your HUD. It is a `VBoxContainer` that shows each subtitle line as a centred `Label` and sizes itself to fit. You can set its fonts and colours in the Inspector, or in code:
+
+```gdscript
+var widget := GameSubtitleWidget.new()
+widget.subtitle_font_size = 16
+widget.text_color = Color.WHITE
+widget.container_width_override = 540.0 # set if calling start() before the widget is laid out
+$HUD/SubtitleBar.add_child(widget)
+```
+
+**2. Create a player and point it at the widget.**
+
+`GameSubtitlePlayer` is a `RefCounted`, not a node. Create it from any script and keep a reference to it.
+
+```gdscript
+var player := GameSubtitlePlayer.new()
+
+func _ready() -> void:
+	player.initialize($HUD/SubtitleBar/GameSubtitleWidget, 2)
+	player.completed.connect(_on_subtitle_completed)
+```
+
+The player and widget are long-lived. Create them once and reuse them for every subtitle.
+`_on_subtitle_completed()` will have to call `player.stop()` to clear the text.
+
+**3. When your dialogue system triggers a line, call `start()`.**
+
+```gdscript
+func show_subtitle(text: String, duration_seconds: float, speaker: String) -> void:
+	player.start(text, duration_seconds,
+			speaker,                 # optional character name, shown at the start of each page
+			Color("#f0cc88"),        # optional colour for the name
+			Color.WHITE)             # optional colour for the subtitle text
+```
+
+`start()` lays out the text, renders the first page immediately, and begins timing. If a subtitle is already playing it is stopped first.
+
+**4. Drive it from `_process()`.**
+
+```gdscript
+func _process(delta: float) -> void:
+	player.tick(delta)
+```
+
+#### `GameSubtitlePlayer` API
+
+```gdscript
+# Create and configure
+var player := GameSubtitlePlayer.new()
+player.initialize(renderer, max_lines)  # renderer is a GameSubtitleWidget or any object with the renderer methods
+
+# Start playing (stops any currently playing subtitle first)
+# All parameters after text are optional; a duration of 0 or less (the default) estimates it from the text
+player.start(text, duration_seconds,
+		character_name,        # String; "" for none
+		character_name_color,  # Color, or null for the renderer's default text colour
+		line_color)            # Color, or null for the renderer's default text colour
+
+# Call once per frame
+player.tick(delta)
+
+# Stop without emitting completed
+player.stop()
+
+# Clear display and return to initial state
+player.reset()
+
+# Number of pages in the current layout (valid after start())
+player.page_count
+
+# Change lines-per-page (takes effect on the next start())
+player.max_lines = 3
+
+# Completion signal
+player.completed.connect(_on_done)
+
+# Estimate a duration from the text (static). Parameters after text are optional.
+var seconds := GameSubtitlePlayer.estimate_duration(text,
+		14.0,   # chars_per_second
+		1.5,    # min_seconds
+		18.0)   # max_seconds
+```
+
+When `character_name` is not empty, `"Name: "` is prepended to the first line of every page. The name is measured using the character-name font (see below) to reserve the exact space before wrapping the body text. `line_color` applies to all body text lines; `character_name_color` applies only to the name prefix.
+
+If you leave out the duration, or pass a value of zero or less, `start()` uses `GameSubtitlePlayer.estimate_duration()` to guess one from the text. The estimate counts characters (Unicode code points, not counting U+00AD soft hyphens), divides by the reading rate, and clamps the result: by default 14 characters per second, at least 1.5 seconds, and at most 18 seconds. Counting characters rather than words means languages written without spaces, such as Chinese and Japanese, still get an estimate; pass a lower `chars_per_second` for languages that are read more slowly per character. You can call `GameSubtitlePlayer.estimate_duration()` yourself, for example to schedule the next line before the subtitle starts, and override `chars_per_second`, `min_seconds`, and `max_seconds`. The JavaScript, Unreal, Unity, and Godot players all use the same rule and defaults, so the same text gets the same estimate everywhere.
+
+#### `GameSubtitleWidget`
+
+```gdscript
+widget.subtitle_font            = my_font       # optional; defaults to the theme's Label font
+widget.subtitle_font_size       = 16
+widget.text_color               = Color.WHITE
+# Optional: give the character name its own font and/or size.
+widget.character_name_font      = my_name_font  # optional; falls back to subtitle_font
+widget.character_name_font_size = 18            # optional; 0 falls back to subtitle_font_size
+widget.container_width_override = 540.0         # bypass the widget's width before its first layout
+```
+
+Text is measured with `Font.get_string_size()` using the same font and size the labels are given, so measurements always match what is drawn. The character name is a separate `Label` beside the body text, so it can have its own font and size. Anything else your theme sets for `Label`, such as an outline or a shadow, applies to the subtitle lines too, so you can style them with a `Theme` on the widget.
+
+The widget ignores the mouse, so it never blocks clicks meant for the game underneath.
+
+#### Custom renderer
+
+Godot has no interfaces, so the player accepts any object that has these four methods. Use a `Node`, a `RefCounted`, or anything else:
+
+```gdscript
+extends Node
+
+# use_character_name_font = true when measuring the character-name prefix
+func measure_line_width(text: String, use_character_name_font: bool = false) -> float:
+	return 0.0 # rendered width of text, in pixels
+
+func get_container_width() -> float:
+	return 0.0 # available width, in pixels
+
+# character_context is not null when a name prefix or line colour is set
+func render(lines: PackedStringArray, character_context: GameSubtitleCharacterContext) -> void:
+	pass # display the lines
+
+func clear() -> void:
+	pass # remove the display
+```
+
+`GameSubtitleCharacterContext` carries `name` (String; empty when only a line colour is set), `color`, and `line_color` (each a `Color`, or `null` for the default text colour).
+
+#### Low-level layout API
+
+The same layout functions used internally are available as static GDScript helpers:
+
+```gdscript
+# Wrap + paginate (measure_width is any Callable taking a String and returning its width)
+var pages: Array[PackedStringArray] = GameSubtitleTextLayout.wrap_and_paginate(
+		text, measure_width, container_width, max_lines)
+
+# Allocate display time proportionally to character count
+var timings: PackedFloat64Array = GameSubtitleTextLayout.allocate_timings(pages, total_duration_seconds)
+```
+
+#### Demo project
+
+`players/player-godot/` is itself a Godot project, with the addon already in place, and a demo that mirrors the other players' demos:
+
+- Same `subtitles.json` data and translations (in `demo/data/`)
+- Language selector, script selector, **Start** / **Stop** / **Reset** buttons, and a 1×/2× speed toggle
+- Lines-per-page ±, font size ±, character name on or off, character name colour, progress bar, elapsed/total time, and a status line
+- Entire UI built in code by `demo/demo.gd`
+
+Open `players/player-godot/project.godot` in Godot 4.7 or later and press **Run Project** (F5). There is nothing to copy first, and the plugin is already enabled.
+
+#### Tests
+
+The addon's tests run headlessly in Godot. From `players/player-godot/`:
+
+```bash
+npm test
+```
+
+This finds Godot on your `PATH` or in `/Applications`, or you can point the `GODOT` environment variable at the Godot binary. It first checks that every script in the project parses, because one broken script stops a whole Godot project opening, and the tests alone only parse the scripts they use. The tests cover the layout, the timing, the player, and the widget, and share their duration table with the other players' tests. They also run in CI, and `npm run release` runs them before it builds.
 
 ## Security Issues
 

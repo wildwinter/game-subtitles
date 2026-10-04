@@ -97,3 +97,6 @@ players/player-unity/**/*.mdb.meta
 .claude
 .vs
 .vsconfig
+
+# Godot
+players/player-godot/.godot/

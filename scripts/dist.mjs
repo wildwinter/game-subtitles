@@ -37,7 +37,11 @@ run('npm run build --prefix players/player-unreal');
 console.log('\n=== Building player-unity ===');
 run('npm run build --prefix players/player-unity');
 
-// 5. Assemble zips
+// 5. Build Godot addon
+console.log('\n=== Building player-godot ===');
+run('npm run build --prefix players/player-godot');
+
+// 6. Assemble zips
 console.log('\n=== Assembling distribution zips ===');
 
 // Dynamic import of archiver (CommonJS module)
@@ -47,6 +51,7 @@ const { createWriteStream } = await import('node:fs');
 const jsFile        = resolve(rootDir, 'build/player-js/game-subtitles-player.js');
 const unrealPlugin  = resolve(rootDir, 'build/player-unreal/GameSubtitles');
 const unityPackage  = resolve(rootDir, 'build/player-unity/GameSubtitles');
+const godotAddon    = resolve(rootDir, 'build/player-godot/addons/game_subtitles');
 const readme        = resolve(rootDir, 'README.md');
 const patternLicenses = resolve(rootDir, 'preprocessor/PreprocessorLib/Dictionaries/LICENSES.txt');
 
@@ -82,6 +87,7 @@ await makeZip(`game-subtitles-lib-v${version}.zip`, archive => {
   archive.file(jsFile,            { name: 'player-js/game-subtitles-player.js' });
   archive.directory(unrealPlugin, 'player-unreal/GameSubtitles');
   archive.directory(unityPackage, 'player-unity/GameSubtitles');
+  archive.directory(godotAddon,   'player-godot/addons/game_subtitles');
   archive.file(patternLicenses,   { name: 'LICENSES.txt' });
   archive.file(readme,            { name: 'README.md' });
 });
@@ -104,6 +110,16 @@ await makeZip(`game-subtitles-unity-v${version}.zip`, archive => {
     { name: 'game-subtitles-preprocess' });
   archive.file(patternLicenses,   { name: 'LICENSES.txt' });
   archive.file(readme,            { name: 'GameSubtitles/README.md' });
+});
+
+await makeZip(`game-subtitles-godot-v${version}.zip`, archive => {
+  archive.directory(godotAddon, 'addons/game_subtitles');
+  archive.file(resolve(rootDir, 'build/preprocessor/win-x64/game-subtitles-preprocess.exe'),
+    { name: 'game-subtitles-preprocess.exe' });
+  archive.file(resolve(rootDir, 'build/preprocessor/osx-arm64/game-subtitles-preprocess'),
+    { name: 'game-subtitles-preprocess' });
+  archive.file(patternLicenses,   { name: 'LICENSES.txt' });
+  archive.file(readme,            { name: 'addons/game_subtitles/README.md' });
 });
 
 console.log('\nDist complete.');

@@ -51,7 +51,7 @@ public:
      * CJK text, which has no spaces, still gets a sensible estimate; pass a lower
      * CharsPerSecond for languages that are read more slowly per character.
      *
-     * The JS and Unity players implement the same rule with the same defaults.
+     * The JS, Unity, and Godot players implement the same rule with the same defaults.
      *
      * @param Text            Subtitle text; may contain U+00AD soft hyphens.
      * @param CharsPerSecond  Reading rate. Values <= 0 fall back to 14.

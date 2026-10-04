@@ -8,7 +8,7 @@ import { wrapAndPaginate, allocateTimings } from './TextLayout.js';
  * means CJK text, which has no spaces, still gets a sensible estimate; pass a lower
  * `charsPerSecond` for languages that are read more slowly per character.
  *
- * The Unity and Unreal players implement the same rule with the same defaults.
+ * The Unity, Unreal, and Godot players implement the same rule with the same defaults.
  *
  * @param {string} text                          Subtitle text, may contain U+00AD soft hyphens.
  * @param {object} [opts]
