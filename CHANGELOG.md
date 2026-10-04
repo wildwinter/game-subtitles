@@ -13,6 +13,7 @@ Notable changes to Game Subtitles. Each version is published as a [GitHub Releas
 
 - Unreal: the automation tests are now in their own Editor module, `GameSubtitlesTests`, so they are never packaged into a game.
 - The Unity and Unreal demo setup instructions no longer say to copy the package or plugin into the demo projects, which already load them from the repository.
+- The Unity demo no longer includes Unity's ads, analytics, and in-app purchasing packages, left over from the project template. Nothing used them, and the ads package made Unity offer to import the Mobile Dependency Resolver whenever the demo was opened.
 
 ## [0.3.0] - 2026-10-04
 
