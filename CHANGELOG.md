@@ -4,6 +4,8 @@ Notable changes to Game Subtitles. Each version is published as a [GitHub Releas
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-04
+
 ### Fixed
 
 - Unity: the space after the character name was missing, so a line showed as "Tam:Oh, go on then.". TextMeshPro leaves trailing spaces out of its measured width, which sized the name to end at the colon. `SubtitleWidget` now draws the gap as layout spacing, and its `MeasureLineWidth` counts trailing spaces, so the room reserved for the name matches what is drawn.
