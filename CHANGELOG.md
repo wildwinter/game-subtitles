@@ -4,6 +4,8 @@ Notable changes to Game Subtitles. Each version is published as a [GitHub Releas
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-04
+
 ### Added
 
 - A Godot 4 player: a GDScript addon with `GameSubtitlePlayer`, a ready-made `GameSubtitleWidget` renderer built from `Label` nodes, and the same layout, timing, and duration estimate as the other players. It ships as `game-subtitles-godot-v{version}.zip`. `players/player-godot` is also a demo project, and its tests run headlessly with `npm test`.
