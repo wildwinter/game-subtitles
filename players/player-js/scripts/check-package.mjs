@@ -95,6 +95,33 @@ try {
     }
   }
   console.log('check-package: a consumer type-checks with NodeNext and Bundler resolution');
+
+  // 5. Every code example in the README is valid against the installed package. TypeScript
+  // examples are checked strictly; JavaScript ones as a JS user's editor would, without
+  // strict null checks.
+  const readme = readFileSync(join(pkgDir, 'README.md'), 'utf8');
+  const blocks = [...readme.matchAll(/```(javascript|typescript)\n([\s\S]*?)```/g)];
+  if (blocks.length === 0) fail('found no code examples in README.md');
+  const examples = { javascript: [], typescript: [] };
+  blocks.forEach(([, lang, code], i) => {
+    const file = `readme-example-${i + 1}.${lang === 'typescript' ? 'ts' : 'js'}`;
+    writeFileSync(join(scratch, file), code);
+    examples[lang].push(file);
+  });
+  const common = ['--noEmit', '--target', 'ES2022', '--lib', 'ES2022,DOM', '--module', 'NodeNext', '--moduleResolution', 'NodeNext'];
+  const checks = [
+    ['TypeScript', examples.typescript, ['--strict']],
+    ['JavaScript', examples.javascript, ['--allowJs', '--checkJs']],
+  ];
+  for (const [label, files, flags] of checks) {
+    if (files.length === 0) continue;
+    try {
+      run('node', [tsc, ...common, ...flags, ...files], scratch);
+    } catch (e) {
+      fail(`a ${label} example in README.md is not valid:\n${e.stdout ?? ''}`);
+    }
+  }
+  console.log(`check-package: all ${blocks.length} README code examples type-check against the package`);
 } finally {
   rmSync(scratch, { recursive: true, force: true });
 }
