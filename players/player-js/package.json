@@ -1,6 +1,6 @@
 {
   "name": "@wildwinter/game-subtitles",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Subtitle player for games: wraps, hyphenates, paginates, and times subtitles, using the soft hyphens the Game Subtitles preprocessor adds.",
   "keywords": ["subtitles", "captions", "games", "hyphenation", "localization", "text-layout"],
   "license": "MIT",
