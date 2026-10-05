@@ -33,6 +33,9 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Check the npm package
+        run: npm run check:package --prefix players/player-js
+
   # Godot runs headless with no licence, so the addon is tested here for real, as in the
   # patter and storylets ports workflows. Unity and Unreal are not: their players need the engines.
   godot:

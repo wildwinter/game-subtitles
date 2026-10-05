@@ -57,9 +57,9 @@ Pre-built releases are available in the [Releases](https://github.com/wildwinter
 | `game-subtitles-godot-v{version}.zip` | Godot addon + Windows & macOS preprocessor binaries | **Godot developers** |
 | `game-subtitles-lib-v{version}.zip` | C# `PreprocessorLib.dll` + all players | Custom tooling / calling the preprocessor as a library |
 
-Download the zip for your platform. Each contains everything you need with no additional dependencies. [CHANGELOG.md](CHANGELOG.md) lists what changed in each version.
+Download the zip for your platform. Each contains everything you need with no additional dependencies. The JavaScript player is also on npm as [`@wildwinter/game-subtitles`](https://www.npmjs.com/package/@wildwinter/game-subtitles), published from each release. [CHANGELOG.md](CHANGELOG.md) lists what changed in each version.
 
-To make a release (maintainers only), write the notes under `## [Unreleased]` in `CHANGELOG.md`, commit them, and run `npm run release -- <version>` on a Mac. Add `--dry-run` to check everything first without changing anything. The script tests, builds, signs and notarises the macOS preprocessor, tags, pushes to `main`, and publishes the GitHub Release. Its tests include the Godot addon's, and the Unity and Unreal tests in each engine that is installed; a check whose engine is missing says so and is skipped. See `scripts/release.mjs` and `scripts/macos.mjs` for the signing setup it expects.
+To make a release (maintainers only), write the notes under `## [Unreleased]` in `CHANGELOG.md`, commit them, and run `npm run release -- <version>` on a Mac. Add `--dry-run` to check everything first without changing anything. The script tests, builds, signs and notarises the macOS preprocessor, tags, pushes to `main`, and publishes the GitHub Release. Its tests include the Godot addon's, and the Unity and Unreal tests in each engine that is installed; a check whose engine is missing says so and is skipped. Publishing the GitHub Release starts `.github/workflows/publish-npm.yml`, which publishes the JavaScript player to npm at the same version. See `scripts/release.mjs` and `scripts/macos.mjs` for the signing setup it expects.
 
 ---
 
@@ -211,11 +211,13 @@ IReadOnlyList<string> langs = SubtitlePreprocessor.SupportedLanguages;
 
 ### JavaScript Player (`players/player-js`)
 
-Copy `game-subtitles-player.js` from the `game-subtitles-js-v{version}.zip` release into your project. The zip also contains the preprocessor binaries (`game-subtitles-preprocess` / `game-subtitles-preprocess.exe`) — place these wherever is convenient on your machine (e.g. somewhere on your `PATH`).
+Install it from npm as [`@wildwinter/game-subtitles`](https://www.npmjs.com/package/@wildwinter/game-subtitles). It is ES modules, with TypeScript types included, and its version matches the release it came from:
 
-| File | Format |
-| --- | --- |
-| `game-subtitles-player.js` | IIFE — `window.GameSubtitles` |
+```bash
+npm install @wildwinter/game-subtitles
+```
+
+Or, for a plain `<script>` tag, copy `game-subtitles-player.js` from the `game-subtitles-js-v{version}.zip` release into your project. It defines a `window.GameSubtitles` global with the same exports, and the npm package carries the same file as `@wildwinter/game-subtitles/iife`. The zip also contains the preprocessor binaries (`game-subtitles-preprocess` and `game-subtitles-preprocess.exe`); put these wherever is convenient on your machine, for example somewhere on your `PATH`.
 
 #### Real-world usage
 
@@ -224,7 +226,7 @@ Here is how you would wire this up in a typical game with a DOM-based subtitle o
 **1. Set up the player once, pointing it at your subtitle element.**
 
 ```javascript
-import { SubtitlePlayer, DomRenderer } from './game-subtitles-player.esm.js';
+import { SubtitlePlayer, DomRenderer } from '@wildwinter/game-subtitles';
 
 const subtitleEl = document.getElementById('subtitle-bar');
 const renderer   = new DomRenderer(subtitleEl);
@@ -274,7 +276,7 @@ That is all. The player handles multi-page display, proportional timing across p
 If your subtitle overlay is drawn on a canvas rather than DOM elements, swap in the `CanvasRenderer`:
 
 ```javascript
-import { SubtitlePlayer, CanvasRenderer } from './game-subtitles-player.esm.js';
+import { SubtitlePlayer, CanvasRenderer } from '@wildwinter/game-subtitles';
 
 const canvas   = document.getElementById('game-canvas');
 const renderer = new CanvasRenderer(canvas, '16px Arial');
@@ -297,7 +299,7 @@ player.start({ text, duration, onComplete, characterName, characterNameColor, li
 player.start({ text, onComplete });
 
 // The same estimate, as a standalone function. All options are optional.
-import { estimateDuration } from './game-subtitles-player.esm.js'; // or GameSubtitles.estimateDuration from the IIFE build
+import { estimateDuration } from '@wildwinter/game-subtitles'; // or GameSubtitles.estimateDuration from the script-tag build
 const seconds = estimateDuration(text, { charsPerSecond: 14, minSeconds: 1.5, maxSeconds: 18 });
 
 // Call once per frame from your game loop

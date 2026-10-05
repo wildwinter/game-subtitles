@@ -1,18 +1,45 @@
 {
-  "name": "game-subtitles-player",
-  "private": true,
-  "description": "Runtime subtitle player for games — JS, browser-compatible",
+  "name": "@wildwinter/game-subtitles",
+  "version": "0.3.1",
+  "description": "Subtitle player for games: wraps, hyphenates, paginates, and times subtitles, using the soft hyphens the Game Subtitles preprocessor adds.",
+  "keywords": ["subtitles", "captions", "games", "hyphenation", "localization", "text-layout"],
+  "license": "MIT",
+  "author": "Ian Thomas",
+  "homepage": "https://github.com/wildwinter/game-subtitles#readme",
+  "bugs": "https://github.com/wildwinter/game-subtitles/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wildwinter/game-subtitles.git",
+    "directory": "players/player-js"
+  },
   "type": "module",
-  "main": "../../build/player-js/game-subtitles-player.esm.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/game-subtitles-player.esm.js"
+    },
+    "./iife": "./dist/game-subtitles-player.js",
+    "./package.json": "./package.json"
+  },
+  "module": "./dist/game-subtitles-player.esm.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build":      "node build.mjs",
-    "test":       "vitest run",
-    "test:watch": "vitest",
-    "demo":       "node build.mjs && node -e \"console.log('\\nDemo built. Open players/player-js/demo/index.html in your browser (no server needed).\\n')\""
+    "build":         "node build.mjs",
+    "test":          "vitest run && tsc -p test/tsconfig.json",
+    "test:watch":    "vitest",
+    "check:package": "node scripts/check-package.mjs",
+    "prepack":       "node build.mjs",
+    "demo":          "node build.mjs && node -e \"console.log('\\nDemo built. Open players/player-js/demo/index.html in your browser (no server needed).\\n')\""
   },
   "devDependencies": {
-    "esbuild": "^0.24.0",
-    "vitest":  "^2.0.0",
-    "jsdom":   "^24.0.0"
+    "esbuild":    "^0.24.0",
+    "jsdom":      "^24.0.0",
+    "typescript": "^5.6.0",
+    "vitest":     "^2.0.0"
   }
 }

@@ -100,3 +100,6 @@ players/player-unity/**/*.mdb.meta
 
 # Godot
 players/player-godot/.godot/
+
+# npm package: the JS build copies the repository's LICENSE in
+players/player-js/LICENSE

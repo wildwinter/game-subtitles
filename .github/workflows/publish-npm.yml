@@ -1,0 +1,67 @@
+name: Publish to npm
+
+# Publishes the JavaScript player (players/player-js) to npm as @wildwinter/game-subtitles
+# whenever a GitHub Release is published. `npm run release` publishes that Release, and sets
+# the package's version to match, so each release reaches npm at the same version.
+#
+# Authenticates with npm TRUSTED PUBLISHING (OIDC): the package trusts this repository and
+# this workflow file on npmjs.com, so no npm token is stored anywhere, and npm adds provenance
+# automatically. That needs `id-token: write`, Node 22.14 or later, and npm 11.5.1 or later.
+# npm only lets a package trust a workflow once the package exists, so its first version was
+# published by hand.
+#
+# `workflow_dispatch` reruns the publish for the version on main, for when a release's own
+# run failed. A version that is already on npm is skipped, never republished.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write        # npm trusted publishing (OIDC) and provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: players/player-js
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: players/player-js/package-lock.json
+
+      # Pinned to the 11.x line on purpose: npm 12.0.0 ships a broken provenance path
+      # ("Cannot find module 'sigstore'") that aborts every publish, npm/cli#9722.
+      - name: OIDC-aware npm (11.5.1 or later; pin off the broken npm 12.x)
+        run: npm install -g npm@11
+
+      # No token anywhere: npm's OIDC detection handles auth by itself.
+      - run: echo "# auth via npm trusted publishing (OIDC) - no token" > ~/.npmrc
+
+      - run: npm ci
+
+      - name: The package version matches the release
+        if: github.event_name == 'release'
+        run: |
+          version=$(node -p "require('./package.json').version")
+          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "package.json says $version but the release is $GITHUB_REF_NAME"; exit 1; }
+
+      - run: npm run build
+      - run: npm test
+      - run: npm run check:package
+
+      - name: Publish @wildwinter/game-subtitles
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if npm view "@wildwinter/game-subtitles@$version" version >/dev/null 2>&1; then
+            echo "@wildwinter/game-subtitles@$version is already on npm; skipping."
+          else
+            npm publish
+          fi

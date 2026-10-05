@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Cut a release: check, test (including the Unity and Unreal tests, in each engine that is
 // installed), set the version, build, sign and notarise the macOS preprocessor,
-// commit, tag, push to main, and publish the GitHub Release with the five zips.
+// commit, tag, push to main, and publish the GitHub Release with the five zips. Publishing the
+// Release starts .github/workflows/publish-npm.yml, which puts the JS player on npm.
 //
 //   npm run release -- 0.2.0
 //   npm run release -- 0.2.0 --dry-run    checks, tests, and a signed build of the current
@@ -105,8 +106,8 @@ if (!dry) {
   writeFileSync(changelogPath, changelog.replace(/^## \[Unreleased\]\s*\n/m, `## [Unreleased]\n\n## [${version}] - ${date}\n\n`));
 }
 
-// The build also copies the version into the Unity package.json, the Unreal .uplugin, and the
-// Godot plugin.cfg.
+// The build also copies the version into the Unity package.json, the Unreal .uplugin, the
+// Godot plugin.cfg, and the npm package's package.json and lockfile.
 run('npm', ['run', 'dist'], { ...process.env, APPLE_CODESIGN_ID: identity });
 
 const binary = resolve(rootDir, 'build/preprocessor/osx-arm64/game-subtitles-preprocess');
@@ -133,7 +134,8 @@ console.log(`release: notarised (submission ${submission})`);
 run('git', ['add', 'package.json', 'CHANGELOG.md',
   'players/player-unity/GameSubtitles/package.json',
   'players/player-unreal/GameSubtitles/GameSubtitles.uplugin',
-  'players/player-godot/addons/game_subtitles/plugin.cfg']);
+  'players/player-godot/addons/game_subtitles/plugin.cfg',
+  'players/player-js/package.json', 'players/player-js/package-lock.json']);
 run('git', ['commit', '-m', `Release ${version}`]);
 run('git', ['tag', '-a', tag, '-m', `Game Subtitles ${version}`]);
 run('git', ['push', 'origin', 'HEAD:main']);

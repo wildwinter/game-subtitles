@@ -4,6 +4,10 @@ Notable changes to Game Subtitles. Each version is published as a [GitHub Releas
 
 ## [Unreleased]
 
+### Added
+
+- The JavaScript player is on npm as `@wildwinter/game-subtitles`, with TypeScript declarations for its public API. Each release publishes it at the release's version, from CI with provenance.
+
 ## [0.3.1] - 2026-10-04
 
 ### Fixed
