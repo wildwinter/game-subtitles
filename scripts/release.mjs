@@ -7,6 +7,9 @@
 //   npm run release -- 0.2.0
 //   npm run release -- 0.2.0 --dry-run    checks, tests, and a signed build of the current
 //                                         version; skips notarising and changes nothing
+//   npm run release -- 0.2.0 --skip-engines
+//                                         skips the Unity and Unreal tests, for a release
+//                                         that changes neither player
 //
 // Write the release notes under "## [Unreleased]" in CHANGELOG.md and commit them first.
 // Run it on a Mac with the signing setup described in scripts/macos.mjs. It works from main
@@ -37,6 +40,7 @@ const fail = msg => {
 
 const args    = process.argv.slice(2);
 const dry     = args.includes('--dry-run');
+const skipEngines = args.includes('--skip-engines');
 const version = args.find(a => !a.startsWith('--'));
 if (!version || !/^\d+\.\d+\.\d+$/.test(version)) fail('usage: npm run release -- <major.minor.patch> [--dry-run]');
 const tag = `v${version}`;
@@ -82,6 +86,7 @@ console.log(`
 release: ${dry ? 'DRY RUN for' : 'releasing'} ${tag} (currently ${current})
   signing as   ${identity}
   notarising   ${notary ? `as ${notary.appleId}` : 'NO'}${dry ? ' (skipped in a dry run)' : ''}
+  engine tests ${skipEngines ? 'SKIPPED (--skip-engines)' : 'Unity and Unreal, where installed'}
   pushing      ${ahead} commit(s) already ahead of origin/main, plus the release commit
   notes
 ${notes.replace(/^/gm, '    ')}`);
@@ -92,9 +97,11 @@ run('npm', ['test']);
 // The Godot addon's tests need Godot, which CI installs separately, so they are not in npm test.
 run('npm', ['test', '--prefix', 'players/player-godot']);
 // The Unity and Unreal tests need the engines. Each check skips, and says so, when its engine
-// is not installed.
-run('npm', ['run', 'check:unity']);
-run('npm', ['run', 'check:unreal']);
+// is not installed. --skip-engines leaves them out for a release that changes neither player.
+if (!skipEngines) {
+  run('npm', ['run', 'check:unity']);
+  run('npm', ['run', 'check:unreal']);
+}
 
 const buildVersion = dry ? current : version;
 if (!dry) {
