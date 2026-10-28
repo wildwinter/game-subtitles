@@ -4,6 +4,10 @@ Notable changes to Game Subtitles. Each version is published as a [GitHub Releas
 
 ## [Unreleased]
 
+### Added
+
+- The preprocessor reads compiled Patter bundles (`.patterc`). It hyphenates the dialogue lines, text lines, and choice text in every locale the bundle carries, each by its own language's rules, and leaves character names, interpolation slots, formatting tags, and the rest of the file exactly as they were, so the bundle's `content.hash` still matches. The C# library has the same support as `PatterBundleProcessor`, and `SubtitlePreprocessor.IsLanguageSupported` says whether a language code has rules.
+
 ## [0.3.2] - 2026-10-05
 
 ### Added

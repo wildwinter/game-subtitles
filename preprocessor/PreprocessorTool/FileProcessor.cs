@@ -14,9 +14,12 @@ internal sealed class FileProcessor
             [".xlsx"] = new XlsxFormatter(),
         };
 
+    private const string PatterBundleExtension = ".patterc";
+
     private static readonly InkJsonFormatter _inkJsonFormatter = new();
 
     private readonly SubtitlePreprocessor _preprocessor;
+    private readonly PatterBundleFormatter _patterBundleFormatter;
     private readonly string? _languageCode;
     private readonly string? _fieldName;
     private readonly bool _forceOverwrite;
@@ -25,6 +28,7 @@ internal sealed class FileProcessor
         bool forceOverwrite = false)
     {
         _preprocessor = preprocessor;
+        _patterBundleFormatter = new PatterBundleFormatter(preprocessor);
         _languageCode = languageCode;
         _fieldName = fieldName;
         _forceOverwrite = forceOverwrite;
@@ -41,6 +45,12 @@ internal sealed class FileProcessor
         }
 
         var ext = Path.GetExtension(inputPath);
+
+        if (ext.Equals(PatterBundleExtension, StringComparison.OrdinalIgnoreCase))
+        {
+            _patterBundleFormatter.Process(inputPath, outputPath, _fieldName, _languageCode, result);
+            return result;
+        }
 
         IFormatter? formatter = null;
         if (ext.Equals(".json", StringComparison.OrdinalIgnoreCase) && InkJsonFormatter.IsInkJson(inputPath))
@@ -70,7 +80,8 @@ internal sealed class FileProcessor
 
         var files = Directory
             .EnumerateFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly)
-            .Where(f => Formatters.ContainsKey(Path.GetExtension(f)));
+            .Where(f => Formatters.ContainsKey(Path.GetExtension(f)) ||
+                        Path.GetExtension(f).Equals(PatterBundleExtension, StringComparison.OrdinalIgnoreCase));
 
         foreach (var file in files)
         {

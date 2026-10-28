@@ -35,4 +35,11 @@ public sealed class SubtitlePreprocessor
     /// </summary>
     public static IReadOnlyList<string> SupportedLanguages
         => HyphenationEngine.SupportedLanguages;
+
+    /// <summary>
+    /// Returns <c>true</c> if <see cref="Process"/> has patterns for the language code, either
+    /// directly or through its base language (so "pt-BR" and "en_AU" are supported).
+    /// </summary>
+    public static bool IsLanguageSupported(string? languageCode)
+        => HyphenationEngine.ResolveResource(languageCode) is not null;
 }

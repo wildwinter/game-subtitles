@@ -73,6 +73,7 @@ return await config.InvokeAsync(args);
 static void Report(string label, ProcessingResult r)
 {
     if (r.Skipped) { Console.WriteLine($"SKIP [{label}]: up to date."); return; }
+    foreach (var n in r.Notes)    Console.WriteLine($"NOTE [{label}]: {n}");
     foreach (var w in r.Warnings) Console.Error.WriteLine($"WARN [{label}]: {w}");
     foreach (var e in r.Errors)   Console.Error.WriteLine($"ERROR [{label}]: {e}");
     if (!r.HasErrors)

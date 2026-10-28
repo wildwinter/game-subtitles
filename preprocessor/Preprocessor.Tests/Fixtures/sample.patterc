@@ -1,0 +1,205 @@
+{
+  "cast": [
+    {
+      "displayName": "Old Tam",
+      "name": "TAM"
+    },
+    {
+      "displayName": "Wren",
+      "name": "WREN"
+    }
+  ],
+  "content": {
+    "hash": "0fixture",
+    "project": "proj_fixture",
+    "structureHash": "0structure"
+  },
+  "locales": {
+    "default": "en",
+    "included": [
+      "en",
+      "fr",
+      "ja"
+    ]
+  },
+  "qualifiers": [
+    {
+      "gameId": "vo",
+      "name": "V.O."
+    }
+  ],
+  "scenes": {
+    "scn_gate": {
+      "blocks": [
+        {
+          "children": [
+            {
+              "beats": [
+                {
+                  "character": "TAM",
+                  "id": "L_intro",
+                  "kind": "line"
+                },
+                {
+                  "action": true,
+                  "id": "T_action",
+                  "kind": "text"
+                },
+                {
+                  "gameData": {
+                    "cue": {
+                      "id": "L_gamedata",
+                      "kind": "line"
+                    }
+                  },
+                  "id": "G_event",
+                  "kind": "gameEvent"
+                }
+              ],
+              "id": "sn_intro",
+              "jump": {
+                "to": "END"
+              },
+              "type": "snippet"
+            },
+            {
+              "children": [
+                {
+                  "beats": [
+                    {
+                      "character": "TAM",
+                      "id": "L_after_line",
+                      "kind": "line"
+                    }
+                  ],
+                  "id": "opt_line",
+                  "jump": {
+                    "to": "END"
+                  },
+                  "prompt": {
+                    "character": "WREN",
+                    "id": "C_line",
+                    "kind": "line"
+                  },
+                  "type": "snippet"
+                },
+                {
+                  "beats": [
+                    {
+                      "character": "TAM",
+                      "id": "L_after_text",
+                      "kind": "line"
+                    }
+                  ],
+                  "id": "opt_text",
+                  "jump": {
+                    "to": "END"
+                  },
+                  "prompt": {
+                    "id": "C_text",
+                    "kind": "text"
+                  },
+                  "type": "snippet"
+                },
+                {
+                  "beats": [
+                    {
+                      "character": "WREN",
+                      "id": "L_noprompt",
+                      "kind": "line"
+                    }
+                  ],
+                  "id": "opt_none",
+                  "jump": {
+                    "to": "END"
+                  },
+                  "type": "snippet"
+                }
+              ],
+              "id": "ch_gate",
+              "type": "choice"
+            }
+          ],
+          "id": "blk_gate",
+          "name": "Gate",
+          "type": "block"
+        }
+      ],
+      "id": "scn_gate",
+      "name": "Gate",
+      "type": "scene"
+    },
+    "scn_notes": {
+      "blocks": [
+        {
+          "children": [
+            {
+              "beats": [
+                {
+                  "id": "T_shown",
+                  "kind": "text"
+                }
+              ],
+              "id": "sn_notes",
+              "jump": {
+                "to": "END"
+              },
+              "type": "snippet"
+            }
+          ],
+          "id": "blk_notes",
+          "name": "Notes",
+          "type": "block"
+        }
+      ],
+      "id": "scn_notes",
+      "name": "Notes",
+      "type": "scene"
+    }
+  },
+  "schema": "patter/bundle@0",
+  "strings": {
+    "en": {
+      "C_line": "Absolutely unbelievable.",
+      "C_text": "[Investigate the extraordinary gatehouse]",
+      "L_after_line": "Unbelievable? Unquestionably.",
+      "L_after_text": "Extraordinary? Hardly.",
+      "L_gamedata": "Internationalization",
+      "L_intro": "[sighs theatrically] Internationalization is <b>extraordinarily</b> complicated, {@player_name}.",
+      "L_noprompt": "Unquestionably revolutionary.",
+      "L_unused": "Internationalization",
+      "T_action": "Wren hesitates uncomfortably beside the gatehouse.",
+      "T_shown": "Something {{extraordinary}} happened <i>unexpectedly</i>.",
+      "cast:TAM": "Old Tamberlaine the Unquestionable",
+      "qualifier:vo": "Voiceover Commentary",
+      "speaker:TAM:vo": "Tamberlaine (Voiceover Commentary)"
+    },
+    "fr": {
+      "C_line": "Absolument incroyable.",
+      "C_text": "[Examiner l’extraordinaire corps de garde]",
+      "L_after_line": "Incroyable ? Incontestablement.",
+      "L_after_text": "Extraordinaire ? Guère.",
+      "L_gamedata": "Internationalisation",
+      "L_intro": "[soupire théâtralement] L’internationalisation est <b>extraordinairement</b> compliquée, {@player_name}.",
+      "L_noprompt": "Incontestablement révolutionnaire.",
+      "L_unused": "Internationalisation",
+      "T_action": "Wren hesitates uncomfortably beside the gatehouse.",
+      "T_shown": "Quelque chose d’{{extraordinaire}} est arrivé <i>inopinément</i>.",
+      "cast:TAM": "Vieux Tamberlaine l'Incontestable",
+      "qualifier:vo": "Voix off commentaire",
+      "speaker:TAM:vo": "Tamberlaine (Voix off commentaire)"
+    },
+    "ja": {
+      "C_line": "信じられない。",
+      "C_text": "[見張り小屋を調べる]",
+      "L_after_line": "信じられない？",
+      "L_after_text": "とんでもない？",
+      "L_intro": "[芝居がかったため息] 国際化はとても複雑です、{@player_name}。",
+      "L_noprompt": "間違いなく革命的だ。",
+      "T_action": "Wren hesitates uncomfortably beside the gatehouse.",
+      "T_shown": "何か{{とんでもない}}ことが起きた。",
+      "cast:TAM": "タム爺さん"
+    }
+  },
+  "voiced": false
+}

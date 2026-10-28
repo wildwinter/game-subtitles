@@ -89,7 +89,7 @@ Arguments:
 Options:
   -o, --output <path>   Output file or folder (required)
   -f, --field <name>    Field to process in CSV / JSON / XLSX files
-  -l, --lang <code>     Language code e.g. en_GB, fr_FR (default: en_US)
+  -l, --lang <code>     Language code e.g. en_GB, fr_FR (default: en_US); not used for Patter bundles
   --force-overwrite     Always reprocess, even if the output is already up to date
   -h, --help
   --version
@@ -118,6 +118,9 @@ game-subtitles-preprocess sheet.xlsx -o out.xlsx --field Subtitle -l en_GB
 
 # Process a compiled Ink JSON file (auto-detected; no --field needed)
 game-subtitles-preprocess story.json -o story-processed.json -l en_US
+
+# Process a compiled Patter bundle (every locale by its own language; no --lang needed)
+game-subtitles-preprocess game.patterc -o game-processed.patterc
 ```
 
 #### What the preprocessor does
@@ -140,6 +143,7 @@ No visible characters are added or removed. The strings are otherwise identical 
 | `.csv` | `--field` required; processes the named column; all other columns pass through unchanged |
 | `.json` (subtitle array) | `--field` required; input must be a JSON array of objects `[{…}]` |
 | `.json` (compiled Ink) | Auto-detected by `"inkVersion"` key; `--field` is ignored (see below) |
+| `.patterc` (compiled Patter bundle) | Every locale in the bundle, each by its own language; `--field` and `--lang` are ignored (see below) |
 | `.xlsx` | `--field` required; first sheet only; header row on row 1 |
 
 > **CSV and UTF-8:** Always save CSV files as **UTF-8 with BOM**. Without a BOM, tools like Microsoft Excel on Windows assume a legacy code page and will silently corrupt any non-ASCII characters — including soft hyphens — before they reach this tool. Most editors (VS Code, Notepad++, JetBrains) have an explicit UTF-8 BOM option in their encoding selector.
@@ -163,6 +167,29 @@ The preprocessor walks the compiled JSON tree and inserts soft hyphens into ever
 - **String expression values** — strings in `str`/`/str` blocks used for comparisons, variable assignments, or other expressions — are left unchanged, so runtime logic is never broken.
 
 The output file is the same compiled JSON with soft hyphens embedded in the displayable strings. Load it with your Ink runtime exactly as you would the original.
+
+#### Patter bundle support
+
+If you write your dialogue in [Patter](https://patterkit.dev), the preprocessor can annotate the compiled bundle (`.patterc`) that `patter export` writes. Run it after the export and before you ship:
+
+```bash
+patter export -o build/game.patterc
+game-subtitles-preprocess build/game.patterc -o dist/game.patterc
+```
+
+The tool recognises a bundle by its `.patterc` extension and checks for `"schema": "patter/bundle@…"` at its root. A bundle carries every language it ships in, so the tool processes them all at once, each by its own language's rules, and `--lang` is not used.
+
+- **Dialogue lines, text lines, and choice text** are processed. The tool finds them by walking the bundle's scenes, so it works whatever your ids look like.
+- **Action text** (the text lines in a dialogue scene, when the project doesn't localise them) is the source language in every locale, so it's hyphenated by the rules of the bundle's default locale.
+- **Character names and speaker labels** (`cast:`, `qualifier:`, and `speaker:` entries) are left unchanged.
+- **Interpolation slots** such as `{@player_name}`, and the `<b>`, `<i>`, and `<bi>` formatting tags, never get a soft hyphen inside them.
+- **Closed-caption cues** such as `[sighs]` are hyphenated like any other text. When captions are off, the Patter runtime removes the whole cue, soft hyphens included.
+
+A locale the preprocessor has no rules for (see [Supported languages](#supported-languages)) is left as it is, with a warning. Patter's codes, such as `fr` or `pt-BR`, are accepted as they are.
+
+Everything else in the file stays byte for byte as it was, including `content.hash`, so `patter validate` and Patterpad's live debug link still treat the processed bundle as up to date. Load it with your Patter runtime exactly as you would the original.
+
+A bundle exported with IDs-only localisation (`localisation.mode: "ids"`) carries no text to process, so it is copied through unchanged. Run the preprocessor on your own string tables instead.
 
 #### Supported languages
 
@@ -205,6 +232,11 @@ string result = preprocessor.Process("Internationalization is hard.", "en_US");
 
 // List all supported language codes
 IReadOnlyList<string> langs = SubtitlePreprocessor.SupportedLanguages;
+
+// Annotate a compiled Patter bundle: every locale, by its own language
+var bundle = new PatterBundleProcessor(preprocessor).Process(File.ReadAllBytes("game.patterc"));
+File.WriteAllBytes("game-processed.patterc", bundle.Utf8Json);
+foreach (var warning in bundle.Warnings) Console.Error.WriteLine(warning);
 ```
 
 ---

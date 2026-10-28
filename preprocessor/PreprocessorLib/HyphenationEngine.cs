@@ -49,15 +49,8 @@ internal sealed class HyphenationEngine
     public Hyphenator? GetHyphenator(string? languageCode)
     {
         var tag = Normalise(languageCode);
-        if (tag is null) return null;
-
-        // Exact match, then base-language fallback
-        if (!LanguageMap.TryGetValue(tag, out var resourceBase))
-        {
-            var dash = tag.IndexOf('-');
-            if (dash <= 0 || !LanguageMap.TryGetValue(tag[..dash], out resourceBase))
-                return null;
-        }
+        var resourceBase = ResolveResource(languageCode);
+        if (tag is null || resourceBase is null) return null;
 
         lock (_lock)
         {
@@ -75,6 +68,22 @@ internal sealed class HyphenationEngine
             _cache[tag] = hyphenator;
             return hyphenator;
         }
+    }
+
+    /// <summary>
+    /// Returns the embedded resource base name for a language code, or <c>null</c> if no patterns
+    /// are available for it.
+    /// </summary>
+    internal static string? ResolveResource(string? languageCode)
+    {
+        var tag = Normalise(languageCode);
+        if (tag is null) return null;
+
+        // Exact match, then base-language fallback
+        if (LanguageMap.TryGetValue(tag, out var resourceBase)) return resourceBase;
+        var dash = tag.IndexOf('-');
+        if (dash > 0 && LanguageMap.TryGetValue(tag[..dash], out resourceBase)) return resourceBase;
+        return null;
     }
 
     /// <summary>All language tags with bundled patterns.</summary>
