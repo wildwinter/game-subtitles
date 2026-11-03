@@ -1,5 +1,6 @@
 import { build } from 'esbuild';
 import { readFileSync, writeFileSync, copyFileSync, mkdirSync, rmSync } from 'node:fs';
+import { setVersionConstant } from '../../scripts/lib/version-constants.mjs';
 
 const { version } = JSON.parse(readFileSync('../../package.json', 'utf8'));
 const banner = { js: `/* @wildwinter/game-subtitles v${version} | MIT */` };
@@ -16,6 +17,8 @@ if (lock.version !== version || lock.packages[''].version !== version) {
   lock.packages[''].version = version;
   writeFileSync('package-lock.json', JSON.stringify(lock, null, 2) + '\n');
 }
+// And the GAME_SUBTITLES_VERSION constant game code reads, before it is bundled.
+setVersionConstant('js', version);
 
 // dist/ is what the npm package ships. The release zips and the demo take the same two
 // bundles from build/player-js/.

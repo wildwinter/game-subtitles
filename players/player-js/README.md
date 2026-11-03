@@ -109,6 +109,16 @@ const pages = wrapAndPaginate('Get down, now! They have seen us.', measureWidth,
 const timings = allocateTimings(pages, 4);                                              // seconds per page
 ```
 
+## Which version is this?
+
+`GAME_SUBTITLES_VERSION` is the package's version as a string, such as `"0.4.0"`. If your game also uses a library that ships its own copy of Game Subtitles, this lets that library tell when the game is running a different copy.
+
+```javascript
+import { GAME_SUBTITLES_VERSION } from '@wildwinter/game-subtitles';
+
+console.log(`Game Subtitles ${GAME_SUBTITLES_VERSION}`);
+```
+
 ## Licence
 
 MIT. See the [repository](https://github.com/wildwinter/game-subtitles) for the full documentation and the preprocessor.

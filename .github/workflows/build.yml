@@ -27,6 +27,10 @@ jobs:
       - name: Install npm dependencies (player)
         run: npm install --prefix players/player-js
 
+      # Before the build, which would rewrite a drifted version and hide it.
+      - name: Check every player says one version
+        run: npm run check:versions
+
       - name: Build
         run: npm run build
 

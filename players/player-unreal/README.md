@@ -47,6 +47,15 @@ TArray<float> Timings =
     FGameSubtitleTextLayout::AllocateTimings(Pages, TotalDurationSeconds);
 ```
 
+### `GameSubtitlesVersion` (`GameSubtitlesVersion.h`)
+
+```cpp
+// The plugin's version, such as "0.4.0", as in the .uplugin's VersionName.
+const char* Version = GameSubtitlesVersion;
+// The same, as Blueprint's Get Game Subtitles Version returns it.
+FString VersionString = UGameSubtitlesVersionLibrary::GetGameSubtitlesVersion();
+```
+
 ### `UGameSubtitlePlayer` (UObject, `GameSubtitlePlayer.h`)
 
 ```cpp
@@ -117,6 +126,8 @@ To customise layout in the Blueprint designer, subclass `UGameSubtitleWidget` an
 4. **Start** (Text, Duration). A Duration of 0 or less estimates one from the text; **Estimate Duration** returns the same estimate on its own.
 5. From `Event Tick` → **Tick** (DeltaSeconds)
 6. **Stop** / **Reset** as needed
+
+**Get Game Subtitles Version** returns the plugin's version, such as `"0.4.0"`.
 
 ---
 

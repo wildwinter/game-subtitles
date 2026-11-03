@@ -2,3 +2,4 @@ export { wrapAndPaginate, allocateTimings } from './TextLayout.js';
 export { SubtitlePlayer, estimateDuration } from './SubtitlePlayer.js';
 export { DomRenderer, CHARACTER_NAME_CLASS } from './renderers/DomRenderer.js';
 export { CanvasRenderer } from './renderers/CanvasRenderer.js';
+export { GAME_SUBTITLES_VERSION } from './version.js';

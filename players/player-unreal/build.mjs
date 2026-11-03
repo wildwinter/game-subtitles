@@ -1,12 +1,16 @@
 import { readFileSync, writeFileSync, cpSync, rmSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { setVersionConstant } from '../../scripts/lib/version-constants.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { version } = JSON.parse(readFileSync(resolve(__dirname, '../../package.json'), 'utf8'));
 
 const src  = resolve(__dirname, 'GameSubtitles');
 const dest = resolve(__dirname, '../../build/player-unreal/GameSubtitles');
+
+// Set GameSubtitlesVersion, which game code reads, before the source is copied
+setVersionConstant('unreal', version);
 
 rmSync(dest, { recursive: true, force: true });
 mkdirSync(dest, { recursive: true });

@@ -2,9 +2,13 @@
 // marked as expected errors below must stay errors, or tsc fails.
 import {
   SubtitlePlayer, DomRenderer, CanvasRenderer, CHARACTER_NAME_CLASS,
-  estimateDuration, wrapAndPaginate, allocateTimings,
+  estimateDuration, wrapAndPaginate, allocateTimings, GAME_SUBTITLES_VERSION,
   type SubtitleRenderer, type CharacterContext, type Page,
 } from '../src/index.js';
+
+const version: string = GAME_SUBTITLES_VERSION;
+// @ts-expect-error the version is a constant
+GAME_SUBTITLES_VERSION = '1.0.0';
 
 const seconds: number = estimateDuration('Hello', { charsPerSecond: 12, maxSeconds: 10 });
 estimateDuration(null);

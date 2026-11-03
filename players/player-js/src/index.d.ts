@@ -134,3 +134,9 @@ export class CanvasRenderer implements SubtitleRenderer {
   render(lines: Page, characterContext?: CharacterContext | null): void;
   clear(): void;
 }
+
+/**
+ * This player's version, such as `"0.4.0"`, as in its package.json. A library that ships its own
+ * copy of Game Subtitles can read it at start-up to tell when the game is running a different copy.
+ */
+export const GAME_SUBTITLES_VERSION: string;

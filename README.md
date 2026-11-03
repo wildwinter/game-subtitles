@@ -402,6 +402,14 @@ const myRenderer = {
 };
 ```
 
+#### Which version is this?
+
+`GAME_SUBTITLES_VERSION` is the player's version as a string, such as `"0.4.0"`, the same as its `package.json`. If your game also uses a library that ships its own copy of Game Subtitles, this lets that library tell when the game is running a different copy.
+
+```javascript
+import { GAME_SUBTITLES_VERSION } from '@wildwinter/game-subtitles';
+```
+
 ---
 
 ### Unreal Engine Plugin (`players/player-unreal`)
@@ -566,6 +574,19 @@ TArray<TArray<FString>> Pages = FGameSubtitleTextLayout::WrapAndPaginate(
 // Allocate display time proportionally to character count
 TArray<float> Timings = FGameSubtitleTextLayout::AllocateTimings(Pages, TotalDurationSeconds);
 ```
+
+#### Which version is this?
+
+`GameSubtitlesVersion.h` declares the plugin's version, such as `"0.4.0"`, the same as the `.uplugin`'s `VersionName`. If your game also uses a library that ships its own copy of Game Subtitles, this lets that library tell when the game is running a different copy.
+
+```cpp
+#include "GameSubtitlesVersion.h"
+
+const char* Version = GameSubtitlesVersion;                                   // C++
+FString VersionString = UGameSubtitlesVersionLibrary::GetGameSubtitlesVersion(); // as Blueprint sees it
+```
+
+In Blueprint, call **Get Game Subtitles Version**.
 
 #### Demo project
 
@@ -761,6 +782,14 @@ List<List<string>> pages = TextLayout.WrapAndPaginate(
 List<float> timings = TextLayout.AllocateTimings(pages, totalDurationSeconds);
 ```
 
+#### Which version is this?
+
+`GameSubtitlesVersion.Current` is the package's version as a string, such as `"0.4.0"`, the same as its `package.json`. If your game also uses a library that ships its own copy of Game Subtitles, this lets that library tell when the game is running a different copy.
+
+```csharp
+string version = GameSubtitles.GameSubtitlesVersion.Current;
+```
+
 #### Demo project
 
 `players/player-unity/GameSubtitlesDemo/` is a Unity project that mirrors the player-js `demo/index.html` and the Unreal demo:
@@ -946,6 +975,14 @@ var pages: Array[PackedStringArray] = GameSubtitleTextLayout.wrap_and_paginate(
 
 # Allocate display time proportionally to character count
 var timings: PackedFloat64Array = GameSubtitleTextLayout.allocate_timings(pages, total_duration_seconds)
+```
+
+#### Which version is this?
+
+`GameSubtitlesVersion.CURRENT` is the addon's version as a string, such as `"0.4.0"`, the same as its `plugin.cfg`. If your game also uses a library that ships its own copy of Game Subtitles, this lets that library tell when the game is running a different copy.
+
+```gdscript
+var version: String = GameSubtitlesVersion.CURRENT
 ```
 
 #### Demo project

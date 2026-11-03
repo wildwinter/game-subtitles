@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, cpSync, rmSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { setVersionConstant } from '../../scripts/lib/version-constants.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const { version } = JSON.parse(readFileSync(resolve(__dirname, '../../package.json'), 'utf8'));
@@ -13,6 +14,8 @@ const cfgPath = resolve(src, 'plugin.cfg');
 const cfg = readFileSync(cfgPath, 'utf8');
 const patched = cfg.replace(/^version=".*"$/m, `version="${version}"`);
 if (patched !== cfg) writeFileSync(cfgPath, patched, 'utf8');
+// And GameSubtitlesVersion.CURRENT, which game code reads
+setVersionConstant('godot', version);
 
 // Copy the addon only; the demo and tests in this folder are not shipped
 rmSync(resolve(dest, '../..'), { recursive: true, force: true });
