@@ -4,6 +4,8 @@ Notable changes to Game Subtitles. Each version is published as a [GitHub Releas
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-03
+
 ### Added
 
 - Each player says its own version, for game code to read at runtime: `GAME_SUBTITLES_VERSION` in JavaScript, `GameSubtitlesVersion.Current` in Unity, `GameSubtitlesVersion` and the Blueprint-callable `GetGameSubtitlesVersion()` in Unreal, and `GameSubtitlesVersion.CURRENT` in Godot. A library that ships its own copy of Game Subtitles can check it at start-up to tell when the game is running a different copy.

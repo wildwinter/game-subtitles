@@ -7,6 +7,6 @@ namespace GameSubtitles
     public static class GameSubtitlesVersion
     {
         /// <summary>This player's version, as in its package.json. Written by the build; never edit it by hand.</summary>
-        public const string Current = "0.4.0";
+        public const string Current = "0.4.1";
     }
 }

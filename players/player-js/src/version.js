@@ -2,4 +2,4 @@
 // start-up to tell when the game is running a different copy.
 
 /** This player's version, as in its package.json. Written by the build; never edit it by hand. */
-export const GAME_SUBTITLES_VERSION = '0.4.0';
+export const GAME_SUBTITLES_VERSION = '0.4.1';

@@ -5,7 +5,7 @@
 #include "GameSubtitlesVersion.generated.h"
 
 /** This plugin's version, as in its .uplugin's VersionName. Written by the build; never edit it by hand. */
-inline constexpr const char* GameSubtitlesVersion = "0.4.0";
+inline constexpr const char* GameSubtitlesVersion = "0.4.1";
 
 /**
  * Which Game Subtitles this is. A plugin that ships its own copy of Game Subtitles can read it at
