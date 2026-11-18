@@ -40,6 +40,32 @@ public:
     );
 
     /**
+     * Wraps Text to Width with no pagination, using the same rules as WrapAndPaginate, so its
+     * breaks match the subtitles'. It breaks between words, or at a soft hyphen (U+00AD) with a
+     * visible '-' added, and force-breaks a word wider than a whole line as a last resort. Soft
+     * hyphens not used for a break are removed. There are no pages, so there is no last-line
+     * rule: a word may break at a soft hyphen on any line, and no ellipsis is added.
+     *
+     * Blueprint: UGameSubtitleTextLayoutLibrary::WrapLines, which measures with a font.
+     *
+     * @param Text          Input text; may contain U+00AD soft hyphens.
+     * @param MeasureWidth  Returns the width of a string in the target font.
+     * @param Width         Maximum width per line (same units as MeasureWidth output).
+     * @return The lines, ready to join with newlines. Empty for blank text.
+     */
+    static TArray<FString> WrapLines(
+        const FString& Text,
+        TFunction<float(const FString&)> MeasureWidth,
+        float Width
+    );
+
+    /**
+     * Removes every soft hyphen (U+00AD) from Text, for a display that should only break
+     * between words.
+     */
+    static FString WithoutSoftHyphens(const FString& Text);
+
+    /**
      * Allocates display durations to pages proportionally by non-whitespace character
      * count, excluding U+2026 (ellipsis) which is never vocalized.
      *

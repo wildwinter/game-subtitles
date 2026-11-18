@@ -6,6 +6,8 @@ extends RefCounted
 
 const SOFT_HYPHEN := "­"
 const ELLIPSIS := "…"
+# A page this long never reaches its last line.
+const _UNLIMITED_LINES := 9223372036854775807
 
 
 ## Wraps [param text] into pages of at most [param max_lines] lines, breaking at
@@ -124,6 +126,35 @@ static func wrap_and_paginate(text: String, measure_width: Callable, container_w
 					pages[pages.size() - 1] = last_page
 
 	return pages
+
+
+## Removes every soft hyphen (U+00AD) from [param text], for a display that should only
+## break between words.
+static func without_soft_hyphens(text: String) -> String:
+	return text.replace(SOFT_HYPHEN, "")
+
+
+## Wraps [param text] to [param width] with no pagination, using the same rules as
+## [method wrap_and_paginate], so its breaks match the subtitles'. It breaks between words, or
+## at a soft hyphen (U+00AD) with a visible "-" added, and force-breaks a word wider than a
+## whole line as a last resort. Soft hyphens not used for a break are removed. There are no
+## pages, so there is no last-line rule: a word may break at a soft hyphen on any line, and no
+## ellipsis is added.
+## [br][br]
+## [param measure_width] is a [Callable] taking a [String] and returning its rendered width.
+## Returns the lines, ready to join with [code]"\n"[/code]; empty for blank text.
+static func wrap_lines(text: String, measure_width: Callable, width: float) -> PackedStringArray:
+	# An unlimited page never reaches its last line, so this is wrap_and_paginate without the
+	# last-line rule.
+	return wrap_and_paginate(text, measure_width, width, _UNLIMITED_LINES)[0]
+
+
+## Wraps [param text] to [param width] as [method wrap_lines] does, measuring with
+## [param font] at [param font_size].
+static func wrap_lines_with_font(text: String, font: Font, font_size: int, width: float) -> PackedStringArray:
+	var measure := func(s: String) -> float:
+		return font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	return wrap_lines(text, measure, width)
 
 
 ## Allocates display time to pages in proportion to their non-whitespace character count.

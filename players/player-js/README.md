@@ -109,6 +109,27 @@ const pages = wrapAndPaginate('Get down, now! They have seen us.', measureWidth,
 const timings = allocateTimings(pages, 4);                                              // seconds per page
 ```
 
+## Soft hyphens in other text
+
+Soft hyphenation is your project's choice: run the preprocessor over your text and it carries soft hyphens (U+00AD); don't, and it carries none. Once a project runs it, the soft hyphens are in that text wherever the game shows it, not only in the subtitles.
+
+Whether a `-` appears where a line breaks at a soft hyphen depends on the text renderer, and it varies. So there are two helpers for text the player doesn't lay out itself, and a game can choose per display:
+
+- `wrapLines(text, measureWidth, width)` wraps text to a width by the subtitles' rules and returns the lines. It breaks between words, or at a soft hyphen with a `-` it adds itself, and as a last resort inside a word wider than a whole line. Soft hyphens it doesn't break at are removed. Use it where you want hyphens drawn reliably, and join the lines with newlines into a display whose own wrapping is off, or is at least as wide.
+- `withoutSoftHyphens(text)` removes every soft hyphen, for a display that should only break between words.
+
+There are no pages here, so there is no last-line rule: where `wrapAndPaginate` keeps whole words on a page's last line, `wrapLines` may break a word on any line, and adds no `…`. Otherwise its lines are the ones `wrapAndPaginate` gives on a single page with no line limit.
+
+```javascript
+import { wrapLines, withoutSoftHyphens } from '@wildwinter/game-subtitles';
+
+const measureWidth = text => text.length * 10;
+
+const lines = wrapLines('Inter\u00ADnational relations', measureWidth, 100); // ['Inter-', 'national', 'relations']
+const wrapped = lines.join('\n');
+const plain = withoutSoftHyphens('Inter\u00ADnational relations');               // 'International relations'
+```
+
 ## Which version is this?
 
 `GAME_SUBTITLES_VERSION` is the package's version as a string, such as `"0.4.0"`. If your game also uses a library that ships its own copy of Game Subtitles, this lets that library tell when the game is running a different copy.

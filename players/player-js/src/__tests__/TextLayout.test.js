@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { wrapAndPaginate, allocateTimings } from '../TextLayout.js';
+import { wrapAndPaginate, wrapLines, withoutSoftHyphens, allocateTimings } from '../TextLayout.js';
 
 // The same cases are in the Unity (TextLayoutTests.cs), Unreal (GameSubtitleTextLayoutTest.cpp),
 // and Godot (tests/run_tests.gd) players. Keep all four in step.
@@ -149,5 +149,67 @@ describe('allocateTimings', () => {
   it('gives a minimum of 1 count to an empty page (no div-by-zero)', () => {
     const timings = allocateTimings([['']], 2);
     expect(timings[0]).toBeCloseTo(2);
+  });
+});
+
+describe('withoutSoftHyphens', () => {
+  it('removes every soft hyphen', () => {
+    expect(withoutSoftHyphens('in\u00ADter\u00ADna\u00ADtion\u00ADal is com\u00ADplex')).toBe('international is complex');
+  });
+
+  it('leaves text without soft hyphens alone', () => {
+    expect(withoutSoftHyphens('Get down, now!')).toBe('Get down, now!');
+  });
+
+  it('returns an empty string for an empty string', () => {
+    expect(withoutSoftHyphens('')).toBe('');
+  });
+});
+
+describe('wrapLines', () => {
+  it('returns no lines for empty or whitespace text', () => {
+    expect(wrapLines('', mono, W)).toEqual([]);
+    expect(wrapLines('   ', mono, W)).toEqual([]);
+  });
+
+  it('wraps between words when there are no soft hyphens', () => {
+    expect(wrapLines('aaaa bbbb cccc dddd eeee', mono, W)).toEqual(['aaaa bbbb', 'cccc dddd', 'eeee']);
+  });
+
+  it('removes soft hyphens it does not break at', () => {
+    expect(wrapLines('inter\u00ADnet', mono, W)).toEqual(['internet']);
+  });
+
+  it('breaks at a soft hyphen with a drawn hyphen', () => {
+    expect(wrapLines('hello inter\u00ADnational', mono, W)).toEqual(['hello', 'inter-', 'national']);
+  });
+
+  it('breaks at a soft hyphen on any line, as there is no last line of a page', () => {
+    const text = 'aa bbbbb\u00ADcccccc';
+    expect(wrapLines(text, mono, W)).toEqual(['aa bbbbb-', 'cccccc']);
+    // The subtitles keep whole words on a page's last line, so with one line a page they do not.
+    expect(wrapAndPaginate(text, mono, W, 1)[0]).toEqual(['aa\u2026']);
+  });
+
+  it('forces a character break for a word wider than a line', () => {
+    expect(wrapLines('hi abcdefghijklmno', mono, W)).toEqual(['hi', 'abcdefghij', 'klmno']);
+  });
+
+  it('never leaves a raw soft hyphen in a line', () => {
+    const text = ['in', 'ter', 'na', 'tion', 'al', 'i', 'za', 'tion'].join('\u00AD') + ' is com\u00ADplex';
+    for (const line of wrapLines(text, mono, W)) expect(line).not.toContain('\u00AD');
+  });
+
+  it('matches wrapAndPaginate on one unlimited page', () => {
+    const texts = [
+      'Get down, now! They have seen us.',
+      'hello inter\u00ADnational',
+      ['in', 'ter', 'na', 'tion', 'al', 'i', 'za', 'tion'].join('\u00AD') + ' is com\u00ADplex',
+      'aa ccccc\u00ADccccc',
+      'hi abcdefghijklmno',
+    ];
+    for (const text of texts) {
+      expect(wrapLines(text, mono, W)).toEqual(wrapAndPaginate(text, mono, W, 1000)[0]);
+    }
   });
 });

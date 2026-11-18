@@ -13,7 +13,8 @@ player-unreal/
 │   └── Source/GameSubtitles/
 │       ├── GameSubtitles.Build.cs
 │       ├── Public/
-│       │   ├── GameSubtitleTextLayout.h    # WrapAndPaginate + AllocateTimings (static)
+│       │   ├── GameSubtitleTextLayout.h    # WrapAndPaginate + WrapLines + AllocateTimings (static)
+│       │   ├── GameSubtitleTextLayoutLibrary.h # Blueprint: Wrap Lines + Without Soft Hyphens
 │       │   ├── IGameSubtitleRenderer.h     # UInterface — MeasureLineWidth / GetContainerWidth / Render / Clear
 │       │   ├── GameSubtitlePlayer.h        # UObject — Initialize / Start / Tick / Stop / Reset
 │       │   └── GameSubtitleWidget.h        # UUserWidget that implements IGameSubtitleRenderer
@@ -45,6 +46,22 @@ TArray<TArray<FString>> Pages =
 // Allocate display time proportionally to character count per page.
 TArray<float> Timings =
     FGameSubtitleTextLayout::AllocateTimings(Pages, TotalDurationSeconds);
+
+// For text outside the subtitles. Wrap to Width with the subtitles' breaks, drawing "-" at
+// soft-hyphen breaks itself; no pages, so a word may break on any line.
+TArray<FString> Lines = FGameSubtitleTextLayout::WrapLines(Text, MeasureWidth, Width);
+// Or remove every soft hyphen, for a display that should only break between words.
+FString Plain = FGameSubtitleTextLayout::WithoutSoftHyphens(Text);
+```
+
+Whether a text renderer draws a `-` where it breaks a line at a soft hyphen varies, so a game uses `WrapLines` where it wants hyphens drawn reliably and `WithoutSoftHyphens` where it wants word breaks only. Soft hyphens are there only if the project runs the preprocessor; once it does, they reach every display that shows that text.
+
+### `UGameSubtitleTextLayoutLibrary` (Blueprint function library, `GameSubtitleTextLayoutLibrary.h`)
+
+```cpp
+// Measures with Slate's font measure service in Font at a scale of 1; Width is in Slate units.
+TArray<FString> Lines = UGameSubtitleTextLayoutLibrary::WrapLines(Text, FontInfo, Width);
+FString Plain = UGameSubtitleTextLayoutLibrary::WithoutSoftHyphens(Text);
 ```
 
 ### `GameSubtitlesVersion` (`GameSubtitlesVersion.h`)
@@ -128,6 +145,8 @@ To customise layout in the Blueprint designer, subclass `UGameSubtitleWidget` an
 6. **Stop** / **Reset** as needed
 
 **Get Game Subtitles Version** returns the plugin's version, such as `"0.4.0"`.
+
+**Wrap Lines** (Text, Font, Width) wraps text outside the subtitles, drawing `-` at soft-hyphen breaks itself, and **Without Soft Hyphens** (Text) removes them for a display that should only break between words.
 
 ---
 

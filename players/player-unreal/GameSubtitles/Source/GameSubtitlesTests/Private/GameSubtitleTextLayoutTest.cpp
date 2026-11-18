@@ -1,5 +1,10 @@
 #include "Misc/AutomationTest.h"
 #include "GameSubtitleTextLayout.h"
+#include "GameSubtitleTextLayoutLibrary.h"
+#include "Framework/Application/SlateApplication.h"
+#include "Fonts/FontMeasure.h"
+#include "Rendering/SlateRenderer.h"
+#include "Styling/CoreStyle.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -28,6 +33,17 @@ BEGIN_DEFINE_SPEC(FGameSubtitleTextLayoutSpec, "GameSubtitles.TextLayout",
             Parts.Add(TEXT("[") + FString::Join(Page, TEXT(", ")) + TEXT("]"));
         }
         return TEXT("[") + FString::Join(Parts, TEXT(", ")) + TEXT("]");
+    }
+
+    TArray<FString> Lines(const FString& Text)
+    {
+        return FGameSubtitleTextLayout::WrapLines(Text, &Mono, W);
+    }
+
+    void ExpectLines(const TArray<FString>& Actual, const TArray<FString>& Expected)
+    {
+        TestEqual(TEXT("lines"), TEXT("[") + FString::Join(Actual, TEXT(", ")) + TEXT("]"),
+            TEXT("[") + FString::Join(Expected, TEXT(", ")) + TEXT("]"));
     }
 
     void ExpectPages(const TArray<TArray<FString>>& Actual, const TArray<TArray<FString>>& Expected)
@@ -198,6 +214,114 @@ void FGameSubtitleTextLayoutSpec::Define()
         It("counts an empty page as one character", [this]()
         {
             ExpectTimings({ { TEXT("") } }, 2.f, { 2.f });
+        });
+    });
+
+    Describe("WithoutSoftHyphens", [this]()
+    {
+        It("removes every soft hyphen", [this]()
+        {
+            const FString Text = FString::Join(TArray<FString>{ TEXT("in"), TEXT("ter"), TEXT("na"), TEXT("tion"), TEXT("al") }, *Shy)
+                + TEXT(" is com") + Shy + TEXT("plex");
+            TestEqual(TEXT("text"), FGameSubtitleTextLayout::WithoutSoftHyphens(Text), FString(TEXT("international is complex")));
+        });
+
+        It("leaves other text alone", [this]()
+        {
+            TestEqual(TEXT("text"), FGameSubtitleTextLayout::WithoutSoftHyphens(TEXT("Get down, now!")), FString(TEXT("Get down, now!")));
+        });
+
+        It("gives an empty string for an empty string", [this]()
+        {
+            TestEqual(TEXT("text"), FGameSubtitleTextLayout::WithoutSoftHyphens(TEXT("")), FString());
+        });
+
+        It("is the same from Blueprint", [this]()
+        {
+            TestEqual(TEXT("text"), UGameSubtitleTextLayoutLibrary::WithoutSoftHyphens(TEXT("com") + Shy + TEXT("plex")), FString(TEXT("complex")));
+        });
+    });
+
+    Describe("WrapLines", [this]()
+    {
+        It("gives no lines for empty or whitespace text", [this]()
+        {
+            ExpectLines(Lines(TEXT("")), {});
+            ExpectLines(Lines(TEXT("   ")), {});
+        });
+
+        It("wraps between words without soft hyphens", [this]()
+        {
+            ExpectLines(Lines(TEXT("aaaa bbbb cccc dddd eeee")), { TEXT("aaaa bbbb"), TEXT("cccc dddd"), TEXT("eeee") });
+        });
+
+        It("removes soft hyphens it does not break at", [this]()
+        {
+            ExpectLines(Lines(TEXT("inter") + Shy + TEXT("net")), { TEXT("internet") });
+        });
+
+        It("breaks at a soft hyphen with a drawn hyphen", [this]()
+        {
+            ExpectLines(Lines(TEXT("hello inter") + Shy + TEXT("national")), { TEXT("hello"), TEXT("inter-"), TEXT("national") });
+        });
+
+        It("breaks at a soft hyphen on any line", [this]()
+        {
+            const FString Text = TEXT("aa bbbbb") + Shy + TEXT("cccccc");
+            ExpectLines(Lines(Text), { TEXT("aa bbbbb-"), TEXT("cccccc") });
+            // The subtitles keep whole words on a page's last line, so with one line a page they do not.
+            ExpectLines(Wrap(Text, 1)[0], { TEXT("aa") + Ellipsis });
+        });
+
+        It("forces a character break for a word wider than a line", [this]()
+        {
+            ExpectLines(Lines(TEXT("hi abcdefghijklmno")), { TEXT("hi"), TEXT("abcdefghij"), TEXT("klmno") });
+        });
+
+        It("never leaves a raw soft hyphen", [this]()
+        {
+            const FString Text = FString::Join(TArray<FString>{ TEXT("in"), TEXT("ter"), TEXT("na"), TEXT("tion"), TEXT("al"), TEXT("i"), TEXT("za"), TEXT("tion") }, *Shy)
+                + TEXT(" is com") + Shy + TEXT("plex");
+            for (const FString& Line : Lines(Text))
+            {
+                TestFalse(*FString::Printf(TEXT("raw soft hyphen in '%s'"), *Line), Line.Contains(Shy));
+            }
+        });
+
+        It("matches WrapAndPaginate on one unlimited page", [this]()
+        {
+            const TArray<FString> Texts =
+            {
+                TEXT("Get down, now! They have seen us."),
+                TEXT("hello inter") + Shy + TEXT("national"),
+                FString::Join(TArray<FString>{ TEXT("in"), TEXT("ter"), TEXT("na"), TEXT("tion"), TEXT("al"), TEXT("i"), TEXT("za"), TEXT("tion") }, *Shy)
+                    + TEXT(" is com") + Shy + TEXT("plex"),
+                TEXT("aa ccccc") + Shy + TEXT("ccccc"),
+                TEXT("hi abcdefghijklmno"),
+            };
+            for (const FString& Text : Texts)
+            {
+                ExpectLines(Lines(Text), Wrap(Text, 1000)[0]);
+            }
+        });
+
+        It("measures with a font from Blueprint", [this]()
+        {
+            if (!TestTrue(TEXT("Slate is running"), FSlateApplication::IsInitialized() && FSlateApplication::Get().GetRenderer() != nullptr))
+            {
+                return;
+            }
+            const FSlateFontInfo Font = FCoreStyle::GetDefaultFontStyle("Regular", 20);
+            const TSharedRef<FSlateFontMeasure> FontMeasure = FSlateApplication::Get().GetRenderer()->GetFontMeasureService();
+            const FString Text = TEXT("Get down, now! They have seen us. Inter") + Shy + TEXT("national.");
+
+            const TArray<FString> Actual = UGameSubtitleTextLayoutLibrary::WrapLines(Text, Font, 120.f);
+            TestTrue(TEXT("wraps to more than one line"), Actual.Num() > 1);
+            ExpectLines(Actual, FGameSubtitleTextLayout::WrapLines(Text, [FontMeasure, &Font](const FString& Line)
+            {
+                const FVector2D Size = FontMeasure->Measure(FStringView(Line), Font, 1.f);
+                return static_cast<float>(Size.X);
+            }, 120.f));
         });
     });
 }

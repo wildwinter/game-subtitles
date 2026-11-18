@@ -4,6 +4,12 @@ Notable changes to Game Subtitles. Each version is published as a [GitHub Releas
 
 ## [Unreleased]
 
+### Added
+
+- Two helpers on every player for text the player doesn't lay out itself, such as speech bubbles and menus, once a project has run the preprocessor over it. Whether a text renderer draws a `-` where it breaks a line at a soft hyphen varies, so a game can choose per display:
+  - Wrap lines wraps text to a width with the subtitles' breaks, drawing the `-` at a soft-hyphen break itself, and returns the lines. It has no pages, so a word may break on any line. It is `wrapLines` in JavaScript, `TextLayout.WrapLines` in Unity (with an overload that measures with a `TMP_Text`), `FGameSubtitleTextLayout::WrapLines` and the Blueprint-callable **Wrap Lines** (measuring with a Slate font) in Unreal, and `GameSubtitleTextLayout.wrap_lines` and `wrap_lines_with_font` in Godot.
+  - Without soft hyphens removes every soft hyphen, for a display that should only break between words. It is `withoutSoftHyphens` in JavaScript, `TextLayout.WithoutSoftHyphens` in Unity, `FGameSubtitleTextLayout::WithoutSoftHyphens` and the Blueprint-callable **Without Soft Hyphens** in Unreal, and `GameSubtitleTextLayout.without_soft_hyphens` in Godot.
+
 ## [0.4.1] - 2026-11-03
 
 ### Added

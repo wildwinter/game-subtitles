@@ -2,7 +2,7 @@
 // marked as expected errors below must stay errors, or tsc fails.
 import {
   SubtitlePlayer, DomRenderer, CanvasRenderer, CHARACTER_NAME_CLASS,
-  estimateDuration, wrapAndPaginate, allocateTimings, GAME_SUBTITLES_VERSION,
+  estimateDuration, wrapAndPaginate, wrapLines, withoutSoftHyphens, allocateTimings, GAME_SUBTITLES_VERSION,
   type SubtitleRenderer, type CharacterContext, type Page,
 } from '../src/index.js';
 
@@ -45,5 +45,7 @@ new SubtitlePlayer({ renderer: { clear: () => {} } });
 
 const laidOut: Page[] = wrapAndPaginate('Hello world', t => t.length * 10, 100, 2);
 const timings: number[] = allocateTimings(laidOut, seconds);
+const wrapped: string[] = wrapLines('Hello world', t => t.length * 10, 100);
+const plain: string = withoutSoftHyphens('Hel\u00ADlo');
 const cls: 'gs-character-name' = CHARACTER_NAME_CLASS;
-void [pages, timings, cls];
+void [pages, timings, cls, wrapped, plain];

@@ -250,6 +250,83 @@ func test_wrap_first_line_indent_narrows_only_line_zero() -> void:
 	_eq(Array(pages[0]), ["aaaa", "bbbb cccc"])
 
 
+# ── without_soft_hyphens ─────────────────────────────────────────────────────
+
+func test_without_soft_hyphens_removes_every_soft_hyphen() -> void:
+	var text := SHY.join(["in", "ter", "na", "tion", "al"]) + " is com" + SHY + "plex"
+	_eq(GameSubtitleTextLayout.without_soft_hyphens(text), "international is complex")
+
+
+func test_without_soft_hyphens_leaves_other_text_alone() -> void:
+	_eq(GameSubtitleTextLayout.without_soft_hyphens("Get down, now!"), "Get down, now!")
+
+
+func test_without_soft_hyphens_of_an_empty_string_is_empty() -> void:
+	_eq(GameSubtitleTextLayout.without_soft_hyphens(""), "")
+
+
+# ── wrap_lines ───────────────────────────────────────────────────────────────
+
+func _lines(text: String) -> Array:
+	return Array(GameSubtitleTextLayout.wrap_lines(text, _mono, W))
+
+
+func test_wrap_lines_gives_no_lines_for_empty_or_whitespace_text() -> void:
+	_eq(_lines(""), [])
+	_eq(_lines("   "), [])
+
+
+func test_wrap_lines_wraps_between_words_without_soft_hyphens() -> void:
+	_eq(_lines("aaaa bbbb cccc dddd eeee"), ["aaaa bbbb", "cccc dddd", "eeee"])
+
+
+func test_wrap_lines_removes_soft_hyphens_it_does_not_break_at() -> void:
+	_eq(_lines("inter" + SHY + "net"), ["internet"])
+
+
+func test_wrap_lines_breaks_at_a_soft_hyphen_with_a_drawn_hyphen() -> void:
+	_eq(_lines("hello inter" + SHY + "national"), ["hello", "inter-", "national"])
+
+
+func test_wrap_lines_breaks_at_a_soft_hyphen_on_any_line() -> void:
+	var text := "aa bbbbb" + SHY + "cccccc"
+	_eq(_lines(text), ["aa bbbbb-", "cccccc"])
+	# The subtitles keep whole words on a page's last line, so with one line a page they do not.
+	_eq(_wrap(text, 1)[0], ["aa" + ELLIPSIS])
+
+
+func test_wrap_lines_forces_character_break_for_word_wider_than_a_line() -> void:
+	_eq(_lines("hi abcdefghijklmno"), ["hi", "abcdefghij", "klmno"])
+
+
+func test_wrap_lines_never_leaves_a_raw_soft_hyphen() -> void:
+	var text := SHY.join(["in", "ter", "na", "tion", "al", "i", "za", "tion"]) + " is com" + SHY + "plex"
+	for line in _lines(text):
+		_check(not line.contains(SHY), "raw soft hyphen in '%s'" % line)
+
+
+func test_wrap_lines_matches_wrap_and_paginate_on_one_unlimited_page() -> void:
+	var texts := [
+		LINE,
+		"hello inter" + SHY + "national",
+		SHY.join(["in", "ter", "na", "tion", "al", "i", "za", "tion"]) + " is com" + SHY + "plex",
+		"aa ccccc" + SHY + "ccccc",
+		"hi abcdefghijklmno",
+	]
+	for text in texts:
+		_eq(_lines(text), _wrap(text, 1000)[0], "'%s':" % text)
+
+
+func test_wrap_lines_with_font_measures_with_that_font() -> void:
+	var font := ThemeDB.fallback_font
+	var measure := func(s: String) -> float:
+		return font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
+	var text := "Get down, now! They have seen us. Inter" + SHY + "national."
+	var lines := GameSubtitleTextLayout.wrap_lines_with_font(text, font, 20, 120.0)
+	_check(lines.size() > 1, "wraps to more than one line")
+	_eq(lines, GameSubtitleTextLayout.wrap_lines(text, measure, 120.0))
+
+
 # ── allocate_timings ─────────────────────────────────────────────────────────
 
 func test_timings_equal_pages_get_equal_time() -> void:

@@ -318,3 +318,18 @@ TArray<float> FGameSubtitleTextLayout::AllocateTimings(
 
     return Timings;
 }
+
+TArray<FString> FGameSubtitleTextLayout::WrapLines(
+    const FString& Text,
+    TFunction<float(const FString&)> MeasureWidth,
+    float Width)
+{
+    // An unlimited page never reaches its last line, so this is WrapAndPaginate without the
+    // last-line rule.
+    return WrapAndPaginate(Text, MoveTemp(MeasureWidth), Width, MAX_int32)[0];
+}
+
+FString FGameSubtitleTextLayout::WithoutSoftHyphens(const FString& Text)
+{
+    return Text.Replace(*SoftHyphen, TEXT(""), ESearchCase::CaseSensitive);
+}

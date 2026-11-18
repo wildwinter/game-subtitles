@@ -203,6 +203,36 @@ export function wrapAndPaginate(text, measureWidth, containerWidth, maxLines, fi
 }
 
 /**
+ * Removes every soft hyphen (U+00AD) from `text`, for a display that should only
+ * break between words.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function withoutSoftHyphens(text) {
+  return text.replaceAll(SOFT_HYPHEN, '');
+}
+
+/**
+ * Wraps `text` to `width` with no pagination, using the same rules as
+ * `wrapAndPaginate`, so its breaks match the subtitles'.  It breaks between
+ * words, or at a soft hyphen with a visible '-' added, and force-breaks a word
+ * wider than a whole line as a last resort.  Soft hyphens not used for a break
+ * are removed.  There are no pages, so there is no last-line rule: a word may
+ * break at a soft hyphen on any line, and no '…' is added.
+ *
+ * @param {string} text           Input, may contain U+00AD soft hyphens.
+ * @param {(t: string) => number} measureWidth  Returns the width of a string.
+ * @param {number} width                        Max width per line.
+ * @returns {string[]}  The lines, ready to join with '\n'.  Empty for blank text.
+ */
+export function wrapLines(text, measureWidth, width) {
+  // An unlimited page never reaches its last line, so this is wrapAndPaginate
+  // without the last-line rule.
+  return wrapAndPaginate(text, measureWidth, width, Infinity)[0];
+}
+
+/**
  * Allocates display durations to pages proportionally by non-whitespace
  * character count.  U+2026 '…' is excluded as it is never vocalized.
  *

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TMPro;
 
 namespace GameSubtitles
 {
@@ -204,6 +205,38 @@ namespace GameSubtitles
 
             return pages;
         }
+
+        /// <summary>
+        /// Removes every soft hyphen (U+00AD) from <paramref name="text"/>, for a display that should
+        /// only break between words.
+        /// </summary>
+        public static string WithoutSoftHyphens(string text) =>
+            text.Replace(SoftHyphen.ToString(), string.Empty);
+
+        /// <summary>
+        /// Wraps <paramref name="text"/> to <paramref name="width"/> with no pagination, using the same
+        /// rules as <see cref="WrapAndPaginate"/>, so its breaks match the subtitles'. It breaks between
+        /// words, or at a soft hyphen (U+00AD) with a visible "-" added, and force-breaks a word wider
+        /// than a whole line as a last resort. Soft hyphens not used for a break are removed. There are
+        /// no pages, so there is no last-line rule: a word may break at a soft hyphen on any line, and
+        /// no ellipsis is added.
+        /// </summary>
+        /// <param name="text">Input text; may contain U+00AD soft hyphens.</param>
+        /// <param name="measureWidth">Callback that returns the rendered width of a string.</param>
+        /// <param name="width">Maximum line width in the same units as <paramref name="measureWidth"/>.</param>
+        /// <returns>The lines, ready to join with "\n". Empty for blank text.</returns>
+        public static List<string> WrapLines(string text, Func<string, float> measureWidth, float width) =>
+            // An unlimited page never reaches its last line, so this is WrapAndPaginate without the
+            // last-line rule.
+            WrapAndPaginate(text, measureWidth, width, int.MaxValue)[0];
+
+        /// <summary>
+        /// Wraps <paramref name="text"/> to <paramref name="width"/>, measuring with
+        /// <paramref name="textComponent"/>'s font and size. See
+        /// <see cref="WrapLines(string, Func{string, float}, float)"/>.
+        /// </summary>
+        public static List<string> WrapLines(string text, TMP_Text textComponent, float width) =>
+            WrapLines(text, s => textComponent.GetPreferredValues(s).x, width);
 
         /// <summary>
         /// Allocates display time proportionally to character count per page.

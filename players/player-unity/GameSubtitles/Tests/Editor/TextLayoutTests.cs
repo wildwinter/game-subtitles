@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using TMPro;
+using UnityEngine;
 
 namespace GameSubtitles.Tests
 {
@@ -193,6 +195,116 @@ namespace GameSubtitles.Tests
         public void AnEmptyPageCountsAsOneCharacter()
         {
             Assert.AreEqual(2f, Timings(2f, new[] { "" })[0], 1e-4f);
+        }
+
+        // ── WithoutSoftHyphens ───────────────────────────────────────────────────
+
+        [Test]
+        public void WithoutSoftHyphensRemovesEverySoftHyphen()
+        {
+            Assert.AreEqual("international is complex",
+                TextLayout.WithoutSoftHyphens(string.Join(Shy, "in", "ter", "na", "tion", "al") + " is com" + Shy + "plex"));
+        }
+
+        [Test]
+        public void WithoutSoftHyphensLeavesOtherTextAlone()
+        {
+            Assert.AreEqual("Get down, now!", TextLayout.WithoutSoftHyphens("Get down, now!"));
+        }
+
+        [Test]
+        public void WithoutSoftHyphensOfAnEmptyStringIsEmpty()
+        {
+            Assert.AreEqual("", TextLayout.WithoutSoftHyphens(""));
+        }
+
+        // ── WrapLines ────────────────────────────────────────────────────────────
+
+        private static List<string> Lines(string text) => TextLayout.WrapLines(text, Mono, W);
+
+        [TestCase("")]
+        [TestCase("   ")]
+        public void WrapLinesGivesNoLinesForEmptyOrWhitespaceText(string text)
+        {
+            Assert.AreEqual(new List<string>(), Lines(text));
+        }
+
+        [Test]
+        public void WrapLinesWrapsBetweenWordsWithoutSoftHyphens()
+        {
+            Assert.AreEqual(new List<string> { "aaaa bbbb", "cccc dddd", "eeee" }, Lines("aaaa bbbb cccc dddd eeee"));
+        }
+
+        [Test]
+        public void WrapLinesRemovesSoftHyphensItDoesNotBreakAt()
+        {
+            Assert.AreEqual(new List<string> { "internet" }, Lines("inter" + Shy + "net"));
+        }
+
+        [Test]
+        public void WrapLinesBreaksAtASoftHyphenWithADrawnHyphen()
+        {
+            Assert.AreEqual(new List<string> { "hello", "inter-", "national" }, Lines("hello inter" + Shy + "national"));
+        }
+
+        [Test]
+        public void WrapLinesBreaksAtASoftHyphenOnAnyLine()
+        {
+            string text = "aa bbbbb" + Shy + "cccccc";
+            Assert.AreEqual(new List<string> { "aa bbbbb-", "cccccc" }, Lines(text));
+            // The subtitles keep whole words on a page's last line, so with one line a page they do not.
+            Assert.AreEqual(new List<string> { "aa" + Ellipsis }, Wrap(text, 1)[0]);
+        }
+
+        [Test]
+        public void WrapLinesForcesACharacterBreakForAWordWiderThanALine()
+        {
+            Assert.AreEqual(new List<string> { "hi", "abcdefghij", "klmno" }, Lines("hi abcdefghijklmno"));
+        }
+
+        [Test]
+        public void WrapLinesNeverLeavesARawSoftHyphen()
+        {
+            string text = string.Join(Shy, "in", "ter", "na", "tion", "al", "i", "za", "tion") + " is com" + Shy + "plex";
+            foreach (string line in Lines(text))
+                StringAssert.DoesNotContain(Shy, line);
+        }
+
+        [Test]
+        public void WrapLinesMatchesWrapAndPaginateOnOneUnlimitedPage()
+        {
+            string[] texts =
+            {
+                "Get down, now! They have seen us.",
+                "hello inter" + Shy + "national",
+                string.Join(Shy, "in", "ter", "na", "tion", "al", "i", "za", "tion") + " is com" + Shy + "plex",
+                "aa ccccc" + Shy + "ccccc",
+                "hi abcdefghijklmno",
+            };
+            foreach (string text in texts)
+                Assert.AreEqual(Wrap(text, 1000)[0], Lines(text), text);
+        }
+
+        [Test]
+        public void WrapLinesMeasuresWithATextComponentsFontAndSize()
+        {
+            var canvas = new GameObject("Canvas", typeof(Canvas));
+            try
+            {
+                var go = new GameObject("Label", typeof(RectTransform));
+                go.transform.SetParent(canvas.transform, false);
+                var label = go.AddComponent<TextMeshProUGUI>();
+                label.fontSize = 20f;
+
+                string text = "Get down, now! They have seen us. Inter" + Shy + "national.";
+                List<string> lines = TextLayout.WrapLines(text, label, 120f);
+                Assert.Greater(lines.Count, 1);
+                Assert.AreEqual(TextLayout.WrapLines(text, s => label.GetPreferredValues(s).x, 120f), lines);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(canvas);
+            }
         }
     }
 }

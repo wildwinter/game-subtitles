@@ -402,6 +402,24 @@ const myRenderer = {
 };
 ```
 
+#### Soft hyphens in other text
+
+Soft hyphenation is your project's choice: run the preprocessor over your text and it carries soft hyphens (U+00AD); don't, and it carries none. Once a project runs it, the soft hyphens are in that text wherever the game shows it, not only in the subtitles, so speech bubbles, menus, and journals get them too.
+
+Whether a `-` appears where a line breaks at a soft hyphen depends on the engine's text renderer, and it varies. So the player has two helpers for text it doesn't lay out itself, and a game can choose per display:
+
+- `wrapLines(text, measureWidth, width)` wraps text to a width by the subtitles' rules and returns the lines as a `string[]`. It breaks between words, or at a soft hyphen with a `-` it adds itself, and as a last resort inside a word wider than a whole line. Soft hyphens it doesn't break at are removed. Use it where you want hyphens drawn reliably: join the lines with newlines into a text display whose own wrapping is off, or is at least as wide.
+- `withoutSoftHyphens(text)` removes every soft hyphen, for a display that should only break between words.
+
+There are no pages here, so there is no last-line rule: where `wrapAndPaginate` keeps whole words on a page's last line, a word may break on any line, and no `…` is added. Otherwise the lines are the ones `wrapAndPaginate` gives on a single page with no line limit, including its tidy ending: when the last line would hold only the tail of a hyphenated word, and the whole word fits there, the whole word goes there. Spaces, tabs, and newlines in the text all count as a space between words.
+
+```javascript
+import { wrapLines, withoutSoftHyphens } from '@wildwinter/game-subtitles';
+
+bubble.textContent = wrapLines(line, text => ctx.measureText(text).width, 240).join('\n'); // hyphens drawn by Game Subtitles
+menuItem.textContent = withoutSoftHyphens(label);                                            // word breaks only
+```
+
 #### Which version is this?
 
 `GAME_SUBTITLES_VERSION` is the player's version as a string, such as `"0.4.0"`, the same as its `package.json`. If your game also uses a library that ships its own copy of Game Subtitles, this lets that library tell when the game is running a different copy.
@@ -574,6 +592,30 @@ TArray<TArray<FString>> Pages = FGameSubtitleTextLayout::WrapAndPaginate(
 // Allocate display time proportionally to character count
 TArray<float> Timings = FGameSubtitleTextLayout::AllocateTimings(Pages, TotalDurationSeconds);
 ```
+
+#### Soft hyphens in other text
+
+Soft hyphenation is your project's choice: run the preprocessor over your text and it carries soft hyphens (U+00AD); don't, and it carries none. Once a project runs it, the soft hyphens are in that text wherever the game shows it, not only in the subtitles, so speech bubbles, menus, and journals get them too.
+
+Whether a `-` appears where a line breaks at a soft hyphen depends on the engine's text renderer, and it varies. So the player has two helpers for text it doesn't lay out itself, and a game can choose per display:
+
+- `FGameSubtitleTextLayout::WrapLines` wraps text to a width by the subtitles' rules and returns the lines as a `TArray<FString>`. It breaks between words, or at a soft hyphen with a `-` it adds itself, and as a last resort inside a word wider than a whole line. Soft hyphens it doesn't break at are removed. Use it where you want hyphens drawn reliably: join the lines with newlines into a text display whose own wrapping is off, or is at least as wide.
+- `FGameSubtitleTextLayout::WithoutSoftHyphens` removes every soft hyphen, for a display that should only break between words.
+
+There are no pages here, so there is no last-line rule: where `WrapAndPaginate` keeps whole words on a page's last line, a word may break on any line, and no `…` is added. Otherwise the lines are the ones `WrapAndPaginate` gives on a single page with no line limit, including its tidy ending: when the last line would hold only the tail of a hyphenated word, and the whole word fits there, the whole word goes there. Spaces, tabs, and newlines in the text all count as a space between words.
+
+```cpp
+#include "GameSubtitleTextLayout.h"
+
+// Hyphens drawn by Game Subtitles (MeasureWidth is any callable returning float)
+TArray<FString> Lines = FGameSubtitleTextLayout::WrapLines(Text, MeasureWidth, Width);
+FString Wrapped = FString::Join(Lines, TEXT("\n"));
+
+// Word breaks only
+FString Plain = FGameSubtitleTextLayout::WithoutSoftHyphens(Text);
+```
+
+Blueprint has both in `UGameSubtitleTextLayoutLibrary` (`GameSubtitleTextLayoutLibrary.h`): **Without Soft Hyphens**, and **Wrap Lines**, which takes a Slate font (`FSlateFontInfo`) and a width in Slate units and measures with Slate's font measure service at a scale of 1. Without a Slate renderer, such as on a dedicated server, nothing can be measured, so **Wrap Lines** returns the text as one line with its soft hyphens removed.
 
 #### Which version is this?
 
@@ -782,6 +824,32 @@ List<List<string>> pages = TextLayout.WrapAndPaginate(
 List<float> timings = TextLayout.AllocateTimings(pages, totalDurationSeconds);
 ```
 
+#### Soft hyphens in other text
+
+Soft hyphenation is your project's choice: run the preprocessor over your text and it carries soft hyphens (U+00AD); don't, and it carries none. Once a project runs it, the soft hyphens are in that text wherever the game shows it, not only in the subtitles, so speech bubbles, menus, and journals get them too.
+
+Whether a `-` appears where a line breaks at a soft hyphen depends on the engine's text renderer, and it varies. So the player has two helpers for text it doesn't lay out itself, and a game can choose per display:
+
+- `TextLayout.WrapLines` wraps text to a width by the subtitles' rules and returns the lines as a `List<string>`. It breaks between words, or at a soft hyphen with a `-` it adds itself, and as a last resort inside a word wider than a whole line. Soft hyphens it doesn't break at are removed. Use it where you want hyphens drawn reliably: join the lines with newlines into a text display whose own wrapping is off, or is at least as wide.
+- `TextLayout.WithoutSoftHyphens` removes every soft hyphen, for a display that should only break between words.
+
+There are no pages here, so there is no last-line rule: where `WrapAndPaginate` keeps whole words on a page's last line, a word may break on any line, and no `…` is added. Otherwise the lines are the ones `WrapAndPaginate` gives on a single page with no line limit, including its tidy ending: when the last line would hold only the tail of a hyphenated word, and the whole word fits there, the whole word goes there. Spaces, tabs, and newlines in the text all count as a space between words.
+
+```csharp
+using GameSubtitles;
+
+// Hyphens drawn by Game Subtitles, measured with the label's own font and size
+bubbleLabel.text = string.Join("\n", TextLayout.WrapLines(line, bubbleLabel, width));
+
+// Or with any Func<string, float> returning width
+List<string> lines = TextLayout.WrapLines(line, measureFn, width);
+
+// Word breaks only
+menuLabel.text = TextLayout.WithoutSoftHyphens(label);
+```
+
+The `TMP_Text` overload measures with the component's `GetPreferredValues`, so set its font and size before calling it.
+
 #### Which version is this?
 
 `GameSubtitlesVersion.Current` is the package's version as a string, such as `"0.4.0"`, the same as its `package.json`. If your game also uses a library that ships its own copy of Game Subtitles, this lets that library tell when the game is running a different copy.
@@ -975,6 +1043,28 @@ var pages: Array[PackedStringArray] = GameSubtitleTextLayout.wrap_and_paginate(
 
 # Allocate display time proportionally to character count
 var timings: PackedFloat64Array = GameSubtitleTextLayout.allocate_timings(pages, total_duration_seconds)
+```
+
+#### Soft hyphens in other text
+
+Soft hyphenation is your project's choice: run the preprocessor over your text and it carries soft hyphens (U+00AD); don't, and it carries none. Once a project runs it, the soft hyphens are in that text wherever the game shows it, not only in the subtitles, so speech bubbles, menus, and journals get them too.
+
+Whether a `-` appears where a line breaks at a soft hyphen depends on the engine's text renderer, and it varies. So the player has two helpers for text it doesn't lay out itself, and a game can choose per display:
+
+- `GameSubtitleTextLayout.wrap_lines` wraps text to a width by the subtitles' rules and returns the lines as a `PackedStringArray`. It breaks between words, or at a soft hyphen with a `-` it adds itself, and as a last resort inside a word wider than a whole line. Soft hyphens it doesn't break at are removed. Use it where you want hyphens drawn reliably: join the lines with newlines into a text display whose own wrapping is off, or is at least as wide.
+- `GameSubtitleTextLayout.without_soft_hyphens` removes every soft hyphen, for a display that should only break between words.
+
+There are no pages here, so there is no last-line rule: where `wrap_and_paginate` keeps whole words on a page's last line, a word may break on any line, and no `…` is added. Otherwise the lines are the ones `wrap_and_paginate` gives on a single page with no line limit, including its tidy ending: when the last line would hold only the tail of a hyphenated word, and the whole word fits there, the whole word goes there. Spaces, tabs, and newlines in the text all count as a space between words.
+
+```gdscript
+# Hyphens drawn by Game Subtitles, measured with a Font at a size
+bubble_label.text = "\n".join(GameSubtitleTextLayout.wrap_lines_with_font(line, font, 20, width))
+
+# Or with any Callable taking a String and returning its width
+var lines: PackedStringArray = GameSubtitleTextLayout.wrap_lines(line, measure_width, width)
+
+# Word breaks only
+menu_label.text = GameSubtitleTextLayout.without_soft_hyphens(label)
 ```
 
 #### Which version is this?

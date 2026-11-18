@@ -101,6 +101,21 @@ export function wrapAndPaginate(
   firstLineIndent?: number,
 ): Page[];
 
+/**
+ * Wraps `text` to `width` with no pagination, with the same breaks as `wrapAndPaginate`:
+ * between words, or at a soft hyphen (U+00AD) with a "-" added, and a forced break inside a word
+ * wider than a whole line. Unused soft hyphens are removed. A word may break on any line, as
+ * there is no page to end. Returns the lines, empty for blank text.
+ */
+export function wrapLines(
+  text: string,
+  measureWidth: (text: string) => number,
+  width: number,
+): string[];
+
+/** Removes every soft hyphen (U+00AD) from `text`, for a display that should only break between words. */
+export function withoutSoftHyphens(text: string): string;
+
 /** Splits `totalDuration` seconds across pages in proportion to their non-whitespace characters. */
 export function allocateTimings(pages: Page[], totalDuration: number): number[];
 
