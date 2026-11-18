@@ -4,6 +4,8 @@ Notable changes to Game Subtitles. Each version is published as a [GitHub Releas
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-18
+
 ### Added
 
 - Two helpers on every player for text the player doesn't lay out itself, such as speech bubbles and menus, once a project has run the preprocessor over it. Whether a text renderer draws a `-` where it breaks a line at a soft hyphen varies, so a game can choose per display:

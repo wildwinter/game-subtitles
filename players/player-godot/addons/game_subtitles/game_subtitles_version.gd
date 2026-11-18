@@ -7,4 +7,4 @@ extends RefCounted
 
 
 ## This addon's version, as in its plugin.cfg. Written by the build; never edit it by hand.
-const CURRENT := "0.4.1"
+const CURRENT := "0.5.0"
